@@ -4,17 +4,95 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark" />
-    <title>DTR Game · Migration Preview</title>
+    <meta name="theme-color" content="#0f0f23" />
+    <title>无限轮回 · MUGEN LOOP</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <main class="shell">
-      <section class="panel" aria-labelledby="title">
-        <p class="eyebrow">CLOUDFLARE MIGRATION PREVIEW</p>
-        <h1 id="title">DTR Game</h1>
-        <p id="status" class="status">正在检查 Worker 状态…</p>
-        <p class="note">旧版画面与玩法将在基准截图和规则测试通过后逐项迁入。</p>
+    <div class="scanlines" aria-hidden="true"></div>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="无限轮回首页">
+        <span class="brand-mark" aria-hidden="true">ML</span>
+        <span><strong>無限輪廻</strong><small>MUGEN LOOP // DTR PROTOCOL</small></span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a class="is-active" href="#lobby">大厅</a><a href="#rooms">对局</a><a href="#archive">记录</a><a href="#help">规则</a>
+      </nav>
+      <div class="net-state" id="network-state" role="status"><span class="signal" aria-hidden="true"></span><span>连接中</span></div>
+    </header>
+
+    <main class="page" id="top">
+      <section class="hero pixel-panel" id="lobby">
+        <div>
+          <p class="kicker">CYCLE 0001 · TEST GATE OPEN</p>
+          <h1><span>无限轮回</span><small>生存不是终点，只是下一轮的入场券。</small></h1>
+          <p class="hero-copy">保留旧版文字大逃杀的房间、资源、探索与即时混战结构，换成原创日系像素世界观。当前为技术预览，不开放付费。</p>
+        </div>
+        <dl class="cycle-card" aria-label="当前轮回状态">
+          <div><dt>轮回编号</dt><dd>#0001</dd></div><div><dt>阶段</dt><dd class="mint">准备中</dd></div>
+          <div><dt>在线房间</dt><dd>02</dd></div><div><dt>服务器时刻</dt><dd id="server-clock">--:--:--</dd></div>
+        </dl>
       </section>
+
+      <div class="lobby-grid">
+        <div class="main-stack">
+          <section class="pixel-panel system-panel" aria-labelledby="system-title">
+            <header class="section-head"><div><p class="section-code">SYS // STATUS</p><h2 id="system-title">系统状况</h2></div><span class="tag">TEST BUILD 0.1</span></header>
+            <div class="system-grid">
+              <div><span>游戏版本</span><strong>RE:BUILD 0.1.0</strong></div><div><span>世界状态</span><strong class="mint">轮回待机</strong></div>
+              <div><span>数据库</span><strong id="db-state">检测中</strong></div><div><span>实时通道</span><strong id="socket-state">检测中</strong></div>
+            </div>
+            <div class="system-message" id="system-message" role="status">正在读取边缘节点状态……</div>
+          </section>
+
+          <section class="pixel-panel rooms-panel" id="rooms" aria-labelledby="rooms-title">
+            <header class="section-head"><div><p class="section-code">ROOM // MATCHMAKING</p><h2 id="rooms-title">房间列表</h2></div><button class="text-button" id="refresh-rooms" type="button">重新检测</button></header>
+            <p class="section-note">房间编号会重复使用，不代表同一轮回。测试阶段仅开放观测与连接检测。</p>
+            <table class="room-table">
+              <thead><tr><th>编号</th><th>模式</th><th>状态</th><th>人数</th><th>区域</th><th>运行时间</th><th>操作</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td data-label="编号">01</td><td data-label="模式"><strong class="coral">教程轮回</strong></td><td data-label="状态"><span class="status-badge ready">开放激活</span></td>
+                  <td data-label="人数">0 / 1</td><td data-label="区域">新宿废层</td><td data-label="运行时间">常驻</td><td data-label="操作"><button class="room-action" data-room="tutorial" type="button">观测</button></td>
+                </tr>
+                <tr>
+                  <td data-label="编号">02</td><td data-label="模式"><strong class="cyan">无限试炼</strong></td><td data-label="状态"><span class="status-badge waiting">等待中</span></td>
+                  <td data-label="人数">0 / 8</td><td data-label="区域">第零候车室</td><td data-label="运行时间">05:41</td><td data-label="操作"><button class="room-action" data-room="infinite" type="button">观测</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="pixel-panel archive-panel" id="archive" aria-labelledby="archive-title">
+            <header class="section-head"><div><p class="section-code">LOG // LAST CYCLE</p><h2 id="archive-title">最近记录</h2></div></header>
+            <ol class="event-log"><li><time>05:41</time><span>边缘节点建立，等待第一批测试玩家。</span></li><li><time>05:35</time><span>Supabase 数据隔离验收通过。</span></li><li><time>03:09</time><span>房间实时通道部署完成。</span></li></ol>
+          </section>
+        </div>
+
+        <aside class="side-stack">
+          <section class="pixel-panel login-panel" aria-labelledby="login-title">
+            <header class="section-head compact"><div><p class="section-code">PLAYER // ACCESS</p><h2 id="login-title">玩家接入</h2></div></header>
+            <form id="login-form" novalidate>
+              <label for="login-email">邮箱</label><input id="login-email" name="email" type="email" autocomplete="email" placeholder="player@example.com" required />
+              <label for="login-password">密码</label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="至少 8 位" minlength="8" required />
+              <button class="primary-button" type="submit">进入轮回</button><p class="form-note" id="login-note">测试阶段：账号认证尚未开放，不会提交你的输入。</p>
+            </form>
+          </section>
+
+          <section class="pixel-panel trial-panel" aria-labelledby="trial-title">
+            <p class="section-code">DAILY // TRIAL</p><h2 id="trial-title">今日试炼</h2><div class="trial-poster" aria-hidden="true"><span>零</span><i></i></div>
+            <h3>終電のない駅</h3><p>列车不会抵达。收集三枚记忆碎片，在禁区收缩前找到离站方式。</p>
+            <dl class="reward-list"><div><dt>危险度</dt><dd>★★★☆☆</dd></div><div><dt>基础奖励</dt><dd>120 LOOP</dd></div></dl>
+          </section>
+
+          <section class="pixel-panel notice-panel" id="help" aria-labelledby="notice-title">
+            <p class="section-code">NOTICE // TEST</p><h2 id="notice-title">测试须知</h2>
+            <ul><li>当前仅验证架构、房间连接和视觉骨架。</li><li>旧版玩法将按教程、标准、试炼顺序迁移。</li><li>商业素材全部采用原创或明确授权版本。</li></ul>
+          </section>
+        </aside>
+      </div>
+
+      <footer class="footer"><span>WORKING TITLE · 無限輪廻</span><span>Cloudflare Workers · Durable Objects · Supabase</span></footer>
     </main>
     <script type="module" src="/app.js"></script>
   </body>
