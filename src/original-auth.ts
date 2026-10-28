@@ -101,7 +101,8 @@ export type LegacyPasswordValidity =
 export function legacyPasswordCheck(password: string | null | undefined, repeated: string | null | undefined): LegacyPasswordValidity {
   if (!password || !repeated) return "pass_not_set";
   if (password !== repeated) return "pass_not_match";
-  if (new TextEncoder().encode(password).length > 24) return "pass_too_long";
+  // The customized PHP fork uses mb_strlen(..., "utf-8") rather than byte strlen.
+  if ([...password].length > 24) return "pass_too_long";
   // The installed PHP source explicitly comments out its <4 byte rejection.
   return "pass_ok";
 }
