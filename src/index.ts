@@ -1,5 +1,6 @@
 import { isValidRoomId, parseClientMessage } from "./protocol";
 import { applyTutorialAction, type TutorialState } from "./tutorial";
+import { applyGameAction, getGameView, type GameWorldState } from "./game";
 
 const ROOM_STATE_KEY = "room-state-v1";
 const MAX_RECENT_COMMANDS = 256;
@@ -16,6 +17,8 @@ interface StoredRoomState {
   players: Record<string, RoomPlayer>;
   recentCommandIds: string[];
   tutorialPlayers?: Record<string, TutorialState>;
+  game?: GameWorldState;
+  gameHistory?: Array<{ sequence: number; kind: string; playerId: string; text: string; targetId?: string; at: number }>;
 }
 
 interface SocketAttachment {
@@ -118,6 +121,15 @@ function routeRoomSocket(request: Request, env: Env, roomId: string): Response |
   return env.GAME_ROOMS.get(id).fetch(new Request(request, { headers }));
 }
 
+function routeRoomState(request: Request, env: Env, roomId: string): Response | Promise<Response> {
+  if (!isValidRoomId(roomId)) return json({ error: "invalid_room_id" }, { status: 400 });
+  const id = env.GAME_ROOMS.idFromName(roomId);
+  const headers = new Headers(request.headers);
+  headers.set("x-dtr-room-id", roomId);
+  headers.set("x-dtr-operation", "state");
+  return env.GAME_ROOMS.get(id).fetch(new Request(request, { headers }));
+}
+
 async function getPublicCatalog(env: Env): Promise<Response> {
   if (!env.SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY) {
     return json({ error: "supabase_not_configured" }, { status: 503 });
@@ -162,6 +174,8 @@ export default {
     }
     const authMatch = url.pathname.match(/^\/api\/auth\/(login|signup|refresh|logout)$/);
     if (authMatch?.[1]) return proxyAuth(request, env, authMatch[1] as "login" | "signup" | "refresh" | "logout");
+    const roomStateMatch = url.pathname.match(/^\/api\/rooms\/([^/]+)\/state$/);
+    if (roomStateMatch?.[1] && request.method === "GET") return routeRoomState(request, env, roomStateMatch[1]);
     const match = url.pathname.match(/^\/api\/rooms\/([^/]+)\/socket$/);
     if (match?.[1]) return routeRoomSocket(request, env, match[1]);
     if (url.pathname.startsWith("/api/")) return json({ error: "not_found" }, { status: 404 });
@@ -198,15 +212,37 @@ export class GameRoom implements DurableObject {
     await this.state.storage.put(ROOM_STATE_KEY, this.room);
   }
 
-  async fetch(request: Request): Promise<Response> {
-    if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
-      return json({ error: "websocket_upgrade_required" }, { status: 426 });
+  private sendGameViews(log?: string, error?: string): void {
+    if (!this.room.game) return;
+    for (const peer of this.state.getWebSockets()) {
+      const attachment = peer.deserializeAttachment() as SocketAttachment | null;
+      if (peer.readyState === WebSocket.OPEN && attachment?.playerId && this.room.game.players[attachment.playerId]) {
+        peer.send(JSON.stringify({ type: "game_state", view: getGameView(this.room.game, attachment.playerId), history: this.room.gameHistory?.slice(-30) ?? [], ...(log ? { log } : {}), ...(error ? { error } : {}) }));
+      }
     }
+  }
+
+  async fetch(request: Request): Promise<Response> {
     await this.ready;
     const roomId = request.headers.get("x-dtr-room-id");
     if (!this.room.roomId && roomId) {
       this.room.roomId = roomId;
       await this.persist();
+    }
+    if (request.headers.get("x-dtr-operation") === "state") {
+      const gamePlayers = Object.values(this.room.game?.players ?? {});
+      return json({
+        roomId: this.room.roomId,
+        connected: this.state.getWebSockets().length,
+        joined: gamePlayers.length,
+        alive: gamePlayers.filter(({ alive }) => alive).length,
+        phase: this.room.game?.phase ?? "waiting",
+        turn: this.room.game?.turn ?? 0,
+        cycle: this.room.game?.cycle ?? 1
+      });
+    }
+    if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
+      return json({ error: "websocket_upgrade_required" }, { status: 426 });
     }
     const pair = new WebSocketPair();
     const client = pair[0];
@@ -260,6 +296,9 @@ export class GameRoom implements DurableObject {
       if (this.room.roomId === "tutorial" && tutorialState) {
         socket.send(JSON.stringify({ type: "tutorial_state", state: tutorialState, log: "训练状态已恢复。" }));
       }
+      if (this.room.roomId !== "tutorial" && this.room.game?.players[playerId]) {
+        socket.send(JSON.stringify({ type: "game_state", view: getGameView(this.room.game, playerId), history: this.room.gameHistory?.slice(-30) ?? [], log: "对局状态已恢复。" }));
+      }
       return;
     }
 
@@ -274,6 +313,7 @@ export class GameRoom implements DurableObject {
       return;
     }
     let tutorialResult: ReturnType<typeof applyTutorialAction> | undefined;
+    let gameResult: ReturnType<typeof applyGameAction> | undefined;
     if (message.action.startsWith("tutorial_")) {
       if (this.room.roomId !== "tutorial") {
         socket.send(JSON.stringify({ type: "error", code: "tutorial_room_required" }));
@@ -287,11 +327,36 @@ export class GameRoom implements DurableObject {
       this.room.tutorialPlayers ??= {};
       this.room.tutorialPlayers[attachment.playerId] = tutorialResult.state;
     }
+    if (message.action.startsWith("game_")) {
+      if (this.room.roomId === "tutorial") {
+        socket.send(JSON.stringify({ type: "error", code: "game_room_required" }));
+        return;
+      }
+      const gamePayload = message.action === "game_enter"
+        ? { mode: this.room.roomId === "standard" ? "standard" : "infinite" }
+        : message.payload;
+      gameResult = applyGameAction(this.room.game, attachment.playerId, message.action, gamePayload);
+      if (!gameResult.ok) {
+        socket.send(JSON.stringify({ type: "game_state", view: getGameView(gameResult.world, attachment.playerId), error: gameResult.code, log: gameResult.event.text }));
+        return;
+      }
+      this.room.game = gameResult.world;
+    }
     this.room.recentCommandIds.push(message.commandId);
     this.room.recentCommandIds = this.room.recentCommandIds.slice(-MAX_RECENT_COMMANDS);
     this.room.sequence += 1;
     player.lastSeenAt = Date.now();
+    if (gameResult) {
+      this.room.gameHistory ??= [];
+      this.room.gameHistory.push({ sequence: this.room.sequence, ...gameResult.event, at: Date.now() });
+      this.room.gameHistory = this.room.gameHistory.slice(-100);
+    }
     await this.persist();
+    if (gameResult) {
+      this.broadcast({ type: "game_event", sequence: this.room.sequence, event: gameResult.event });
+      this.sendGameViews(gameResult.event.text);
+      return;
+    }
     this.broadcast({
       type: "room_event",
       sequence: this.room.sequence,
