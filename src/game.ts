@@ -1,7 +1,9 @@
 import { LEGACY_AREAS, LEGACY_MAP_RULES, PROTOTYPE_AREA_ALIASES, isLegacyAreaId, normalizeSavedArea, type LegacyAreaId } from "./legacy-map";
 
+import { WEATHER, TEAM_RULES, detectWeaponFamily, weatherAttack, weatherDefense, weatherDiscoveryChance, type WeaponProficiency, type EquipmentPart } from "./legacy-rules";
+
 export type AreaId = LegacyAreaId;
-export type ItemKind = "weapon" | "armor" | "heal" | "stamina" | "antidote";
+export type ItemKind = "weapon" | "armor" | "heal" | "stamina" | "antidote" | "material" | "trap";
 
 export interface AreaDefinition {
   id: AreaId;
@@ -21,6 +23,7 @@ export interface GameItem {
   power: number;
   durability: number;
   price: number;
+  armorSlot?: EquipmentPart;
 }
 
 export interface EnemyState {
@@ -54,6 +57,9 @@ export interface GamePlayerState {
   armor: GameItem | null;
   pendingItem: GameItem | null;
   enemy: EnemyState | null;
+  proficiencies: Record<WeaponProficiency, number>;
+  armorParts: Partial<Record<EquipmentPart, GameItem>>;
+  teamId: string | null;
 }
 
 export interface CorpseState {
@@ -76,6 +82,9 @@ export interface GameWorldState {
   players: Record<string, GamePlayerState>;
   corpses: CorpseState[];
   winnerId: string | null;
+  weatherId: number;
+  teams: Record<string, string[]>;
+  traps: Array<{ id: string; area: AreaId; owner: string; power: number }>;
 }
 
 export interface GameTransition {
@@ -99,9 +108,23 @@ const catalog: Array<Omit<GameItem, "instanceId">> = [
   { catalogId: "station_shell", name: "站务员外壳", kind: "armor", power: 10, durability: 15, price: 850 },
   { catalogId: "healing_gel", name: "应急凝胶", kind: "heal", power: 35, durability: 1, price: 160 },
   { catalogId: "energy_cell", name: "体力电池", kind: "stamina", power: 45, durability: 1, price: 140 },
-  { catalogId: "purifier", name: "净化针剂", kind: "antidote", power: 0, durability: 1, price: 120 }
+  { catalogId: "purifier", name: "净化针剂", kind: "antidote", power: 0, durability: 1, price: 120 },
+  { catalogId: "helmet", name: "基础头盔", kind: "armor", armorSlot: "head", power: 3, durability: 15, price: 200 },
+  { catalogId: "armguards", name: "防护臂甲", kind: "armor", armorSlot: "arms", power: 2, durability: 15, price: 180 },
+  { catalogId: "legguards", name: "防护腿甲", kind: "armor", armorSlot: "legs", power: 3, durability: 15, price: 200 },
+  { catalogId: "tripwire", name: "简易绊索陷阱", kind: "trap", power: 12, durability: 1, price: 120 },
+  { catalogId: "rice_stew", name: "杂炊", kind: "material", power: 0, durability: 1, price: 35 },
+  { catalogId: "matsutake", name: "松茸", kind: "material", power: 0, durability: 1, price: 60 },
+  { catalogId: "curry", name: "咖喱", kind: "material", power: 0, durability: 1, price: 40 },
+  { catalogId: "bread", name: "面包", kind: "material", power: 0, durability: 1, price: 30 },
+  { catalogId: "matsutake_rice", name: "松茸御饭", kind: "heal", power: 120, durability: 10, price: 0 },
+  { catalogId: "curry_bread", name: "咖喱面包", kind: "heal", power: 140, durability: 2, price: 0 }
 ];
 
+const CRAFT_RECIPES = [
+  { ingredients: ["rice_stew", "matsutake"], result: "matsutake_rice" },
+  { ingredients: ["curry", "bread"], result: "curry_bread" }
+] as const;
 const areaById = (id: AreaId): AreaDefinition => GAME_AREAS.find((area) => area.id === id) ?? GAME_AREAS[1]!;
 const clone = <T>(value: T): T => structuredClone(value);
 
@@ -116,7 +139,7 @@ function makeItem(world: GameWorldState, definition: Omit<GameItem, "instanceId"
 }
 
 export function createGameWorld(seed = 20261028, mode: GameWorldState["mode"] = "infinite"): GameWorldState {
-  return { mode, phase: "waiting", cycle: 1, turn: 0, seed: seed >>> 0, forbidden: [...LEGACY_MAP_RULES.startForbidden], warningArea: null, warningAreas: [], players: {}, corpses: [], winnerId: null };
+  return { mode, phase: "waiting", cycle: 1, turn: 0, seed: seed >>> 0, forbidden: [...LEGACY_MAP_RULES.startForbidden], warningArea: null, warningAreas: [], players: {}, corpses: [], winnerId: null, weatherId: 2, teams: {}, traps: [] };
 }
 
 function createPlayer(world: GameWorldState, playerId: string): GamePlayerState {
@@ -124,8 +147,8 @@ function createPlayer(world: GameWorldState, playerId: string): GamePlayerState 
     id: playerId,
     hp: 100,
     maxHp: 100,
-    sp: 120,
-    maxSp: 120,
+    sp: 300,
+    maxSp: 300,
     level: 1,
     exp: 0,
     money: 300,
@@ -139,7 +162,10 @@ function createPlayer(world: GameWorldState, playerId: string): GamePlayerState 
     weapon: makeItem(world, catalog[0]!),
     armor: null,
     pendingItem: null,
-    enemy: null
+    enemy: null,
+    proficiencies: { wp: 0, wk: 0, wg: 0, wc: 0, wd: 0, wf: 0 },
+    armorParts: {},
+    teamId: null
   };
 }
 
@@ -179,7 +205,15 @@ function levelUp(player: GamePlayerState): string {
 function normalizeSavedWorldAreas(world: GameWorldState): GameWorldState {
   // Durable Objects created before this migration can still hold 6-region IDs.
   // Translate them without deleting a saved player, their inventory, or history.
-  for (const player of Object.values(world.players)) player.area = normalizeSavedArea(player.area);
+  for (const player of Object.values(world.players)) {
+    player.area = normalizeSavedArea(player.area);
+    player.proficiencies ??= { wp: 0, wk: 0, wg: 0, wc: 0, wd: 0, wf: 0 };
+    player.armorParts ??= {};
+    player.teamId ??= null;
+  }
+  world.weatherId ??= 2;
+  world.teams ??= {};
+  world.traps ??= [];
   for (const corpse of world.corpses) corpse.area = normalizeSavedArea(corpse.area);
   world.forbidden = [...new Set((world.forbidden ?? []).map(normalizeSavedArea))];
   world.warningAreas = (world.warningAreas ?? (world.warningArea ? [world.warningArea] : [])).map(normalizeSavedArea);
@@ -249,8 +283,10 @@ function spawnEnemy(world: GameWorldState, player: GamePlayerState): EnemyState 
 function combatNpc(world: GameWorldState, player: GamePlayerState): string {
   const enemy = player.enemy!;
   const weaponPower = player.weapon?.power ?? 3;
+  const proficiency = detectWeaponFamily(player.weapon?.catalogId ?? "fist");
+  player.proficiencies[proficiency] = Math.min(999, player.proficiencies[proficiency] + 1);
   const tacticAttack = player.tactic === "aggressive" ? 5 : player.tactic === "defensive" ? -2 : 0;
-  const damage = Math.max(1, weaponPower + player.level * 2 + tacticAttack - enemy.defense + Math.floor(nextRandom(world) * 6));
+  const damage = Math.max(1, weatherAttack(weaponPower + player.level * 2 + tacticAttack + Math.floor(player.proficiencies[proficiency] / 20), world.weatherId) - weatherDefense(enemy.defense, world.weatherId) + Math.floor(nextRandom(world) * 6));
   enemy.hp = Math.max(0, enemy.hp - damage);
   if (player.weapon) {
     player.weapon.durability -= 1;
@@ -266,7 +302,7 @@ function combatNpc(world: GameWorldState, player: GamePlayerState): string {
     text += ` 目标已清除，获得 ${enemy.rewardExp} 经验和 ${enemy.rewardMoney} LOOP。${levelUp(player)}`;
     return text;
   }
-  const defense = (player.armor?.power ?? 0) + (player.tactic === "defensive" ? 5 : player.tactic === "aggressive" ? -2 : 0);
+  const defense = weatherDefense((player.armor?.power ?? 0) + Object.values(player.armorParts).reduce((sum, part) => sum + (part?.power ?? 0), 0), world.weatherId) + (player.tactic === "defensive" ? 5 : player.tactic === "aggressive" ? -2 : 0);
   const counter = Math.max(1, enemy.attack - defense + Math.floor(nextRandom(world) * 5));
   player.hp = Math.max(0, player.hp - counter);
   if (player.armor) {
@@ -330,6 +366,12 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
     if (player.enemy) return failure(world, playerId, "enemy_present", "遭遇敌人时无法移动，请先战斗或撤离。 ");
     if (player.sp <= 15) return failure(world, playerId, "insufficient_sp", "体力不足，无法移动。 ");
     player.sp -= 15; player.area = to;
+    const trap = world.traps.find((entry) => entry.area === to && entry.owner !== playerId);
+    if (trap && nextRandom(world) < 0.25) {
+      player.hp = Math.max(0, player.hp - trap.power);
+      if (player.hp === 0) player.alive = false;
+      world.traps = world.traps.filter((entry) => entry.id !== trap.id);
+    }
     transition = success(world, playerId, "moved", `消耗 15 点体力，移动到${areaById(to).name}。`);
   } else if (action === "game_search") {
     if (player.enemy || player.pendingItem) return failure(world, playerId, "unresolved_encounter", "请先处理当前发现物或敌人。 ");
@@ -337,8 +379,8 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
     player.sp -= 15;
     const roll = nextRandom(world);
     const areaRules = areaById(player.area);
-    const itemThreshold = Math.max(0.1, Math.min(0.8, (player.tactic === "scavenge" ? 0.68 : 0.5) + areaRules.itemFind / 100));
-    const enemyThreshold = Math.min(0.98, Math.max(itemThreshold, 0.88 + areaRules.encounter / 100));
+    const itemThreshold = Math.max(0.1, Math.min(0.8, weatherDiscoveryChance(player.tactic === "scavenge" ? 68 : 50, areaRules.itemFind, world.weatherId) / 100));
+    const enemyThreshold = Math.min(0.98, Math.max(itemThreshold, (88 + areaRules.encounter + (WEATHER[world.weatherId] ?? WEATHER[2]).encounter) / 100));
     if (roll < itemThreshold) {
       const lootPool = catalog.slice(1);
       player.pendingItem = makeItem(world, lootPool[Math.floor(nextRandom(world) * lootPool.length)]!);
@@ -399,14 +441,16 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
       if (!target?.alive || target.area !== player.area || targetId === playerId) return failure(world, playerId, "invalid_target", "目标不在当前区域。 ");
       const attackBonus = player.tactic === "aggressive" ? 5 : player.tactic === "defensive" ? -2 : 0;
       const defenseBonus = target.tactic === "defensive" ? 5 : target.tactic === "aggressive" ? -2 : 0;
-      const damage = Math.max(1, (player.weapon?.power ?? 3) + player.level * 2 + attackBonus - (target.armor?.power ?? 0) - defenseBonus + Math.floor(nextRandom(world) * 6));
+      const damage = Math.max(1, weatherAttack((player.weapon?.power ?? 3) + player.level * 2 + attackBonus, world.weatherId) - weatherDefense((target.armor?.power ?? 0) + Object.values(target.armorParts).reduce((sum, part) => sum + (part?.power ?? 0), 0), world.weatherId) - defenseBonus + Math.floor(nextRandom(world) * 6));
       target.hp = Math.max(0, target.hp - damage);
+      const weaponFamily = detectWeaponFamily(player.weapon?.catalogId ?? "fist");
+      player.proficiencies[weaponFamily] += 1;
       if (player.weapon) { player.weapon.durability -= 1; if (player.weapon.durability <= 0) player.weapon = null; }
       if (target.hp === 0) {
         target.alive = false; player.kills += 1; player.exp += 80;
         const corpseMoney = Math.floor(target.money / 2); target.money -= corpseMoney;
-        const corpseItems = [...target.inventory, ...(target.weapon ? [target.weapon] : []), ...(target.armor ? [target.armor] : [])];
-        target.inventory = []; target.weapon = null; target.armor = null;
+        const corpseItems = [...target.inventory, ...(target.weapon ? [target.weapon] : []), ...(target.armor ? [target.armor] : []), ...Object.values(target.armorParts).filter((part): part is GameItem => Boolean(part))];
+        target.inventory = []; target.weapon = null; target.armor = null; target.armorParts = {};
         world.corpses.push({ id: `corpse_${world.turn}_${targetId}`, playerId: targetId, area: target.area, money: corpseMoney, items: corpseItems });
       }
       transition = success(world, playerId, "pvp_attack", `对目标造成 ${damage} 点伤害。${target.alive ? "" : ` 目标已出局，遗留了可搜索的战利品。${levelUp(player)}`}`, targetId);
@@ -464,7 +508,7 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
     if (!player.enemy) return failure(world, playerId, "no_enemy", "当前没有需要撤离的敌人。 ");
     if (nextRandom(world) < 0.65) { player.enemy = null; transition = success(world, playerId, "fled", "成功脱离战斗。 "); }
     else {
-      const damage = Math.max(1, player.enemy.attack - (player.armor?.power ?? 0));
+      const damage = Math.max(1, player.enemy.attack - (player.armor?.power ?? 0) - Object.values(player.armorParts).reduce((sum, part) => sum + (part?.power ?? 0), 0));
       player.hp = Math.max(0, player.hp - damage); if (player.hp === 0) player.alive = false;
       transition = success(world, playerId, "flee_failed", `撤离失败，受到 ${damage} 点伤害。`);
     }
