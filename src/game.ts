@@ -243,6 +243,8 @@ function advanceWorld(world: GameWorldState): string {
       if (player.alive && closed.includes(player.area)) { player.hp = 0; player.alive = false; }
     }
     notice = ` 新增禁区：${closed.map((id) => areaById(id).name).join("、")}。`;
+    world.weatherId = Math.floor(nextRandom(world) * WEATHER.length);
+    notice += ` 当前天气：${WEATHER[world.weatherId]!.name}。`;
     if (world.forbidden.length >= GAME_AREAS.length) {
       if (world.mode === "infinite") {
         world.cycle += 1;
@@ -411,7 +413,11 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
     if (!selected || (selected.kind !== "weapon" && selected.kind !== "armor")) return failure(world, playerId, "item_not_equippable", "该物品无法装备。 ");
     player.inventory.splice(index, 1);
     if (selected.kind === "weapon") { if (player.weapon) player.inventory.push(player.weapon); player.weapon = selected; }
-    else { if (player.armor) player.inventory.push(player.armor); player.armor = selected; }
+    else if (selected.armorSlot && selected.armorSlot !== "body") {
+      const previous = player.armorParts[selected.armorSlot];
+      if (previous) player.inventory.push(previous);
+      player.armorParts[selected.armorSlot] = selected;
+    } else { if (player.armor) player.inventory.push(player.armor); player.armor = selected; }
     transition = success(world, playerId, "equipped", `已装备${selected.name}。`);
   } else if (action === "game_unequip") {
     const slot = parseString(payload, "slot");
@@ -422,13 +428,19 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
     } else if (slot === "armor" && player.armor) {
       const selected = player.armor; player.armor = null; player.inventory.push(selected);
       transition = success(world, playerId, "unequipped", `已卸下${selected.name}。`);
+    } else if (slot === "head" || slot === "arms" || slot === "legs") {
+      const selected = player.armorParts[slot];
+      if (!selected) return failure(world, playerId, "slot_empty", "该装备栏为空。 ");
+      player.inventory.push(selected); delete player.armorParts[slot];
+      transition = success(world, playerId, "unequipped", `已卸下${selected.name}。`);
     } else return failure(world, playerId, "slot_empty", "该装备栏为空。 ");
   } else if (action === "game_use") {
     const instanceId = parseString(payload, "instanceId");
     const index = player.inventory.findIndex((entry) => entry.instanceId === instanceId);
     const selected = player.inventory[index];
     if (!selected || !["heal", "stamina", "antidote"].includes(selected.kind)) return failure(world, playerId, "item_not_usable", "该物品无法使用。 ");
-    player.inventory.splice(index, 1);
+    if (selected.durability <= 1) player.inventory.splice(index, 1);
+    else selected.durability -= 1;
     if (selected.kind === "heal") player.hp = Math.min(player.maxHp, player.hp + selected.power);
     if (selected.kind === "stamina") player.sp = Math.min(player.maxSp, player.sp + selected.power);
     if (selected.kind === "antidote") player.status = "normal";
@@ -438,6 +450,7 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
     if (targetId) {
       if (world.mode !== "standard") return failure(world, playerId, "pvp_disabled", "无限试炼中无法攻击其他玩家。 ");
       const target = world.players[targetId];
+      if (player.teamId && target?.teamId === player.teamId) return failure(world, playerId, "friendly_fire", "不能攻击同队玩家。 ");
       if (!target?.alive || target.area !== player.area || targetId === playerId) return failure(world, playerId, "invalid_target", "目标不在当前区域。 ");
       const attackBonus = player.tactic === "aggressive" ? 5 : player.tactic === "defensive" ? -2 : 0;
       const defenseBonus = target.tactic === "defensive" ? 5 : target.tactic === "aggressive" ? -2 : 0;
@@ -498,6 +511,61 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
       transition = success(world, playerId, "looted_item", `从遗留物中取得${selected.name}。`);
     }
     if (corpse.money === 0 && corpse.items.length === 0) world.corpses = world.corpses.filter(({ id }) => id !== corpse.id);
+  } else if (action === "game_team_create") {
+    if (player.teamId) return failure(world, playerId, "already_in_team", "你已经加入队伍。 ");
+    if (player.sp <= TEAM_RULES.createSp) return failure(world, playerId, "insufficient_sp", "组队需要 200 点体力。 ");
+    const teamId = `team_${playerId}_${world.cycle}`;
+    if (world.teams[teamId]) return failure(world, playerId, "team_exists", "队伍已存在。 ");
+    player.sp -= TEAM_RULES.createSp;
+    player.teamId = teamId;
+    world.teams[teamId] = [playerId];
+    transition = success(world, playerId, "team_created", "创建队伍成功，其他玩家可以选择加入。 ");
+  } else if (action === "game_team_join") {
+    if (player.teamId) return failure(world, playerId, "already_in_team", "你已经加入队伍。 ");
+    const teamId = parseString(payload, "teamId");
+    const members = world.teams[teamId];
+    if (!members) return failure(world, playerId, "team_missing", "没有找到该队伍。 ");
+    if (members.length >= TEAM_RULES.maxMembers) return failure(world, playerId, "team_full", "队伍人数已满。 ");
+    if (player.sp <= TEAM_RULES.joinSp) return failure(world, playerId, "insufficient_sp", "加入队伍需要 100 点体力。 ");
+    player.sp -= TEAM_RULES.joinSp;
+    members.push(playerId);
+    player.teamId = teamId;
+    transition = success(world, playerId, "team_joined", "已加入队伍。 ");
+  } else if (action === "game_team_leave") {
+    if (!player.teamId) return failure(world, playerId, "team_missing", "你没有加入队伍。 ");
+    const oldId = player.teamId;
+    world.teams[oldId] = (world.teams[oldId] ?? []).filter((id) => id !== playerId);
+    if (world.teams[oldId].length === 0) delete world.teams[oldId];
+    player.teamId = null;
+    transition = success(world, playerId, "team_left", "已经退出队伍。 ");
+  } else if (action === "game_craft") {
+    if (player.enemy) return failure(world, playerId, "enemy_present", "战斗中不能合成物品。 ");
+    const resultId = parseString(payload, "result");
+    const recipe = CRAFT_RECIPES.find((entry) => entry.result === resultId);
+    if (!recipe) return failure(world, playerId, "unknown_recipe", "合成配方不存在。 ");
+    const used = new Set<number>();
+    for (const ingredient of recipe.ingredients) {
+      const index = player.inventory.findIndex((item, i) => !used.has(i) && item.catalogId === ingredient);
+      if (index < 0) return failure(world, playerId, "missing_ingredient", "缺少合成材料。 ");
+      used.add(index);
+    }
+    const product = catalog.find((item) => item.catalogId === recipe.result);
+    if (!product) return failure(world, playerId, "unknown_recipe", "配方结果不存在。 ");
+    for (const index of [...used].sort((a, b) => b - a)) player.inventory.splice(index, 1);
+    const produced = makeItem(world, product);
+    player.inventory.push(produced);
+    transition = success(world, playerId, "crafted", `合成成功：${produced.name}。`);
+  } else if (action === "game_trap_place") {
+    if (player.enemy) return failure(world, playerId, "enemy_present", "战斗中不能设置陷阱。 ");
+    const instanceId = parseString(payload, "instanceId");
+    const index = player.inventory.findIndex((item) => item.instanceId === instanceId && item.kind === "trap");
+    if (index < 0) return failure(world, playerId, "trap_missing", "背包中没有可设置的陷阱。 ");
+    const selected = player.inventory.splice(index, 1)[0]!;
+    world.traps.push({ id: selected.instanceId, area: player.area, owner: playerId, power: selected.power });
+    transition = success(world, playerId, "trap_placed", `已在${areaById(player.area).name}设置陷阱。`);
+  } else if (action === "game_trap_detect") {
+    const traps = world.traps.filter((trap) => trap.area === player.area);
+    transition = success(world, playerId, "trap_detected", `当前地区探测到 ${traps.length} 个陷阱。`);
   } else if (action === "game_tactic") {
     const tactic = parseString(payload, "tactic");
     if (!(["balanced", "aggressive", "defensive", "scavenge"] as string[]).includes(tactic)) return failure(world, playerId, "invalid_tactic", "无效战术。 ");
@@ -531,9 +599,10 @@ export function getGameView(world: GameWorldState, playerId: string) {
     .map(({ id, alive, kills, level, wave }, index) => ({ rank: index + 1, id, alive, kills, level, wave }));
   return {
     player,
-    world: { mode: world.mode, phase: world.phase, cycle: world.cycle, turn: world.turn, forbidden: world.forbidden, warningArea: world.warningArea, warningAreas: world.warningAreas, winnerId: world.winnerId },
+    world: { mode: world.mode, phase: world.phase, cycle: world.cycle, turn: world.turn, forbidden: world.forbidden, warningArea: world.warningArea, warningAreas: world.warningAreas, winnerId: world.winnerId, weatherId: world.weatherId, weather: WEATHER[world.weatherId] ?? WEATHER[2], teams: world.teams },
     areas: GAME_AREAS,
     shop: catalog.filter(({ price }) => price > 0),
+    recipes: CRAFT_RECIPES,
     corpses: world.corpses.filter((corpse) => player && corpse.area === player.area),
     targets: world.mode === "standard" ? Object.values(world.players).filter((target) => target.id !== playerId && target.alive && player && target.area === player.area).map(({ id, hp, maxHp, level }) => ({ id, hp, maxHp, level })) : [],
     ranking
