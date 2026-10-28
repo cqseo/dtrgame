@@ -112,7 +112,10 @@ function observeRoom(roomId, label) {
   if (gameMode && gameSocket) gameSocket.close();
   const socket = new WebSocket(`${protocol}//${location.host}/api/rooms/${roomId}/socket`);
   if (roomId === "tutorial") tutorialSocket = socket;
-  if (gameMode) { gameSocket = socket; activeGameRoom = roomId; }
+  if (gameMode) {
+    if (activeGameRoom !== roomId) byId("game-log").replaceChildren();
+    gameSocket = socket; activeGameRoom = roomId;
+  }
   const timeout = window.setTimeout(() => { socket.close(); systemMessage.textContent = `${label}身份验证超时，请重试。`; }, 8000);
   systemMessage.textContent = `正在验证 ${label} 的玩家身份……`;
   const expectedPlayerId = authSession?.user?.id ?? `guest:${guestId}`;
@@ -131,6 +134,7 @@ function observeRoom(roomId, label) {
         } else if (gameMode) {
           byId("game-console").hidden = false;
           byId("game-console-title").textContent = gameMode === "standard" ? "标准大逃杀控制台" : "无限试炼控制台";
+          byId("game-mode-code").textContent = gameMode === "standard" ? "SURVIVAL // BATTLE ROYALE" : "SURVIVAL // INFINITE";
           sendGameAction("game_enter", { mode: gameMode });
           byId("game-console").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
         } else socket.close();
