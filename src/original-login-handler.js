@@ -55,7 +55,7 @@ async function handleOriginalLogin(request,env){
   }
   const username=form.get("username")??"",password=form.get("password")??"";
   if(!username||!password)return legacyLoginError("用户名或密码为空");
-  if([...username].length>15||/[\\s?+'|,<>&;#"]|\\p{C}/u.test(username))return legacyLoginError("用户名不合法");
+  if([...username].length>15||/[\s?+'|,<>&;#"]|\p{C}/u.test(username))return legacyLoginError("用户名不合法");
   if([...password].length>24)return legacyLoginError("密码过长");
   const account=await env.LEGACY_DB.prepare("SELECT username,password,groupid,roomid FROM legacy_users WHERE username = ? LIMIT 1").bind(username).first();
   if(!account)return legacyLoginError("用户不存在");
