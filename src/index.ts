@@ -27,6 +27,31 @@ function routeRoomSocket(request: Request, env: Env, roomId: string): Response |
   return env.GAME_ROOMS.get(id).fetch(request);
 }
 
+async function getPublicCatalog(env: Env): Promise<Response> {
+  if (!env.SUPABASE_URL || !env.SUPABASE_PUBLISHABLE_KEY) {
+    return json({ error: "supabase_not_configured" }, { status: 503 });
+  }
+
+  const endpoint = new URL("/rest/v1/game_items", env.SUPABASE_URL);
+  endpoint.searchParams.set("select", "id,sku,name,item_type,config");
+  endpoint.searchParams.set("active", "eq.true");
+  endpoint.searchParams.set("order", "sku.asc");
+
+  const response = await fetch(endpoint, {
+    headers: {
+      apikey: env.SUPABASE_PUBLISHABLE_KEY
+    }
+  });
+
+  if (!response.ok) {
+    return json({ error: "catalog_unavailable" }, { status: 502 });
+  }
+
+  return json({ items: await response.json() }, {
+    headers: { "cache-control": "public, max-age=60, s-maxage=300" }
+  });
+}
+
 export default {
   async fetch(request, env): Promise<Response> {
     const url = new URL(request.url);
@@ -40,6 +65,9 @@ export default {
           stripe: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET)
         }
       });
+    }
+    if (url.pathname === "/api/catalog" && request.method === "GET") {
+      return getPublicCatalog(env);
     }
     const match = url.pathname.match(/^\/api\/rooms\/([^/]+)\/socket$/);
     if (match?.[1]) return routeRoomSocket(request, env, match[1]);
