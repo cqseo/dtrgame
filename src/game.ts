@@ -119,8 +119,8 @@ const catalog: Array<Omit<GameItem, "instanceId">> = [
   { catalogId: "matsutake", name: "松茸", kind: "material", power: 0, durability: 1, price: 60 },
   { catalogId: "curry", name: "咖喱", kind: "material", power: 0, durability: 1, price: 40 },
   { catalogId: "bread", name: "面包", kind: "material", power: 0, durability: 1, price: 30 },
-  { catalogId: "matsutake_rice", name: "松茸御饭", kind: "heal", power: 120, durability: 10, price: 0 },
-  { catalogId: "curry_bread", name: "咖喱面包", kind: "heal", power: 140, durability: 2, price: 0 }
+  { catalogId: "matsutake_rice", name: "松茸御饭", kind: "heal", power: 120, durability: 20, price: 0 },
+  { catalogId: "curry_bread", name: "咖喱面包", kind: "heal", power: 140, durability: 8, price: 0 }
 ];
 
 const CRAFT_RECIPES = [
