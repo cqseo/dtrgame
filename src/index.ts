@@ -182,11 +182,12 @@ export class GameRoom implements DurableObject {
     });
   }
 
-  private snapshot(): { type: "room_snapshot"; sequence: number; players: RoomPlayer[] } {
+  private snapshot(): { type: "room_snapshot"; sequence: number; knownPlayerCount: number } {
+    // A new unauthenticated socket must not receive Supabase user UUIDs.
     return {
       type: "room_snapshot",
       sequence: this.room.sequence,
-      players: Object.values(this.room.players)
+      knownPlayerCount: Object.keys(this.room.players).length
     };
   }
 
@@ -254,7 +255,10 @@ export class GameRoom implements DurableObject {
       socket.serializeAttachment({ ...attachment, playerId, authenticatedAt: now } satisfies SocketAttachment);
       this.room.sequence += 1;
       await this.persist();
-      this.broadcast({ type: "room_event", sequence: this.room.sequence, event: { type: "player_joined", player: this.room.players[playerId] } });
+      // Confirm identity only to the authenticated socket; send no personal UUID
+      // in room-wide presence notifications.
+      socket.send(JSON.stringify({ type: "auth_ok", playerId, sequence: this.room.sequence }));
+      this.broadcast({ type: "room_event", sequence: this.room.sequence, event: { type: "player_joined" } });
       const tutorialState = this.room.tutorialPlayers?.[playerId];
       if (this.room.roomId === "tutorial" && tutorialState) {
         socket.send(JSON.stringify({ type: "tutorial_state", state: tutorialState, log: "训练状态已恢复。" }));
