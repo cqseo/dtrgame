@@ -104,7 +104,7 @@ describe("authoritative game engine", () => {
 
   it("restores prototype region IDs from persisted room snapshots without losing inventory", () => {
     const old = applyGameAction(createGameWorld(103), "p1", "game_enter", undefined).world;
-    old.players.p1!.area = "memory_market" as typeof old.players.p1.area;
+    old.players.p1!.area = "memory_market" as never;
     old.players.p1!.money = 987;
     const view = getGameView(old, "p1");
     expect(view.player!.area).toBe("zone_14");
