@@ -154,3 +154,9 @@ h1 small { display: block; margin-top: 20px; font: 700 clamp(.92rem,2vw,1.2rem)/
   .footer { flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *,*::before,*::after { animation-duration: .01ms!important; transition-duration: .01ms!important; } }
+
+/* Legacy 35-region travel selector: bounded scroll area to avoid pushing combat below the fold. */
+.map-actions { max-height: 284px; overflow-y: auto; padding: 8px; border: 1px solid #333157; border-radius: 4px; align-content: start; }
+.game-map-hint { color: var(--muted); font-size: .77rem; margin: 0 0 8px; line-height: 1.5; }
+.map-actions button[aria-current="location"] { border-color: var(--cyan); background: #192b35; color: #defcff; }
+@media (max-width: 640px) { .map-actions { max-height: 320px; } }
