@@ -7,9 +7,9 @@ describe("authoritative game engine", () => {
     let result = applyGameAction(createGameWorld(1), "p1", "game_enter", undefined);
     result = applyGameAction(result.world, "p1", "game_move", { to: "old_platform" });
     expect(result.ok).toBe(true);
-    expect(result.world.players.p1?.sp).toBe(105);
+    expect(result.world.players.p1?.sp).toBe(285);
     result = applyGameAction(result.world, "p1", "game_rest", undefined);
-    expect(result.world.players.p1?.sp).toBe(120);
+    expect(result.world.players.p1?.sp).toBe(300);
   });
 
   it("labels standard and infinite entry correctly", () => {
@@ -24,7 +24,7 @@ describe("authoritative game engine", () => {
     const result = applyGameAction(entered, "p1", "game_move", { to: "unknown_region" });
     expect(result.ok).toBe(false);
     expect(result.world.turn).toBe(0);
-    expect(result.world.players.p1?.sp).toBe(120);
+    expect(result.world.players.p1?.sp).toBe(300);
   });
 
   it("produces a resolvable exploration outcome", () => {
@@ -33,7 +33,7 @@ describe("authoritative game engine", () => {
     const player = result.world.players.p1!;
     expect(result.ok).toBe(true);
     expect(Boolean(player.pendingItem || player.enemy || player.money > 300)).toBe(true);
-    expect(player.sp).toBe(105);
+    expect(player.sp).toBe(285);
   });
 
   it("creates lootable remains after a player elimination", () => {
@@ -87,7 +87,7 @@ describe("authoritative game engine", () => {
     const result = applyGameAction(entered, "p1", "game_move", { to: "zone_34" });
     expect(result.ok).toBe(true);
     expect(result.world.players.p1!.area).toBe("zone_34");
-    expect(result.world.players.p1!.sp).toBe(105);
+    expect(result.world.players.p1!.sp).toBe(285);
     const forbidden = applyGameAction(result.world, "p1", "game_move", { to: "zone_0" });
     expect(forbidden.ok).toBe(false);
     expect(forbidden.code).toBe("forbidden_destination");
@@ -135,5 +135,72 @@ describe("authoritative game engine", () => {
     const view = getGameView(world, "p1");
     expect(view.ranking.map(({ id }) => id)).toEqual(["p1", "p2"]);
     expect(view.ranking[0]).not.toHaveProperty("inventory");
+  });
+});
+
+describe("extended legacy mechanics", () => {
+  it("applies original 18-weather effects with stable defaults", async () => {
+    const { WEATHER, weatherAttack, weatherDefense, weatherDiscoveryChance } = await import("../src/legacy-rules");
+    expect(WEATHER).toHaveLength(18);
+    expect(WEATHER[10]).toMatchObject({ name: "瘴气", attack: 20, defense: -50 });
+    expect(weatherAttack(100, 10)).toBe(120);
+    expect(weatherDefense(100, 10)).toBe(50);
+    expect(weatherDiscoveryChance(60, 15, 9)).toBe(55);
+  });
+  it("creates original-cost teams, enforces 5-player cap and prevents friendly fire", () => {
+    let world = createGameWorld(202);
+    for (let i = 1; i <= 6; i++) world = applyGameAction(world, "p" + i, "game_enter", undefined).world;
+    const leader = applyGameAction(world, "p1", "game_team_create", undefined);
+    expect(leader.ok).toBe(true);
+    expect(leader.world.players.p1!.sp).toBe(100);
+    world = leader.world;
+    const teamId = world.players.p1!.teamId!;
+    for (let i = 2; i <= 5; i++) {
+      const r = applyGameAction(world, "p" + i, "game_team_join", { teamId });
+      expect(r.ok).toBe(true);
+      world = r.world;
+    }
+    expect(world.teams[teamId]).toHaveLength(5);
+    const overflow = applyGameAction(world, "p6", "game_team_join", { teamId });
+    expect(overflow.ok).toBe(false);
+    expect(overflow.code).toBe("team_full");
+    expect(applyGameAction(world, "p1", "game_attack", { targetId: "p2" }).code).toBe("friendly_fire");
+  });
+  it("supports four equipment parts and all six weapon proficiencies", () => {
+    let world = applyGameAction(createGameWorld(310), "p1", "game_enter", undefined).world;
+    world = applyGameAction(world, "p1", "game_move", { to: "zone_14" }).world;
+    const buy = applyGameAction(world, "p1", "game_shop_buy", { catalogId: "helmet" });
+    expect(buy.ok).toBe(true);
+    const id = buy.world.players.p1!.inventory.at(-1)!.instanceId;
+    const equip = applyGameAction(buy.world, "p1", "game_equip", { instanceId: id });
+    expect(equip.ok).toBe(true);
+    expect(equip.world.players.p1!.armorParts.head?.catalogId).toBe("helmet");
+    const unequip = applyGameAction(equip.world, "p1", "game_unequip", { slot: "head" });
+    expect(unequip.ok).toBe(true);
+    expect(unequip.world.players.p1!.armorParts.head).toBeUndefined();
+    const p = unequip.world.players.p1!;
+    expect(Object.keys(p.proficiencies).sort()).toEqual(["wc", "wd", "wf", "wg", "wk", "wp"].sort());
+  });
+  it("crafts the two source-grounded recipes by consuming ingredients", () => {
+    let world = applyGameAction(createGameWorld(311), "p1", "game_enter", undefined).world;
+    world = applyGameAction(world, "p1", "game_move", { to: "zone_14" }).world;
+    world = applyGameAction(world, "p1", "game_shop_buy", { catalogId: "rice_stew" }).world;
+    world = applyGameAction(world, "p1", "game_shop_buy", { catalogId: "matsutake" }).world;
+    const before = world.players.p1!.inventory.length;
+    const r = applyGameAction(world, "p1", "game_craft", { result: "matsutake_rice" });
+    expect(r.ok).toBe(true);
+    expect(r.world.players.p1!.inventory.length).toBe(before - 1);
+    expect(r.world.players.p1!.inventory.some((item) => item.catalogId === "matsutake_rice")).toBe(true);
+  });
+  it("places traps in the world and persists them independently of inventory", () => {
+    let world = applyGameAction(createGameWorld(312), "p1", "game_enter", undefined).world;
+    world = applyGameAction(world, "p1", "game_move", { to: "zone_14" }).world;
+    world = applyGameAction(world, "p1", "game_shop_buy", { catalogId: "tripwire" }).world;
+    const instanceId = world.players.p1!.inventory.at(-1)!.instanceId;
+    const r = applyGameAction(world, "p1", "game_trap_place", { instanceId });
+    expect(r.ok).toBe(true);
+    expect(r.world.traps).toHaveLength(1);
+    expect(r.world.traps[0]!.owner).toBe("p1");
+    expect(r.world.players.p1!.inventory.find((i) => i.instanceId === instanceId)).toBeUndefined();
   });
 });
