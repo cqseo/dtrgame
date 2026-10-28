@@ -93,7 +93,7 @@
               <div><span>LOOP</span><strong id="game-money">--</strong></div><div><span>波次</span><strong id="game-wave">--</strong></div>
               <div><span>击杀</span><strong id="game-kills">--</strong></div><div><span>周目</span><strong id="game-cycle">--</strong></div>
             </div>
-            <div class="game-location"><span>当前位置</span><strong id="game-area">--</strong><small id="game-zone">安全区域</small></div>
+            <div class="game-location"><span>当前位置</span><strong id="game-area">--</strong><small id="game-zone">安全区域</small><small id="game-weather">天气 --</small></div>
             <p class="game-notice" id="game-notice" role="status">进入房间后同步对局状态。</p>
             <div class="game-columns">
               <div>
@@ -106,9 +106,9 @@
                 </div>
               </div>
               <div>
-                <h3>装备与背包（6 格）</h3><div class="equipment" id="game-equipment"></div><div class="inventory" id="game-inventory"></div>
+                <h3>装备与背包（6 格）</h3><div class="equipment" id="game-equipment"></div><div class="equipment" id="game-armor-parts"></div><div class="equipment" id="game-proficiencies"></div><div class="inventory" id="game-inventory"></div>
                 <h3>战术姿态</h3><div class="tactic-list"><button type="button" data-game-tactic="balanced">均衡</button><button type="button" data-game-tactic="aggressive">强攻</button><button type="button" data-game-tactic="defensive">防守</button><button type="button" data-game-tactic="scavenge">搜刮</button></div>
-                <div id="game-shop" hidden><h3>区域商店</h3><div class="shop-list" id="game-shop-list"></div></div>
+                <div id="game-team-panel"><h3>组队（最多 5 人）</h3><div class="team-actions" id="game-team-actions"></div></div><div id="game-craft-panel"><h3>道具合成</h3><div class="craft-actions" id="game-craft-actions"></div></div><div id="game-shop" hidden><h3>区域商店</h3><div class="shop-list" id="game-shop-list"></div></div>
                 <div id="game-targets" hidden><h3>同区域玩家</h3><div class="target-list" id="game-target-list"></div></div>
                 <div id="game-corpses" hidden><h3>遗留战利品</h3><div class="corpse-list" id="game-corpse-list"></div></div>
                 <h3>本轮排行</h3><ol class="game-ranking" id="game-ranking"></ol>
