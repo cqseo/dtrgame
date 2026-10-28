@@ -18622,5 +18622,5 @@ export function baotaLootForArea(area: number, wave: number) {
   return BAOTA_ITEM_TABLES.map.filter(item => (item.area === area || item.area === 99) && (item.wave === wave || item.wave === 99 || (item.wave === 98 && wave >= 1)));
 }
 export function baotaShopByGroup(group: string) {
-  return BAOTA_ITEM_TABLES.shop.filter(item => item.classId === group && item.name !== "");
+  return BAOTA_ITEM_TABLES.shop.filter(item => item.classId === group && item.name !== "" && item.kind !== "");
 }
