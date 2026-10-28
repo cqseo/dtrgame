@@ -6,9 +6,9 @@
 - Original game: `/www/wwwroot/dts-game-test` on Baota `VM-0-10-opencloudos`.
 - Actual installed source modules: `gamedata/modules.list.php` with 735 enabled and 9 disabled. Respect initialization order.
 - Original asset and template snapshot: `/opt/dts-sandbox/backups/legacy-ui-reference-20261028/original-full-ui-only.tar.gz`.
-- SHA-256 archive: `8776a1e8f18d0ea57f8fe4ed7a9d8dd06d3eeae81dfa753aff1f36567777cc49`.
+- SHA-256 archive: `52abb75a53fa27fb5ab2bfabc08f612b691917ed7dbc48ea1fdc266227f094dc`.
 - Asset hash manifest: `/opt/dts-sandbox/backups/legacy-ui-reference-20261028/full-ui-manifest.json`.
-- The snapshot includes **1,573 original presentation files** (all 864 `.htm` files, 1 `.HTML`, 12 CSS, 12 JS, 389 PNG, 255 GIF, 32 JPG, 113 root template files including language pack, and other original media). Verified: 1,573 / 1,573 entries match SHA-256 and length, zero mismatches.
+- The snapshot includes **1,565 immutable original presentation files** (all 864 `.htm` files, 1 `.HTML`, 12 CSS, 12 JS, 389 PNG, 255 GIF, 32 JPG, 113 root template files including language pack, and other original media). Verified: 1,565 / 1,565 entries match SHA-256 and length, zero mismatches. Transient `gamedata/cache`, `gamedata/tmp`, dynamic admin/system messages, and generated modinit files are deliberately excluded to avoid bundling player data or volatile output.
 - Original assets are read-only. NEVER modify live PHP gameplay to make the port easier.
 
 ## Exact frontend contract
