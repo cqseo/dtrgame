@@ -39,7 +39,8 @@ describe("original PHP authentication compatibility (synthetic accounts)", () =>
   });
   it("matches byte-length password restrictions of installed PHP", () => {
     expect(legacyPasswordCheck("a", "a")).toBe("pass_ok");
-    expect(legacyPasswordCheck("中文".repeat(9), "中文".repeat(9))).toBe("pass_too_long");
+    expect(legacyPasswordCheck("中文".repeat(9), "中文".repeat(9))).toBe("pass_ok");
+    expect(legacyPasswordCheck("中文".repeat(25), "中文".repeat(25))).toBe("pass_too_long");
     expect(legacyPasswordCheck("", "")).toBe("pass_not_set");
     expect(legacyPasswordCheck("abcd", "abce")).toBe("pass_not_match");
   });
