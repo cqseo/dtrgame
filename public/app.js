@@ -335,8 +335,8 @@ async function checkWorker() {
   try {
     const [healthResponse, catalogResponse, tutorialResponse, standardResponse, infiniteResponse] = await Promise.all([
       fetch("/api/health", { cache: "no-store" }), fetch("/api/catalog", { cache: "no-store" }),
-      fetch("/api/rooms/tutorial/state", { cache: "no-store" }), fetch("/api/rooms/standard-main-v1/state", { cache: "no-store" }),
-      fetch("/api/rooms/infinite-main-v1/state", { cache: "no-store" })
+      fetch("/api/rooms/tutorial/state", { cache: "no-store" }), fetch("/api/rooms/standard-main-v2/state", { cache: "no-store" }),
+      fetch("/api/rooms/infinite-main-v2/state", { cache: "no-store" })
     ]);
     if (!healthResponse.ok) throw new Error("health_failed");
     const health = await healthResponse.json();
