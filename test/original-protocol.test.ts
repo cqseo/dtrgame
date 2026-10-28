@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { gunzipSync, gzipSync } from "node:zlib";
 import { legacyDecode, legacyEncode } from "../src/original-protocol";
 
 const fixture = {
@@ -15,11 +14,15 @@ describe("Baota PHP gencode/gdecode wire compatibility", () => {
   });
   it("encodes payload accepted by native Node gzip and JSON parsers", async () => {
     const encoded = await legacyEncode(fixture);
-    expect(JSON.parse(gunzipSync(Buffer.from(encoded, "base64")).toString("utf8"))).toEqual(fixture);
+    const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+    expect(JSON.parse(await new Response(stream).text())).toEqual(fixture);
   });
   it("decodes zlib-compatible compressed original-game response payloads", async () => {
-    const phpCompatible = gzipSync(JSON.stringify(fixture)).toString("base64");
-    expect(await legacyDecode(phpCompatible)).toEqual(fixture);
+    const bytes = new TextEncoder().encode(JSON.stringify(fixture));
+    const gzip = await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer();
+    const bin = Array.from(new Uint8Array(gzip), b => String.fromCharCode(b)).join("");
+    expect(await legacyDecode(btoa(bin))).toEqual(fixture);
   });
   it("matches PHP's empty wire input behavior", async () => {
     expect(await legacyDecode("")).toEqual([]);
