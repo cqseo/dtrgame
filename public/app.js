@@ -99,13 +99,20 @@ function checkSocket() {
   });
 }
 
+function gameModeForRoom(roomId) {
+  if (roomId.startsWith("standard")) return "standard";
+  if (roomId.startsWith("infinite")) return "infinite";
+  return null;
+}
+
 function observeRoom(roomId, label) {
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   if (roomId === "tutorial" && tutorialSocket) tutorialSocket.close();
-  if ((roomId === "infinite" || roomId === "standard") && gameSocket) gameSocket.close();
+  const gameMode = gameModeForRoom(roomId);
+  if (gameMode && gameSocket) gameSocket.close();
   const socket = new WebSocket(`${protocol}//${location.host}/api/rooms/${roomId}/socket`);
   if (roomId === "tutorial") tutorialSocket = socket;
-  if (roomId === "infinite" || roomId === "standard") { gameSocket = socket; activeGameRoom = roomId; }
+  if (gameMode) { gameSocket = socket; activeGameRoom = roomId; }
   const timeout = window.setTimeout(() => { socket.close(); systemMessage.textContent = `${label}身份验证超时，请重试。`; }, 8000);
   systemMessage.textContent = `正在验证 ${label} 的玩家身份……`;
   const expectedPlayerId = authSession?.user?.id ?? `guest:${guestId}`;
@@ -121,10 +128,10 @@ function observeRoom(roomId, label) {
           byId("tutorial-console").hidden = false;
           sendTutorialAction("tutorial_start");
           byId("tutorial-console").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
-        } else if (roomId === "infinite" || roomId === "standard") {
+        } else if (gameMode) {
           byId("game-console").hidden = false;
-          byId("game-console-title").textContent = roomId === "standard" ? "标准大逃杀控制台" : "无限试炼控制台";
-          sendGameAction("game_enter", { mode: roomId });
+          byId("game-console-title").textContent = gameMode === "standard" ? "标准大逃杀控制台" : "无限试炼控制台";
+          sendGameAction("game_enter", { mode: gameMode });
           byId("game-console").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
         } else socket.close();
       } else if (message.type === "tutorial_state") {
@@ -168,7 +175,7 @@ function actionButton(label, onClick, className = "") {
 function renderGame(view, log = "对局状态已同步。", error = "", history = []) {
   if (!view?.player) return;
   gameView = view;
-  const { player, world, areas, shop, targets, corpses } = view;
+  const { player, world, areas, shop, targets, corpses, ranking } = view;
   const area = areas.find(({ id }) => id === player.area);
   byId("game-hp").textContent = `${player.hp} / ${player.maxHp}`;
   byId("game-sp").textContent = `${player.sp} / ${player.maxSp}`;
@@ -270,6 +277,15 @@ function renderGame(view, log = "对局状态已同步。", error = "", history 
     for (const item of corpse.items) controls.append(actionButton(`取 ${item.name}`, () => sendGameAction("game_loot", { corpseId: corpse.id, instanceId: item.instanceId })));
     row.append(info, controls); corpseList.append(row);
   }
+
+  const rankingList = byId("game-ranking"); rankingList.replaceChildren();
+  for (const entry of ranking ?? []) {
+    const row = document.createElement("li");
+    const identity = entry.id === player.id ? "你" : `玩家 ${entry.rank}`;
+    row.textContent = `${identity} · ${entry.alive ? "存活" : "淘汰"} · Lv.${entry.level} · ${entry.kills} 击杀 · 波次 ${entry.wave}`;
+    if (entry.id === player.id) row.className = "is-self";
+    rankingList.append(row);
+  }
 }
 
 function sendTutorialAction(action) {
@@ -315,8 +331,8 @@ async function checkWorker() {
   try {
     const [healthResponse, catalogResponse, tutorialResponse, standardResponse, infiniteResponse] = await Promise.all([
       fetch("/api/health", { cache: "no-store" }), fetch("/api/catalog", { cache: "no-store" }),
-      fetch("/api/rooms/tutorial/state", { cache: "no-store" }), fetch("/api/rooms/standard/state", { cache: "no-store" }),
-      fetch("/api/rooms/infinite/state", { cache: "no-store" })
+      fetch("/api/rooms/tutorial/state", { cache: "no-store" }), fetch("/api/rooms/standard-main-v1/state", { cache: "no-store" }),
+      fetch("/api/rooms/infinite-main-v1/state", { cache: "no-store" })
     ]);
     if (!healthResponse.ok) throw new Error("health_failed");
     const health = await healthResponse.json();
@@ -346,7 +362,7 @@ async function checkWorker() {
 
 byId("refresh-rooms").addEventListener("click", checkWorker);
 document.querySelectorAll(".room-action").forEach((button) => button.addEventListener("click", () => {
-  const label = button.dataset.room === "tutorial" ? "教程轮回" : button.dataset.room === "standard" ? "标准大逃杀" : "无限试炼";
+  const label = button.dataset.room === "tutorial" ? "教程轮回" : button.dataset.mode === "standard" ? "标准大逃杀" : "无限试炼";
   observeRoom(button.dataset.room, label);
 }));
 byId("login-form").addEventListener("submit", async (event) => {

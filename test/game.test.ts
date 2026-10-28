@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyGameAction, createGameWorld } from "../src/game";
+import { applyGameAction, createGameWorld, getGameView } from "../src/game";
 
 describe("authoritative game engine", () => {
   it("supports entry, movement and recovery with legacy SP costs", () => {
@@ -60,5 +60,15 @@ describe("authoritative game engine", () => {
     for (let i = 0; i < 8; i += 1) result = applyGameAction(result.world, "p1", "game_rest", undefined);
     expect(result.world.turn).toBe(8);
     expect(result.world.forbidden.length).toBe(1);
+  });
+
+  it("publishes a stable survival ranking without exposing private inventory", () => {
+    let world = applyGameAction(createGameWorld(7, "standard"), "p1", "game_enter", { mode: "standard" }).world;
+    world = applyGameAction(world, "p2", "game_enter", undefined).world;
+    world.players.p2!.alive = false;
+    world.players.p1!.kills = 2;
+    const view = getGameView(world, "p1");
+    expect(view.ranking.map(({ id }) => id)).toEqual(["p1", "p2"]);
+    expect(view.ranking[0]).not.toHaveProperty("inventory");
   });
 });

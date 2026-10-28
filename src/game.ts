@@ -452,12 +452,16 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
 
 export function getGameView(world: GameWorldState, playerId: string) {
   const player = world.players[playerId];
+  const ranking = Object.values(world.players)
+    .sort((a, b) => Number(b.alive) - Number(a.alive) || b.kills - a.kills || b.level - a.level || b.wave - a.wave || a.id.localeCompare(b.id))
+    .map(({ id, alive, kills, level, wave }, index) => ({ rank: index + 1, id, alive, kills, level, wave }));
   return {
     player,
     world: { mode: world.mode, phase: world.phase, cycle: world.cycle, turn: world.turn, forbidden: world.forbidden, warningArea: world.warningArea, winnerId: world.winnerId },
     areas: GAME_AREAS,
     shop: catalog.filter(({ price }) => price > 0),
     corpses: world.corpses.filter((corpse) => player && corpse.area === player.area),
-    targets: world.mode === "standard" ? Object.values(world.players).filter((target) => target.id !== playerId && target.alive && player && target.area === player.area).map(({ id, hp, maxHp, level }) => ({ id, hp, maxHp, level })) : []
+    targets: world.mode === "standard" ? Object.values(world.players).filter((target) => target.id !== playerId && target.alive && player && target.area === player.area).map(({ id, hp, maxHp, level }) => ({ id, hp, maxHp, level })) : [],
+    ranking
   };
 }
