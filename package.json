@@ -11,6 +11,7 @@
     "audit:legacy": "node scripts/audit-legacy.mjs ../legacy-dts docs/legacy-source-manifest.json",
     "generate:legacy": "node scripts/generate-legacy-registry.mjs ../legacy-dts src/generated/legacy-registry.ts",
     "generate:items": "node scripts/generate-legacy-starting-items.mjs ../legacy-dts src/generated/legacy-starting-items.ts",
+    "generate:recipes": "node scripts/generate-legacy-recipes.mjs ../legacy-dts src/generated/legacy-recipes.ts",
     "generate:migration": "node scripts/generate-legacy-module-migration.mjs ../legacy-dts docs/legacy-module-migration.json",
     "verify": "npm run check && npm test && npm run build",
     "deploy": "wrangler deploy"
