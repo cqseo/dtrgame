@@ -31,6 +31,10 @@ separately, consumables can apply a harmful status, and the matching purifier
 removes it. Tutorial progress is stored per authenticated player in the room's
 Durable Object.
 
+While `APP_ENV=test`, gameplay rooms also accept a session-scoped guest UUID so
+gameplay migration is not blocked by email delivery or account setup. Guest
+entry is rejected automatically outside the test environment.
+
 See [Architecture](docs/ARCHITECTURE.md) and [Migration plan](docs/MIGRATION_PLAN.md).
 
 ## Secrets

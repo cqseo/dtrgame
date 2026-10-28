@@ -7,6 +7,7 @@ export const MAX_ACCESS_TOKEN_LENGTH = 8 * 1024;
 
 export type ClientMessage =
   | { type: "auth"; accessToken: string }
+  | { type: "guest"; guestId: string }
   | { type: "action"; commandId: string; action: string; payload?: unknown }
   | { type: "ping"; at: number };
 
@@ -38,6 +39,9 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       message.accessToken.length <= MAX_ACCESS_TOKEN_LENGTH
     ) {
       return { type: "auth", accessToken: message.accessToken };
+    }
+    if (message.type === "guest" && typeof message.guestId === "string" && isValidPlayerId(message.guestId)) {
+      return { type: "guest", guestId: message.guestId };
     }
     if (
       message.type === "action" &&

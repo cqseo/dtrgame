@@ -233,14 +233,18 @@ export class GameRoom implements DurableObject {
       return;
     }
 
-    if (message.type === "auth") {
-      const authenticatedUser = await validateAccessToken(this.env, message.accessToken);
-      if (!authenticatedUser) {
+    if (message.type === "auth" || message.type === "guest") {
+      const authenticatedUser = message.type === "auth" ? await validateAccessToken(this.env, message.accessToken) : null;
+      if (message.type === "auth" && !authenticatedUser) {
         socket.send(JSON.stringify({ type: "error", code: "auth_invalid" }));
         return;
       }
+      if (message.type === "guest" && this.env.APP_ENV !== "test") {
+        socket.send(JSON.stringify({ type: "error", code: "guest_disabled" }));
+        return;
+      }
       const now = Date.now();
-      const playerId = authenticatedUser.id;
+      const playerId = authenticatedUser?.id ?? `guest:${message.type === "guest" ? message.guestId : ""}`;
       const existing = this.room.players[playerId];
       this.room.players[playerId] = {
         id: playerId,
@@ -248,7 +252,7 @@ export class GameRoom implements DurableObject {
         lastSeenAt: now
       };
       const attachment = (socket.deserializeAttachment() as SocketAttachment | null) ?? { connectedAt: now };
-      socket.serializeAttachment({ ...attachment, playerId, authenticatedAt: now } satisfies SocketAttachment);
+      socket.serializeAttachment({ ...attachment, playerId, ...(authenticatedUser ? { authenticatedAt: now } : {}) } satisfies SocketAttachment);
       this.room.sequence += 1;
       await this.persist();
       this.broadcast({ type: "room_event", sequence: this.room.sequence, event: { type: "player_joined", player: this.room.players[playerId] } });
