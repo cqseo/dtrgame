@@ -201,6 +201,7 @@ function renderGame(view, log = "对局状态已同步。", error = "", history 
   }
   appendGameLog(log, Boolean(error));
 
+  byId("game-map-note").textContent = `共 ${areas.length} 个地区 · 可进入 ${areas.filter(({ id }) => !world.forbidden.includes(id)).length} 个 · 下一波预警 ${warnings.size} 个 · 移动消耗 15 SP`;
   const map = byId("game-map"); map.replaceChildren();
   for (const destination of areas) {
     const closed = world.forbidden.includes(destination.id);
