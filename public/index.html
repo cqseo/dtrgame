@@ -76,7 +76,9 @@
             <form id="login-form" novalidate>
               <label for="login-email">邮箱 <span class="required">必填</span></label><input id="login-email" name="email" type="email" autocomplete="email" placeholder="player@example.com" required />
               <label for="login-password">密码 <span class="required">必填</span></label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="至少 8 位" minlength="8" required />
-              <button class="primary-button" type="submit">进入轮回</button><p class="form-note" id="login-note">测试阶段：账号认证尚未开放，不会提交你的输入。</p>
+              <div class="auth-actions"><button class="primary-button" type="submit">进入轮回</button><button class="secondary-button" id="signup-button" type="button">创建账号</button></div>
+              <button class="text-button logout-button" id="logout-button" type="button" hidden>退出账号</button>
+              <p class="form-note" id="login-note" aria-live="polite">测试账号使用 Supabase 安全认证；新账号可能需要邮箱确认。</p>
             </form>
           </section>
 
