@@ -27,6 +27,9 @@ function checkSocket() {
 }
 
 async function checkWorker() {
+  const refreshButton = byId("refresh-rooms");
+  refreshButton.disabled = true;
+  refreshButton.setAttribute("aria-busy", "true");
   networkState.className = "net-state";
   networkState.lastElementChild.textContent = "连接中";
   dbState.textContent = "检测中"; socketState.textContent = "检测中";
@@ -47,6 +50,9 @@ async function checkWorker() {
     networkState.classList.add("is-offline"); networkState.lastElementChild.textContent = "连接失败";
     dbState.textContent = "未知"; socketState.textContent = "未知";
     systemMessage.textContent = "边缘节点暂时无法响应，请稍后重新检测。";
+  } finally {
+    refreshButton.disabled = false;
+    refreshButton.removeAttribute("aria-busy");
   }
 }
 

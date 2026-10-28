@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
     <div class="scanlines" aria-hidden="true"></div>
     <header class="topbar">
       <a class="brand" href="#top" aria-label="无限轮回首页">
@@ -21,7 +22,7 @@
       <div class="net-state" id="network-state" role="status"><span class="signal" aria-hidden="true"></span><span>连接中</span></div>
     </header>
 
-    <main class="page" id="top">
+    <main class="page" id="main-content" tabindex="-1">
       <section class="hero pixel-panel" id="lobby">
         <div>
           <p class="kicker">CYCLE 0001 · TEST GATE OPEN</p>
@@ -73,8 +74,8 @@
           <section class="pixel-panel login-panel" aria-labelledby="login-title">
             <header class="section-head compact"><div><p class="section-code">PLAYER // ACCESS</p><h2 id="login-title">玩家接入</h2></div></header>
             <form id="login-form" novalidate>
-              <label for="login-email">邮箱</label><input id="login-email" name="email" type="email" autocomplete="email" placeholder="player@example.com" required />
-              <label for="login-password">密码</label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="至少 8 位" minlength="8" required />
+              <label for="login-email">邮箱 <span class="required">必填</span></label><input id="login-email" name="email" type="email" autocomplete="email" placeholder="player@example.com" required />
+              <label for="login-password">密码 <span class="required">必填</span></label><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="至少 8 位" minlength="8" required />
               <button class="primary-button" type="submit">进入轮回</button><p class="form-note" id="login-note">测试阶段：账号认证尚未开放，不会提交你的输入。</p>
             </form>
           </section>
