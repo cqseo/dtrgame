@@ -11,6 +11,13 @@ describe("authoritative game engine", () => {
     expect(result.world.players.p1?.sp).toBe(120);
   });
 
+  it("labels standard and infinite entry correctly", () => {
+    const standard = applyGameAction(createGameWorld(8, "standard"), "p1", "game_enter", { mode: "standard" });
+    const infinite = applyGameAction(createGameWorld(9), "p1", "game_enter", undefined);
+    expect(standard.event.text).toContain("标准大逃杀");
+    expect(infinite.event.text).toContain("无限试炼");
+  });
+
   it("rejects impossible movement without consuming a turn", () => {
     const entered = applyGameAction(createGameWorld(2), "p1", "game_enter", undefined).world;
     const result = applyGameAction(entered, "p1", "game_move", { to: "terminal_roof" });

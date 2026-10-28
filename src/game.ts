@@ -261,7 +261,7 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
     }
     if (!world.players[playerId]) world.players[playerId] = createPlayer(world, playerId);
     if (world.phase === "waiting") { world.phase = "active"; world.winnerId = null; }
-    return success(world, playerId, "entered", "已进入无限试炼。 ");
+    return success(world, playerId, "entered", world.mode === "standard" ? "已进入标准大逃杀。 " : "已进入无限试炼。 ");
   }
   const player = world.players[playerId];
   if (!player) return failure(world, playerId, "game_not_entered", "请先进入对局。 ");
