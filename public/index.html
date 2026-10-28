@@ -27,20 +27,20 @@
         <div>
           <p class="kicker">CYCLE 0001 · TEST GATE OPEN</p>
           <h1><span>无限轮回</span><small>生存不是终点，只是下一轮的入场券。</small></h1>
-          <p class="hero-copy">保留旧版文字大逃杀的房间、资源、探索与即时混战结构，换成原创日系像素世界观。当前为技术预览，不开放付费。</p>
+          <p class="hero-copy">保留旧版文字大逃杀的房间、资源、探索与即时混战结构，换成原创日系像素世界观。完整玩法测试已开放，暂不开放付费。</p>
         </div>
         <dl class="cycle-card" aria-label="当前轮回状态">
           <div><dt>轮回编号</dt><dd>#0001</dd></div><div><dt>阶段</dt><dd class="mint">准备中</dd></div>
-          <div><dt>在线房间</dt><dd>02</dd></div><div><dt>服务器时刻</dt><dd id="server-clock">--:--:--</dd></div>
+          <div><dt>在线房间</dt><dd>03</dd></div><div><dt>服务器时刻</dt><dd id="server-clock">--:--:--</dd></div>
         </dl>
       </section>
 
       <div class="lobby-grid">
         <div class="main-stack">
           <section class="pixel-panel system-panel" aria-labelledby="system-title">
-            <header class="section-head"><div><p class="section-code">SYS // STATUS</p><h2 id="system-title">系统状况</h2></div><span class="tag">TEST BUILD 0.1</span></header>
+            <header class="section-head"><div><p class="section-code">SYS // STATUS</p><h2 id="system-title">系统状况</h2></div><span class="tag">GAMEPLAY BETA 0.2</span></header>
             <div class="system-grid">
-              <div><span>游戏版本</span><strong>RE:BUILD 0.1.0</strong></div><div><span>世界状态</span><strong class="mint">轮回待机</strong></div>
+              <div><span>游戏版本</span><strong>RE:BUILD 0.2.0</strong></div><div><span>世界状态</span><strong class="mint">玩法开放</strong></div>
               <div><span>数据库</span><strong id="db-state">检测中</strong></div><div><span>实时通道</span><strong id="socket-state">检测中</strong></div>
             </div>
             <div class="system-message" id="system-message" role="status">正在读取边缘节点状态……</div>
@@ -48,7 +48,7 @@
 
           <section class="pixel-panel rooms-panel" id="rooms" aria-labelledby="rooms-title">
             <header class="section-head"><div><p class="section-code">ROOM // MATCHMAKING</p><h2 id="rooms-title">房间列表</h2></div><button class="text-button" id="refresh-rooms" type="button">重新检测</button></header>
-            <p class="section-note">房间编号会重复使用，不代表同一轮回。测试阶段仅开放观测与连接检测。</p>
+            <p class="section-note">三种模式均可直接游玩；房间状态会实时保存，断线重连后继续当前轮回。</p>
             <table class="room-table">
               <thead><tr><th>编号</th><th>模式</th><th>状态</th><th>人数</th><th>区域</th><th>运行时间</th><th>操作</th></tr></thead>
               <tbody>
@@ -58,11 +58,11 @@
                 </tr>
                 <tr>
                   <td data-label="编号">02</td><td data-label="模式"><strong class="coral">标准大逃杀</strong></td><td data-label="状态"><span class="status-badge waiting">开放中</span></td>
-                  <td data-label="人数" id="standard-count">0 / 8</td><td data-label="区域">轮回城区</td><td data-label="运行时间" id="standard-turn">TURN 0</td><td data-label="操作"><button class="room-action" data-room="standard" type="button">进入</button></td>
+                  <td data-label="人数" id="standard-count">0 / 8</td><td data-label="区域">轮回城区</td><td data-label="运行时间" id="standard-turn">TURN 0</td><td data-label="操作"><button class="room-action" data-room="standard-main-v1" data-mode="standard" type="button">进入</button></td>
                 </tr>
                 <tr>
                   <td data-label="编号">03</td><td data-label="模式"><strong class="cyan">无限试炼</strong></td><td data-label="状态"><span class="status-badge waiting">开放中</span></td>
-                  <td data-label="人数" id="infinite-count">0 / 8</td><td data-label="区域">第零候车室</td><td data-label="运行时间" id="infinite-turn">TURN 0</td><td data-label="操作"><button class="room-action" data-room="infinite" type="button">进入</button></td>
+                  <td data-label="人数" id="infinite-count">0 / 8</td><td data-label="区域">第零候车室</td><td data-label="运行时间" id="infinite-turn">TURN 0</td><td data-label="操作"><button class="room-action" data-room="infinite-main-v1" data-mode="infinite" type="button">进入</button></td>
                 </tr>
               </tbody>
             </table>
@@ -111,6 +111,7 @@
                 <div id="game-shop" hidden><h3>区域商店</h3><div class="shop-list" id="game-shop-list"></div></div>
                 <div id="game-targets" hidden><h3>同区域玩家</h3><div class="target-list" id="game-target-list"></div></div>
                 <div id="game-corpses" hidden><h3>遗留战利品</h3><div class="corpse-list" id="game-corpse-list"></div></div>
+                <h3>本轮排行</h3><ol class="game-ranking" id="game-ranking"></ol>
               </div>
             </div>
             <h3>行动记录</h3><ol class="game-log" id="game-log" aria-live="polite"></ol>
@@ -119,7 +120,7 @@
 
           <section class="pixel-panel archive-panel" id="archive" aria-labelledby="archive-title">
             <header class="section-head"><div><p class="section-code">LOG // LAST CYCLE</p><h2 id="archive-title">最近记录</h2></div></header>
-            <ol class="event-log"><li><time>05:41</time><span>边缘节点建立，等待第一批测试玩家。</span></li><li><time>05:35</time><span>Supabase 数据隔离验收通过。</span></li><li><time>03:09</time><span>房间实时通道部署完成。</span></li></ol>
+            <ol class="event-log"><li><time>NOW</time><span>标准大逃杀与无限试炼完整玩法开放。</span></li><li><time>PASS</time><span>战斗、禁区、商店、掉落与断线恢复验收通过。</span></li><li><time>PASS</time><span>边缘实时房间与数据隔离验收通过。</span></li></ol>
           </section>
         </div>
 
@@ -143,7 +144,7 @@
 
           <section class="pixel-panel notice-panel" id="help" aria-labelledby="notice-title">
             <p class="section-code">NOTICE // TEST</p><h2 id="notice-title">测试须知</h2>
-            <ul><li>当前仅验证架构、房间连接和视觉骨架。</li><li>旧版玩法将按教程、标准、试炼顺序迁移。</li><li>商业素材全部采用原创或明确授权版本。</li></ul>
+            <ul><li>教程、标准大逃杀、无限试炼均已开放完整测试。</li><li>游客可直接进入，账号、支付与分销将在玩法定版后完善。</li><li>商业素材全部采用原创或明确授权版本。</li></ul>
           </section>
         </aside>
       </div>

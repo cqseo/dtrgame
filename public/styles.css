@@ -110,6 +110,9 @@ h1 small { display: block; margin-top: 20px; font: 700 clamp(.92rem,2vw,1.2rem)/
 .inventory-controls button { min-width: 46px; }
 .game-log { max-height: 190px; overflow: auto; margin: 0; padding: 10px 10px 10px 32px; border: 1px solid #333157; background: #090919; }
 .game-log li { padding: 5px 0; color: #c7c8dc; line-height: 1.5; }
+.game-ranking { margin: 0; padding: 8px 8px 8px 34px; border: 1px solid #333157; background: #090919; }
+.game-ranking li { padding: 6px 4px; color: #aeb0c9; line-height: 1.4; }
+.game-ranking li.is-self { color: var(--mint); font-weight: 800; }
 .game-chat { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 9px; }
 .game-chat input { min-height: 44px; padding: 0 12px; border: 1px solid #45426f; color: var(--ink); background: #0b0b1a; }
 .game-chat button { min-height: 44px; padding: 0 18px; border: 1px solid var(--cyan); color: var(--cyan); background: #17172c; font-weight: 900; }

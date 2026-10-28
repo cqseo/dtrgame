@@ -333,7 +333,7 @@ export class GameRoom implements DurableObject {
         return;
       }
       const gamePayload = message.action === "game_enter"
-        ? { mode: this.room.roomId === "standard" ? "standard" : "infinite" }
+        ? { mode: this.room.roomId?.startsWith("standard") ? "standard" : "infinite" }
         : message.payload;
       gameResult = applyGameAction(this.room.game, attachment.playerId, message.action, gamePayload);
       if (!gameResult.ok) {
