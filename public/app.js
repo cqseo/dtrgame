@@ -74,6 +74,16 @@ async function restoreAuth() {
   } else renderAuth();
 }
 
+function updateAreaTimer() {
+  const target = byId("game-area-timer");
+  if (!target || !gameView?.world?.areaDueAt) return;
+  const remaining = Math.max(0, Math.ceil((gameView.world.areaDueAt - Date.now()) / 1000));
+  const minutes = String(Math.floor(remaining / 60)).padStart(2, "0");
+  const seconds = String(remaining % 60).padStart(2, "0");
+  target.textContent = `下一次禁区封锁：${minutes}:${seconds}`;
+  target.className = remaining <= 60 ? "coral" : "mint";
+}
+
 function updateClock() {
   byId("server-clock").textContent = new Intl.DateTimeFormat("zh-CN", {
     timeZone: "Asia/Shanghai", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
@@ -179,6 +189,7 @@ function actionButton(label, onClick, className = "") {
 function renderGame(view, log = "对局状态已同步。", error = "", history = []) {
   if (!view?.player) return;
   gameView = view;
+  updateAreaTimer();
   const { player, world, areas, shop, targets, corpses, ranking } = view;
   const area = areas.find(({ id }) => id === player.area);
   byId("game-hp").textContent = `${player.hp} / ${player.maxHp}`;
@@ -458,4 +469,4 @@ byId("game-chat-form").addEventListener("submit", (event) => {
   if (text) { sendGameAction("game_chat", { text }); input.value = ""; }
 });
 
-updateClock(); setInterval(updateClock, 1000); restoreAuth(); checkWorker();
+updateClock(); setInterval(() => { updateClock(); updateAreaTimer(); }, 1000); restoreAuth(); checkWorker();
