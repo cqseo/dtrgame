@@ -74,6 +74,10 @@ h1 small { display: block; margin-top: 20px; font: 700 clamp(.92rem,2vw,1.2rem)/
 .login-panel input::placeholder { color: #6f7088; }
 .primary-button { min-height: 48px; margin-top: 8px; border: 1px solid #f59a58; color: #160d08; background: var(--coral); box-shadow: 4px 4px 0 #080811; font-weight: 900; letter-spacing: .08em; }
 .primary-button:active { transform: translate(4px,4px); box-shadow: none; }
+.auth-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.secondary-button { min-height: 48px; margin-top: 8px; border: 1px solid var(--cyan); color: var(--cyan); background: #12132c; font-weight: 900; }
+.secondary-button:hover { background: #20234b; }
+.logout-button { width: 100%; }
 .form-note { min-height: 38px; margin: 4px 0 0; color: var(--muted); font-size: .72rem; line-height: 1.6; } .form-note.is-error { color: var(--coral); }
 .trial-poster { position: relative; display: grid; place-items: center; aspect-ratio: 16/8; margin: 16px 0; overflow: hidden; border: 1px solid #4d497b; background: radial-gradient(circle at 65% 35%,#5b2e53,transparent 28%),linear-gradient(135deg,#17172c,#282454 50%,#111125); }
 .trial-poster::before, .trial-poster::after { content: ""; position: absolute; background: var(--coral); }

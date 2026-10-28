@@ -9,7 +9,7 @@ describe("room protocol", () => {
   });
   it("parses supported messages", () => {
     expect(parseClientMessage('{"type":"ping","at":42}')).toEqual({ type: "ping", at: 42 });
-    expect(parseClientMessage('{"type":"join","playerId":"player_01"}')).toEqual({ type: "join", playerId: "player_01" });
+    expect(parseClientMessage(JSON.stringify({ type: "auth", accessToken: "a".repeat(64) }))).toEqual({ type: "auth", accessToken: "a".repeat(64) });
     expect(parseClientMessage('{"type":"action","commandId":"player_01:7","action":"move","payload":{"x":1}}')).toEqual({
       type: "action",
       commandId: "player_01:7",
@@ -26,6 +26,7 @@ describe("room protocol", () => {
   it("rejects malformed and oversized messages", () => {
     expect(parseClientMessage("not-json")).toBeNull();
     expect(parseClientMessage(JSON.stringify({ type: "unknown" }))).toBeNull();
+    expect(parseClientMessage('{"type":"auth","accessToken":"short"}')).toBeNull();
     expect(parseClientMessage('{"type":"action","action":"move"}')).toBeNull();
     expect(parseClientMessage("x".repeat(MAX_MESSAGE_BYTES + 1))).toBeNull();
   });

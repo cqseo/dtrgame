@@ -3,9 +3,10 @@ export const MAX_MESSAGE_BYTES = 8 * 1024;
 export const MAX_PLAYER_ID_LENGTH = 64;
 export const MAX_COMMAND_ID_LENGTH = 96;
 export const MAX_ACTION_LENGTH = 48;
+export const MAX_ACCESS_TOKEN_LENGTH = 8 * 1024;
 
 export type ClientMessage =
-  | { type: "join"; playerId: string }
+  | { type: "auth"; accessToken: string }
   | { type: "action"; commandId: string; action: string; payload?: unknown }
   | { type: "ping"; at: number };
 
@@ -30,8 +31,13 @@ export function parseClientMessage(raw: string): ClientMessage | null {
     if (message.type === "ping" && typeof message.at === "number" && Number.isFinite(message.at)) {
       return { type: "ping", at: message.at };
     }
-    if (message.type === "join" && typeof message.playerId === "string" && isValidPlayerId(message.playerId)) {
-      return { type: "join", playerId: message.playerId };
+    if (
+      message.type === "auth" &&
+      typeof message.accessToken === "string" &&
+      message.accessToken.length > 20 &&
+      message.accessToken.length <= MAX_ACCESS_TOKEN_LENGTH
+    ) {
+      return { type: "auth", accessToken: message.accessToken };
     }
     if (
       message.type === "action" &&
