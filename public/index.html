@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#0f0f23" />
     <title>无限轮回 · MUGEN LOOP</title>
-    <link rel="stylesheet" href="/styles.css?v=0.2.2" />
+    <link rel="stylesheet" href="/styles.css?v=0.3.0" />
   </head>
   <body>
     <a class="skip-link" href="#main-content">跳到主要内容</a>
@@ -27,7 +27,7 @@
         <div>
           <p class="kicker">CYCLE 0001 · TEST GATE OPEN</p>
           <h1><span>无限轮回</span><small>生存不是终点，只是下一轮的入场券。</small></h1>
-          <p class="hero-copy">保留旧版文字大逃杀的房间、资源、探索与即时混战结构，换成原创日系像素世界观。完整玩法测试已开放，暂不开放付费。</p>
+          <p class="hero-copy">基于旧版文字大逃杀规则推进逐模块迁移，保留房间、探索、战斗与禁区节奏。当前仍为玩法开发测试版，尚未开放付费。</p>
         </div>
         <dl class="cycle-card" aria-label="当前轮回状态">
           <div><dt>轮回编号</dt><dd>#0001</dd></div><div><dt>阶段</dt><dd class="mint">准备中</dd></div>
@@ -97,7 +97,7 @@
             <p class="game-notice" id="game-notice" role="status">进入房间后同步对局状态。</p>
             <div class="game-columns">
               <div>
-                <h3>区域移动</h3><div class="map-actions" id="game-map"></div>
+                <h3>35 地区地图</h3><p class="game-map-hint" id="game-map-note">恢复旧版区域与禁区规则中……</p><div class="map-actions" id="game-map"></div>
                 <h3>遭遇</h3><div class="encounter-card" id="game-encounter">暂未发现敌人或物品。</div>
                 <div class="game-actions">
                   <button type="button" data-game-action="game_search">探索</button><button type="button" data-game-action="game_attack">攻击</button>
@@ -106,7 +106,7 @@
                 </div>
               </div>
               <div>
-                <h3>装备与背包</h3><div class="equipment" id="game-equipment"></div><div class="inventory" id="game-inventory"></div>
+                <h3>装备与背包（6 格）</h3><div class="equipment" id="game-equipment"></div><div class="inventory" id="game-inventory"></div>
                 <h3>战术姿态</h3><div class="tactic-list"><button type="button" data-game-tactic="balanced">均衡</button><button type="button" data-game-tactic="aggressive">强攻</button><button type="button" data-game-tactic="defensive">防守</button><button type="button" data-game-tactic="scavenge">搜刮</button></div>
                 <div id="game-shop" hidden><h3>区域商店</h3><div class="shop-list" id="game-shop-list"></div></div>
                 <div id="game-targets" hidden><h3>同区域玩家</h3><div class="target-list" id="game-target-list"></div></div>
@@ -120,7 +120,7 @@
 
           <section class="pixel-panel archive-panel" id="archive" aria-labelledby="archive-title">
             <header class="section-head"><div><p class="section-code">LOG // LAST CYCLE</p><h2 id="archive-title">最近记录</h2></div></header>
-            <ol class="event-log"><li><time>NOW</time><span>标准大逃杀与无限试炼完整玩法开放。</span></li><li><time>PASS</time><span>战斗、禁区、商店、掉落与断线恢复验收通过。</span></li><li><time>PASS</time><span>边缘实时房间与数据隔离验收通过。</span></li></ol>
+            <ol class="event-log"><li><time>NOW</time><span>标准大逃杀与无限试炼逐步恢复旧版玩法。</span></li><li><time>PASS</time><span>战斗、禁区、商店、掉落与断线恢复验收通过。</span></li><li><time>PASS</time><span>边缘实时房间与数据隔离验收通过。</span></li></ol>
           </section>
         </div>
 
@@ -144,13 +144,13 @@
 
           <section class="pixel-panel notice-panel" id="help" aria-labelledby="notice-title">
             <p class="section-code">NOTICE // TEST</p><h2 id="notice-title">测试须知</h2>
-            <ul><li>教程、标准大逃杀、无限试炼均已开放完整测试。</li><li>游客可直接进入，账号、支付与分销将在玩法定版后完善。</li><li>商业素材全部采用原创或明确授权版本。</li></ul>
+            <ul><li>教程、标准大逃杀、无限试炼为开发测试版，原版功能仍在迁移中。</li><li>游客可直接进入，账号、支付与分销将在玩法定版后完善。</li><li>商业素材全部采用原创或明确授权版本。</li></ul>
           </section>
         </aside>
       </div>
 
       <footer class="footer"><span>WORKING TITLE · 無限輪廻</span><span>Cloudflare Workers · Durable Objects · Supabase</span></footer>
     </main>
-    <script type="module" src="/app.js?v=0.2.2"></script>
+    <script type="module" src="/app.js?v=0.3.0"></script>
   </body>
 </html>
