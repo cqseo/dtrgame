@@ -109,7 +109,7 @@ export function applyArenaAction(current: ArenaState | undefined, action: string
   }
 
   if (action === "arena_move") {
-    const to = payload && typeof payload === "object" ? payload as { x?: unknown; y?: unknown } : {};
+    const to: { x?: unknown; y?: unknown } = payload && typeof payload === "object" ? payload as { x?: unknown; y?: unknown } : {};
     if (!Number.isInteger(to.x) || !Number.isInteger(to.y)) return fail(current, "invalid_destination", "目标坐标必须是整数。");
     const x = to.x as number;
     const y = to.y as number;
