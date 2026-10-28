@@ -85,8 +85,10 @@ export interface GameTransition {
   event: { kind: string; playerId: string; text: string; targetId?: string };
 }
 
-export const GAME_AREAS: AreaDefinition[] = LEGACY_AREAS.map(({ id, name, grid, itemFind, encounter, initiative, shop }) => ({
-  id, name, grid, itemFind, encounter, initiative, shop: Boolean(shop)
+export const GAME_AREAS: AreaDefinition[] = LEGACY_AREAS.map((area) => ({
+  id: area.id, name: area.name, grid: area.grid,
+  itemFind: area.itemFind, encounter: area.encounter, initiative: area.initiative,
+  shop: "shop" in area && area.shop === true
 }));
 
 const catalog: Array<Omit<GameItem, "instanceId">> = [
