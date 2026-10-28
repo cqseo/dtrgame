@@ -195,6 +195,7 @@ function renderGame(view, log = "对局状态已同步。", error = "", history 
   const warning = warnings.has(player.area);
   byId("game-zone").textContent = world.forbidden.includes(player.area) ? "禁区" : warning ? "即将封锁" : "安全区域";
   byId("game-zone").className = warning || world.forbidden.includes(player.area) ? "coral" : "mint";
+  byId("game-weather").textContent = `天气：${world.weather?.name ?? "多云"}`;
   byId("game-notice").textContent = error ? `${log}（${error}）` : log;
   if (!byId("game-log").children.length && history.length) {
     [...history].reverse().forEach((entry) => appendGameLog(entry.kind === "chat" ? `玩家：${entry.text}` : entry.text));
@@ -235,6 +236,37 @@ function renderGame(view, log = "对局状态已同步。", error = "", history 
   equipment.append(equipmentText);
   if (player.weapon) equipment.append(actionButton("卸下武器", () => sendGameAction("game_unequip", { slot: "weapon" })));
   if (player.armor) equipment.append(actionButton("卸下护甲", () => sendGameAction("game_unequip", { slot: "armor" })));
+  const armorParts = byId("game-armor-parts"); armorParts.replaceChildren();
+  const slotLabels = { head: "头部", arms: "手臂", legs: "腿部" };
+  for (const [slot, label] of Object.entries(slotLabels)) {
+    const item = player.armorParts?.[slot];
+    armorParts.append(document.createTextNode(`${label}：${item ? item.name + "（" + item.power + " 防御）" : "无"}　`));
+    if (item) armorParts.append(actionButton("卸下", () => sendGameAction("game_unequip", { slot })));
+  }
+  const proficiencyNode = byId("game-proficiencies"); proficiencyNode.replaceChildren();
+  const proficiencyNames = { wp: "殴", wk: "斩", wg: "射", wc: "投", wd: "爆", wf: "灵" };
+  proficiencyNode.textContent = Object.entries(proficiencyNames).map(([key, name]) => `${name}熟 ${player.proficiencies?.[key] ?? 0}`).join(" · ");
+  const teamNode = byId("game-team-actions"); teamNode.replaceChildren();
+  const currentTeam = player.teamId;
+  if (currentTeam) {
+    teamNode.append(document.createTextNode(`当前队伍：${(world.teams?.[currentTeam] ?? []).length}/5 人　`));
+    teamNode.append(actionButton("退出队伍", () => sendGameAction("game_team_leave")));
+  } else {
+    const create = actionButton("创建队伍（200 SP）", () => sendGameAction("game_team_create"));
+    create.disabled = player.sp <= 200 || !player.alive; teamNode.append(create);
+    for (const [teamId, members] of Object.entries(world.teams ?? {})) {
+      const join = actionButton(`加入队伍（${members.length}/5，100 SP）`, () => sendGameAction("game_team_join", { teamId }));
+      join.disabled = members.length >= 5 || player.sp <= 100 || !player.alive;
+      teamNode.append(join);
+    }
+  }
+  const craftNode = byId("game-craft-actions"); craftNode.replaceChildren();
+  for (const recipe of view.recipes ?? []) {
+    const available = recipe.ingredients.every((id) => player.inventory.some((item) => item.catalogId === id));
+    const button = actionButton(`合成 ${recipe.result}`, () => sendGameAction("game_craft", { result: recipe.result }));
+    button.disabled = !available || !player.alive || Boolean(player.enemy);
+    craftNode.append(button);
+  }
   const inventory = byId("game-inventory"); inventory.replaceChildren();
   inventory.setAttribute("aria-label", `六格背包，已使用 ${player.inventory.length} / 6 格`);
   if (!player.inventory.length) inventory.textContent = "背包为空。";
@@ -247,6 +279,7 @@ function renderGame(view, log = "对局状态已同步。", error = "", history 
     const controls = document.createElement("div"); controls.className = "inventory-controls";
     if (["weapon", "armor"].includes(item.kind)) controls.append(actionButton("装备", () => sendGameAction("game_equip", { instanceId: item.instanceId })));
     if (["heal", "stamina", "antidote"].includes(item.kind)) controls.append(actionButton("使用", () => sendGameAction("game_use", { instanceId: item.instanceId })));
+    if (item.kind === "trap") controls.append(actionButton("设置陷阱", () => sendGameAction("game_trap_place", { instanceId: item.instanceId })));
     if (area?.shop) controls.append(actionButton("出售", () => sendGameAction("game_shop_sell", { instanceId: item.instanceId })));
     controls.append(actionButton("丢弃", () => sendGameAction("game_discard", { instanceId: item.instanceId })));
     row.append(info, controls); inventory.append(row);
