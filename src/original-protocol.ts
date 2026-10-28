@@ -30,7 +30,7 @@ export async function legacyEncode(payload: unknown): Promise<string> {
 }
 export async function legacyDecode<T = unknown>(value: string): Promise<T> {
   if (!value) return [] as T;
-  const input = new Blob([fromBase64(value)]);
+  const input = new Blob([new Uint8Array(fromBase64(value))]);
   const decompressed = await new Response(input.stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
   return JSON.parse(new TextDecoder().decode(decompressed)) as T;
 }
