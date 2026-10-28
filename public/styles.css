@@ -160,3 +160,6 @@ h1 small { display: block; margin-top: 20px; font: 700 clamp(.92rem,2vw,1.2rem)/
 .game-map-hint { color: var(--muted); font-size: .77rem; margin: 0 0 8px; line-height: 1.5; }
 .map-actions button[aria-current="location"] { border-color: var(--cyan); background: #192b35; color: #defcff; }
 @media (max-width: 640px) { .map-actions { max-height: 320px; } }
+
+/* Additional legacy systems */
+.team-actions,.craft-actions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}.team-actions button,.craft-actions button{min-height:42px;padding:8px 12px;background:#17172c;border:1px solid #5550a0;color:var(--cyan);font-weight:700}.team-actions button:disabled,.craft-actions button:disabled{opacity:.45;cursor:not-allowed}#game-weather{display:block;font-size:.8rem;color:var(--mint)}#game-proficiencies,#game-armor-parts{font-size:.79rem;line-height:1.7}
