@@ -35,6 +35,19 @@ While `APP_ENV=test`, gameplay rooms also accept a session-scoped guest UUID so
 gameplay migration is not blocked by email delivery or account setup. Guest
 entry is rejected automatically outside the test environment.
 
+## Playable game modes
+
+- Tutorial: deterministic move, search, pickup, harmful-item and recovery lesson.
+- Standard battle royale: up to eight players, PvP, tactical stances, corpses,
+  one-at-a-time looting, shrinking forbidden zones and last-survivor results.
+- Infinite trial: persistent waves of scaling NPC encounters without PvP match
+  termination; players can restart a failed loop and continue through cycles.
+
+Both main modes include SP-based movement/search, HP and status effects,
+inventory limits, weapons and armor with durability, consumables, NPC combat,
+fleeing, experience and levels, LOOP currency, regional shops, buying/selling,
+room chat, reconnect recovery and a bounded persistent action history.
+
 See [Architecture](docs/ARCHITECTURE.md) and [Migration plan](docs/MIGRATION_PLAN.md).
 
 ## Secrets

@@ -54,11 +54,15 @@
               <tbody>
                 <tr>
                   <td data-label="编号">01</td><td data-label="模式"><strong class="coral">教程轮回</strong></td><td data-label="状态"><span class="status-badge ready">开放激活</span></td>
-                  <td data-label="人数">0 / 1</td><td data-label="区域">新宿废层</td><td data-label="运行时间">常驻</td><td data-label="操作"><button class="room-action" data-room="tutorial" type="button">观测</button></td>
+                  <td data-label="人数" id="tutorial-count">0 / 1</td><td data-label="区域">新宿废层</td><td data-label="运行时间">常驻</td><td data-label="操作"><button class="room-action" data-room="tutorial" type="button">进入</button></td>
                 </tr>
                 <tr>
-                  <td data-label="编号">02</td><td data-label="模式"><strong class="cyan">无限试炼</strong></td><td data-label="状态"><span class="status-badge waiting">等待中</span></td>
-                  <td data-label="人数">0 / 8</td><td data-label="区域">第零候车室</td><td data-label="运行时间">05:41</td><td data-label="操作"><button class="room-action" data-room="infinite" type="button">观测</button></td>
+                  <td data-label="编号">02</td><td data-label="模式"><strong class="coral">标准大逃杀</strong></td><td data-label="状态"><span class="status-badge waiting">开放中</span></td>
+                  <td data-label="人数" id="standard-count">0 / 8</td><td data-label="区域">轮回城区</td><td data-label="运行时间" id="standard-turn">TURN 0</td><td data-label="操作"><button class="room-action" data-room="standard" type="button">进入</button></td>
+                </tr>
+                <tr>
+                  <td data-label="编号">03</td><td data-label="模式"><strong class="cyan">无限试炼</strong></td><td data-label="状态"><span class="status-badge waiting">开放中</span></td>
+                  <td data-label="人数" id="infinite-count">0 / 8</td><td data-label="区域">第零候车室</td><td data-label="运行时间" id="infinite-turn">TURN 0</td><td data-label="操作"><button class="room-action" data-room="infinite" type="button">进入</button></td>
                 </tr>
               </tbody>
             </table>
@@ -79,6 +83,38 @@
               <button type="button" data-tutorial-action="tutorial_use_ration">使用异常补给</button>
               <button type="button" data-tutorial-action="tutorial_use_purifier">使用净化针剂</button>
             </div>
+          </section>
+
+          <section class="pixel-panel game-console" id="game-console" aria-labelledby="game-console-title" hidden>
+            <header class="section-head"><div><p class="section-code">SURVIVAL // INFINITE</p><h2 id="game-console-title">无限试炼控制台</h2></div><span class="tag" id="game-phase">待机</span></header>
+            <div class="game-stats" aria-label="对局状态">
+              <div><span>生命</span><strong id="game-hp">--</strong></div><div><span>体力</span><strong id="game-sp">--</strong></div>
+              <div><span>等级</span><strong id="game-level">--</strong></div><div><span>经验</span><strong id="game-exp">--</strong></div>
+              <div><span>LOOP</span><strong id="game-money">--</strong></div><div><span>波次</span><strong id="game-wave">--</strong></div>
+              <div><span>击杀</span><strong id="game-kills">--</strong></div><div><span>周目</span><strong id="game-cycle">--</strong></div>
+            </div>
+            <div class="game-location"><span>当前位置</span><strong id="game-area">--</strong><small id="game-zone">安全区域</small></div>
+            <p class="game-notice" id="game-notice" role="status">进入房间后同步对局状态。</p>
+            <div class="game-columns">
+              <div>
+                <h3>区域移动</h3><div class="map-actions" id="game-map"></div>
+                <h3>遭遇</h3><div class="encounter-card" id="game-encounter">暂未发现敌人或物品。</div>
+                <div class="game-actions">
+                  <button type="button" data-game-action="game_search">探索</button><button type="button" data-game-action="game_attack">攻击</button>
+                  <button type="button" data-game-action="game_flee">撤离</button><button type="button" data-game-action="game_pickup">拾取</button>
+                  <button type="button" data-game-action="game_rest">休息</button><button type="button" data-game-action="game_restart">重新轮回</button>
+                </div>
+              </div>
+              <div>
+                <h3>装备与背包</h3><div class="equipment" id="game-equipment"></div><div class="inventory" id="game-inventory"></div>
+                <h3>战术姿态</h3><div class="tactic-list"><button type="button" data-game-tactic="balanced">均衡</button><button type="button" data-game-tactic="aggressive">强攻</button><button type="button" data-game-tactic="defensive">防守</button><button type="button" data-game-tactic="scavenge">搜刮</button></div>
+                <div id="game-shop" hidden><h3>区域商店</h3><div class="shop-list" id="game-shop-list"></div></div>
+                <div id="game-targets" hidden><h3>同区域玩家</h3><div class="target-list" id="game-target-list"></div></div>
+                <div id="game-corpses" hidden><h3>遗留战利品</h3><div class="corpse-list" id="game-corpse-list"></div></div>
+              </div>
+            </div>
+            <h3>行动记录</h3><ol class="game-log" id="game-log" aria-live="polite"></ol>
+            <form class="game-chat" id="game-chat-form"><label class="sr-only" for="game-chat-input">房间消息</label><input id="game-chat-input" maxlength="200" placeholder="输入房间消息" autocomplete="off" /><button type="submit">发送</button></form>
           </section>
 
           <section class="pixel-panel archive-panel" id="archive" aria-labelledby="archive-title">

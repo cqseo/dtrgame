@@ -1,0 +1,463 @@
+export type AreaId = "zero_station" | "old_platform" | "signal_corridor" | "shinjuku_ruins" | "memory_market" | "terminal_roof";
+export type ItemKind = "weapon" | "armor" | "heal" | "stamina" | "antidote";
+
+export interface AreaDefinition {
+  id: AreaId;
+  name: string;
+  neighbors: AreaId[];
+  shop?: boolean;
+}
+
+export interface GameItem {
+  instanceId: string;
+  catalogId: string;
+  name: string;
+  kind: ItemKind;
+  power: number;
+  durability: number;
+  price: number;
+}
+
+export interface EnemyState {
+  id: string;
+  name: string;
+  hp: number;
+  maxHp: number;
+  attack: number;
+  defense: number;
+  rewardExp: number;
+  rewardMoney: number;
+}
+
+export interface GamePlayerState {
+  id: string;
+  hp: number;
+  maxHp: number;
+  sp: number;
+  maxSp: number;
+  level: number;
+  exp: number;
+  money: number;
+  area: AreaId;
+  status: "normal" | "poisoned";
+  tactic: "balanced" | "aggressive" | "defensive" | "scavenge";
+  alive: boolean;
+  kills: number;
+  wave: number;
+  inventory: GameItem[];
+  weapon: GameItem | null;
+  armor: GameItem | null;
+  pendingItem: GameItem | null;
+  enemy: EnemyState | null;
+}
+
+export interface CorpseState {
+  id: string;
+  playerId: string;
+  area: AreaId;
+  money: number;
+  items: GameItem[];
+}
+
+export interface GameWorldState {
+  mode: "standard" | "infinite";
+  phase: "waiting" | "active" | "finished";
+  cycle: number;
+  turn: number;
+  seed: number;
+  forbidden: AreaId[];
+  warningArea: AreaId | null;
+  players: Record<string, GamePlayerState>;
+  corpses: CorpseState[];
+  winnerId: string | null;
+}
+
+export interface GameTransition {
+  ok: boolean;
+  world: GameWorldState;
+  code?: string;
+  event: { kind: string; playerId: string; text: string; targetId?: string };
+}
+
+export const GAME_AREAS: AreaDefinition[] = [
+  { id: "zero_station", name: "第零候车室", neighbors: ["old_platform", "signal_corridor"] },
+  { id: "old_platform", name: "旧站台", neighbors: ["zero_station", "shinjuku_ruins"] },
+  { id: "signal_corridor", name: "信号廊", neighbors: ["zero_station", "memory_market"] },
+  { id: "shinjuku_ruins", name: "新宿废层", neighbors: ["old_platform", "terminal_roof"] },
+  { id: "memory_market", name: "记忆市集", neighbors: ["signal_corridor", "terminal_roof"], shop: true },
+  { id: "terminal_roof", name: "终点天台", neighbors: ["shinjuku_ruins", "memory_market"], shop: true }
+];
+
+const catalog: Array<Omit<GameItem, "instanceId">> = [
+  { catalogId: "folding_baton", name: "折叠短棍", kind: "weapon", power: 9, durability: 18, price: 0 },
+  { catalogId: "signal_blade", name: "信号切断刃", kind: "weapon", power: 17, durability: 14, price: 520 },
+  { catalogId: "loop_rifle", name: "轮回脉冲枪", kind: "weapon", power: 25, durability: 10, price: 980 },
+  { catalogId: "fiber_vest", name: "纤维护甲", kind: "armor", power: 5, durability: 20, price: 420 },
+  { catalogId: "station_shell", name: "站务员外壳", kind: "armor", power: 10, durability: 15, price: 850 },
+  { catalogId: "healing_gel", name: "应急凝胶", kind: "heal", power: 35, durability: 1, price: 160 },
+  { catalogId: "energy_cell", name: "体力电池", kind: "stamina", power: 45, durability: 1, price: 140 },
+  { catalogId: "purifier", name: "净化针剂", kind: "antidote", power: 0, durability: 1, price: 120 }
+];
+
+const areaById = (id: AreaId): AreaDefinition => GAME_AREAS.find((area) => area.id === id)!;
+const clone = <T>(value: T): T => structuredClone(value);
+
+function nextRandom(world: GameWorldState): number {
+  world.seed = (Math.imul(world.seed, 1664525) + 1013904223) >>> 0;
+  return world.seed / 4294967296;
+}
+
+function makeItem(world: GameWorldState, definition: Omit<GameItem, "instanceId">): GameItem {
+  const suffix = Math.floor(nextRandom(world) * 0xffffff).toString(36);
+  return { ...definition, instanceId: `${definition.catalogId}_${world.turn}_${suffix}` };
+}
+
+export function createGameWorld(seed = 20261028, mode: GameWorldState["mode"] = "infinite"): GameWorldState {
+  return { mode, phase: "waiting", cycle: 1, turn: 0, seed: seed >>> 0, forbidden: [], warningArea: null, players: {}, corpses: [], winnerId: null };
+}
+
+function createPlayer(world: GameWorldState, playerId: string): GamePlayerState {
+  return {
+    id: playerId,
+    hp: 100,
+    maxHp: 100,
+    sp: 120,
+    maxSp: 120,
+    level: 1,
+    exp: 0,
+    money: 300,
+    area: "zero_station",
+    status: "normal",
+    tactic: "balanced",
+    alive: true,
+    kills: 0,
+    wave: 1,
+    inventory: [makeItem(world, catalog.find(({ catalogId }) => catalogId === "healing_gel")!), makeItem(world, catalog.find(({ catalogId }) => catalogId === "purifier")!)],
+    weapon: makeItem(world, catalog[0]!),
+    armor: null,
+    pendingItem: null,
+    enemy: null
+  };
+}
+
+function failure(world: GameWorldState, playerId: string, code: string, text: string): GameTransition {
+  return { ok: false, world, code, event: { kind: "error", playerId, text } };
+}
+
+function success(world: GameWorldState, playerId: string, kind: string, text: string, targetId?: string): GameTransition {
+  return { ok: true, world, event: { kind, playerId, text, ...(targetId ? { targetId } : {}) } };
+}
+
+function parseString(payload: unknown, key: string): string {
+  return typeof payload === "object" && payload && typeof (payload as Record<string, unknown>)[key] === "string" ? (payload as Record<string, string>)[key]! : "";
+}
+
+function applyPoison(player: GamePlayerState): string {
+  if (player.status !== "poisoned" || !player.alive) return "";
+  player.hp = Math.max(0, player.hp - 5);
+  if (player.hp === 0) player.alive = false;
+  return " 中毒造成 5 点生命损失。";
+}
+
+function levelUp(player: GamePlayerState): string {
+  let text = "";
+  while (player.exp >= player.level * 100) {
+    player.exp -= player.level * 100;
+    player.level += 1;
+    player.maxHp += 12;
+    player.maxSp += 8;
+    player.hp = player.maxHp;
+    player.sp = player.maxSp;
+    text += ` 等级提升至 ${player.level}。`;
+  }
+  return text;
+}
+
+function advanceWorld(world: GameWorldState): string {
+  world.turn += 1;
+  let notice = "";
+  if (world.turn % 8 === 5 && !world.warningArea) {
+    const available = GAME_AREAS.filter(({ id }) => !world.forbidden.includes(id));
+    world.warningArea = available[Math.floor(nextRandom(world) * available.length)]?.id ?? null;
+    if (world.warningArea) notice = ` 警告：${areaById(world.warningArea).name}即将成为禁区。`;
+  }
+  if (world.turn % 8 === 0 && world.warningArea) {
+    const closed = world.warningArea;
+    world.forbidden.push(closed);
+    world.warningArea = null;
+    for (const player of Object.values(world.players)) {
+      if (player.alive && player.area === closed) { player.hp = 0; player.alive = false; }
+    }
+    notice = ` ${areaById(closed).name}已成为禁区。`;
+    if (world.forbidden.length >= GAME_AREAS.length - 2) {
+      world.cycle += 1;
+      world.forbidden = [];
+      notice += ` 轮回重置，进入第 ${world.cycle} 周目。`;
+    }
+  }
+  const joined = Object.values(world.players);
+  const alive = joined.filter(({ alive }) => alive);
+  if (world.mode === "standard" && joined.length > 1 && alive.length <= 1) {
+    world.phase = "finished";
+    world.winnerId = alive[0]?.id ?? null;
+    notice += world.winnerId ? " 对局结束，最后的幸存者已经产生。" : " 对局结束，无人生还。";
+  }
+  return notice;
+}
+
+function spawnEnemy(world: GameWorldState, player: GamePlayerState): EnemyState {
+  const names = ["失真巡检员", "空壳乘客", "逆行执行体", "记忆猎犬"];
+  const scale = player.level + player.wave + world.cycle - 2;
+  const maxHp = 38 + scale * 12;
+  return {
+    id: `enemy_${world.turn}_${Math.floor(nextRandom(world) * 99999)}`,
+    name: names[Math.floor(nextRandom(world) * names.length)]!,
+    hp: maxHp,
+    maxHp,
+    attack: 7 + scale * 3,
+    defense: 2 + scale,
+    rewardExp: 35 + scale * 14,
+    rewardMoney: 45 + scale * 20
+  };
+}
+
+function combatNpc(world: GameWorldState, player: GamePlayerState): string {
+  const enemy = player.enemy!;
+  const weaponPower = player.weapon?.power ?? 3;
+  const tacticAttack = player.tactic === "aggressive" ? 5 : player.tactic === "defensive" ? -2 : 0;
+  const damage = Math.max(1, weaponPower + player.level * 2 + tacticAttack - enemy.defense + Math.floor(nextRandom(world) * 6));
+  enemy.hp = Math.max(0, enemy.hp - damage);
+  if (player.weapon) {
+    player.weapon.durability -= 1;
+    if (player.weapon.durability <= 0) player.weapon = null;
+  }
+  let text = `你对${enemy.name}造成 ${damage} 点伤害。`;
+  if (enemy.hp === 0) {
+    player.exp += enemy.rewardExp;
+    player.money += enemy.rewardMoney;
+    player.kills += 1;
+    player.wave += 1;
+    player.enemy = null;
+    text += ` 目标已清除，获得 ${enemy.rewardExp} 经验和 ${enemy.rewardMoney} LOOP。${levelUp(player)}`;
+    return text;
+  }
+  const defense = (player.armor?.power ?? 0) + (player.tactic === "defensive" ? 5 : player.tactic === "aggressive" ? -2 : 0);
+  const counter = Math.max(1, enemy.attack - defense + Math.floor(nextRandom(world) * 5));
+  player.hp = Math.max(0, player.hp - counter);
+  if (player.armor) {
+    player.armor.durability -= 1;
+    if (player.armor.durability <= 0) player.armor = null;
+  }
+  if (player.hp === 0) player.alive = false;
+  return `${text} ${enemy.name}反击造成 ${counter} 点伤害。`;
+}
+
+export function applyGameAction(input: GameWorldState | undefined, playerId: string, action: string, payload: unknown): GameTransition {
+  const requestedMode = parseString(payload, "mode") === "standard" ? "standard" : "infinite";
+  const world = clone(input ?? createGameWorld(20261028, requestedMode));
+  if (action === "game_enter") {
+    if (!world.players[playerId] && Object.values(world.players).filter(({ alive }) => alive).length >= 8) {
+      return failure(world, playerId, "room_full", "房间人数已满。 ");
+    }
+    if (!world.players[playerId]) world.players[playerId] = createPlayer(world, playerId);
+    if (world.phase === "waiting") { world.phase = "active"; world.winnerId = null; }
+    return success(world, playerId, "entered", "已进入无限试炼。 ");
+  }
+  const player = world.players[playerId];
+  if (!player) return failure(world, playerId, "game_not_entered", "请先进入对局。 ");
+  if (action === "game_chat") {
+    const text = parseString(payload, "text").trim();
+    if (!text || text.length > 200) return failure(world, playerId, "invalid_chat", "消息长度必须为 1–200 个字符。 ");
+    return success(world, playerId, "chat", text);
+  }
+  if (action === "game_restart") {
+    const wasFinished = world.phase === "finished";
+    if (wasFinished) {
+      for (const id of Object.keys(world.players)) world.players[id] = createPlayer(world, id);
+      world.corpses = [];
+    } else world.players[playerId] = createPlayer(world, playerId);
+    world.phase = "active";
+    world.winnerId = null;
+    if (wasFinished || Object.values(world.players).every((entry) => entry.id === playerId || !entry.alive)) {
+      world.cycle += 1;
+      world.turn = 0;
+      world.forbidden = [];
+      world.warningArea = null;
+    }
+    return success(world, playerId, "restarted", "轮回重启，角色状态已重置。 ");
+  }
+  if (!player.alive) {
+    return failure(world, playerId, "player_dead", "角色已死亡，请重新开始轮回。 ");
+  }
+  if (world.phase === "finished" && action !== "game_loot") return failure(world, playerId, "game_finished", "本局已经结束。 ");
+  if (world.forbidden.includes(player.area)) {
+    player.hp = 0; player.alive = false;
+    return success(world, playerId, "zone_death", "你停留在禁区，轮回终止。 ");
+  }
+
+  let transition: GameTransition;
+  if (action === "game_move") {
+    const to = parseString(payload, "to") as AreaId;
+    if (!areaById(player.area).neighbors.includes(to)) return failure(world, playerId, "invalid_destination", "无法直接移动到该区域。 ");
+    if (world.forbidden.includes(to)) return failure(world, playerId, "forbidden_destination", "目标区域已经封锁。 ");
+    if (player.enemy) return failure(world, playerId, "enemy_present", "遭遇敌人时无法移动，请先战斗或撤离。 ");
+    if (player.sp <= 15) return failure(world, playerId, "insufficient_sp", "体力不足，无法移动。 ");
+    player.sp -= 15; player.area = to;
+    transition = success(world, playerId, "moved", `消耗 15 点体力，移动到${areaById(to).name}。`);
+  } else if (action === "game_search") {
+    if (player.enemy || player.pendingItem) return failure(world, playerId, "unresolved_encounter", "请先处理当前发现物或敌人。 ");
+    if (player.sp <= 15) return failure(world, playerId, "insufficient_sp", "体力不足，无法探索。 ");
+    player.sp -= 15;
+    const roll = nextRandom(world);
+    const itemThreshold = player.tactic === "scavenge" ? 0.68 : 0.5;
+    if (roll < itemThreshold) {
+      const lootPool = catalog.slice(1);
+      player.pendingItem = makeItem(world, lootPool[Math.floor(nextRandom(world) * lootPool.length)]!);
+      transition = success(world, playerId, "found_item", `探索发现了${player.pendingItem.name}。`);
+    } else if (roll < 0.88) {
+      player.enemy = spawnEnemy(world, player);
+      transition = success(world, playerId, "found_enemy", `遭遇${player.enemy.name}。`);
+    } else {
+      const foundMoney = 40 + Math.floor(nextRandom(world) * 120);
+      player.money += foundMoney;
+      transition = success(world, playerId, "found_money", `发现 ${foundMoney} LOOP。`);
+    }
+  } else if (action === "game_pickup") {
+    if (!player.pendingItem) return failure(world, playerId, "nothing_to_pickup", "当前没有可拾取物品。 ");
+    if (player.inventory.length >= 7) return failure(world, playerId, "inventory_full", "背包已满，请先使用或丢弃物品。 ");
+    const found = player.pendingItem; player.inventory.push(found); player.pendingItem = null;
+    transition = success(world, playerId, "picked_up", `已拾取${found.name}。`);
+  } else if (action === "game_discard") {
+    const instanceId = parseString(payload, "instanceId");
+    const before = player.inventory.length;
+    player.inventory = player.inventory.filter((entry) => entry.instanceId !== instanceId);
+    if (player.inventory.length === before) return failure(world, playerId, "item_not_found", "背包中没有该物品。 ");
+    transition = success(world, playerId, "discarded", "物品已丢弃。 ");
+  } else if (action === "game_equip") {
+    const instanceId = parseString(payload, "instanceId");
+    const index = player.inventory.findIndex((entry) => entry.instanceId === instanceId);
+    const selected = player.inventory[index];
+    if (!selected || (selected.kind !== "weapon" && selected.kind !== "armor")) return failure(world, playerId, "item_not_equippable", "该物品无法装备。 ");
+    player.inventory.splice(index, 1);
+    if (selected.kind === "weapon") { if (player.weapon) player.inventory.push(player.weapon); player.weapon = selected; }
+    else { if (player.armor) player.inventory.push(player.armor); player.armor = selected; }
+    transition = success(world, playerId, "equipped", `已装备${selected.name}。`);
+  } else if (action === "game_unequip") {
+    const slot = parseString(payload, "slot");
+    if (player.inventory.length >= 7) return failure(world, playerId, "inventory_full", "背包已满，无法卸下装备。 ");
+    if (slot === "weapon" && player.weapon) {
+      const selected = player.weapon; player.weapon = null; player.inventory.push(selected);
+      transition = success(world, playerId, "unequipped", `已卸下${selected.name}。`);
+    } else if (slot === "armor" && player.armor) {
+      const selected = player.armor; player.armor = null; player.inventory.push(selected);
+      transition = success(world, playerId, "unequipped", `已卸下${selected.name}。`);
+    } else return failure(world, playerId, "slot_empty", "该装备栏为空。 ");
+  } else if (action === "game_use") {
+    const instanceId = parseString(payload, "instanceId");
+    const index = player.inventory.findIndex((entry) => entry.instanceId === instanceId);
+    const selected = player.inventory[index];
+    if (!selected || !["heal", "stamina", "antidote"].includes(selected.kind)) return failure(world, playerId, "item_not_usable", "该物品无法使用。 ");
+    player.inventory.splice(index, 1);
+    if (selected.kind === "heal") player.hp = Math.min(player.maxHp, player.hp + selected.power);
+    if (selected.kind === "stamina") player.sp = Math.min(player.maxSp, player.sp + selected.power);
+    if (selected.kind === "antidote") player.status = "normal";
+    transition = success(world, playerId, "used_item", `已使用${selected.name}。`);
+  } else if (action === "game_attack") {
+    const targetId = parseString(payload, "targetId");
+    if (targetId) {
+      if (world.mode !== "standard") return failure(world, playerId, "pvp_disabled", "无限试炼中无法攻击其他玩家。 ");
+      const target = world.players[targetId];
+      if (!target?.alive || target.area !== player.area || targetId === playerId) return failure(world, playerId, "invalid_target", "目标不在当前区域。 ");
+      const attackBonus = player.tactic === "aggressive" ? 5 : player.tactic === "defensive" ? -2 : 0;
+      const defenseBonus = target.tactic === "defensive" ? 5 : target.tactic === "aggressive" ? -2 : 0;
+      const damage = Math.max(1, (player.weapon?.power ?? 3) + player.level * 2 + attackBonus - (target.armor?.power ?? 0) - defenseBonus + Math.floor(nextRandom(world) * 6));
+      target.hp = Math.max(0, target.hp - damage);
+      if (player.weapon) { player.weapon.durability -= 1; if (player.weapon.durability <= 0) player.weapon = null; }
+      if (target.hp === 0) {
+        target.alive = false; player.kills += 1; player.exp += 80;
+        const corpseMoney = Math.floor(target.money / 2); target.money -= corpseMoney;
+        const corpseItems = [...target.inventory, ...(target.weapon ? [target.weapon] : []), ...(target.armor ? [target.armor] : [])];
+        target.inventory = []; target.weapon = null; target.armor = null;
+        world.corpses.push({ id: `corpse_${world.turn}_${targetId}`, playerId: targetId, area: target.area, money: corpseMoney, items: corpseItems });
+      }
+      transition = success(world, playerId, "pvp_attack", `对目标造成 ${damage} 点伤害。${target.alive ? "" : ` 目标已出局，遗留了可搜索的战利品。${levelUp(player)}`}`, targetId);
+    } else {
+      if (!player.enemy) return failure(world, playerId, "no_enemy", "当前没有可攻击的敌人。 ");
+      transition = success(world, playerId, "npc_attack", combatNpc(world, player));
+    }
+  } else if (action === "game_rest") {
+    if (player.enemy) return failure(world, playerId, "enemy_present", "遭遇敌人时无法休息。 ");
+    player.sp = Math.min(player.maxSp, player.sp + 30);
+    player.hp = Math.min(player.maxHp, player.hp + 10);
+    transition = success(world, playerId, "rested", "短暂休整，恢复 30 体力和 10 生命。 ");
+  } else if (action === "game_shop_buy") {
+    if (!areaById(player.area).shop) return failure(world, playerId, "shop_unavailable", "当前区域没有商店。 ");
+    if (player.inventory.length >= 7) return failure(world, playerId, "inventory_full", "背包已满。 ");
+    const catalogId = parseString(payload, "catalogId");
+    const selected = catalog.find((entry) => entry.catalogId === catalogId && entry.price > 0);
+    if (!selected) return failure(world, playerId, "unknown_product", "商店没有这个物品。 ");
+    if (player.money < selected.price) return failure(world, playerId, "insufficient_money", "LOOP 不足。 ");
+    player.money -= selected.price; player.inventory.push(makeItem(world, selected));
+    transition = success(world, playerId, "purchased", `购买了${selected.name}。`);
+  } else if (action === "game_shop_sell") {
+    if (!areaById(player.area).shop) return failure(world, playerId, "shop_unavailable", "当前区域没有商店。 ");
+    const instanceId = parseString(payload, "instanceId");
+    const index = player.inventory.findIndex((entry) => entry.instanceId === instanceId);
+    const selected = player.inventory[index];
+    if (!selected) return failure(world, playerId, "item_not_found", "背包中没有该物品。 ");
+    const value = Math.max(10, Math.floor(selected.price * 0.5));
+    player.inventory.splice(index, 1); player.money += value;
+    transition = success(world, playerId, "sold", `出售${selected.name}，获得 ${value} LOOP。`);
+  } else if (action === "game_loot") {
+    const corpseId = parseString(payload, "corpseId");
+    const corpse = world.corpses.find((entry) => entry.id === corpseId && entry.area === player.area);
+    if (!corpse) return failure(world, playerId, "corpse_not_found", "当前区域没有这具遗留物。 ");
+    const instanceId = parseString(payload, "instanceId");
+    if (!instanceId && corpse.money > 0) {
+      const amount = corpse.money; corpse.money = 0; player.money += amount;
+      transition = success(world, playerId, "looted_money", `从遗留物中取得 ${amount} LOOP。`);
+    } else {
+      if (player.inventory.length >= 7) return failure(world, playerId, "inventory_full", "背包已满。 ");
+      const index = corpse.items.findIndex((entry) => entry.instanceId === instanceId);
+      const selected = corpse.items[index];
+      if (!selected) return failure(world, playerId, "loot_not_found", "遗留物中没有该物品。 ");
+      corpse.items.splice(index, 1); player.inventory.push(selected);
+      transition = success(world, playerId, "looted_item", `从遗留物中取得${selected.name}。`);
+    }
+    if (corpse.money === 0 && corpse.items.length === 0) world.corpses = world.corpses.filter(({ id }) => id !== corpse.id);
+  } else if (action === "game_tactic") {
+    const tactic = parseString(payload, "tactic");
+    if (!(["balanced", "aggressive", "defensive", "scavenge"] as string[]).includes(tactic)) return failure(world, playerId, "invalid_tactic", "无效战术。 ");
+    player.tactic = tactic as GamePlayerState["tactic"];
+    const labels = { balanced: "均衡", aggressive: "强攻", defensive: "防守", scavenge: "搜刮" };
+    transition = success(world, playerId, "tactic_changed", `战术切换为${labels[player.tactic]}。`);
+  } else if (action === "game_flee") {
+    if (!player.enemy) return failure(world, playerId, "no_enemy", "当前没有需要撤离的敌人。 ");
+    if (nextRandom(world) < 0.65) { player.enemy = null; transition = success(world, playerId, "fled", "成功脱离战斗。 "); }
+    else {
+      const damage = Math.max(1, player.enemy.attack - (player.armor?.power ?? 0));
+      player.hp = Math.max(0, player.hp - damage); if (player.hp === 0) player.alive = false;
+      transition = success(world, playerId, "flee_failed", `撤离失败，受到 ${damage} 点伤害。`);
+    }
+  } else {
+    return failure(world, playerId, "unsupported_game_action", "不支持的游戏行动。 ");
+  }
+
+  if (transition.ok) {
+    transition.event.text += applyPoison(player);
+    transition.event.text += advanceWorld(world);
+  }
+  return transition;
+}
+
+export function getGameView(world: GameWorldState, playerId: string) {
+  const player = world.players[playerId];
+  return {
+    player,
+    world: { mode: world.mode, phase: world.phase, cycle: world.cycle, turn: world.turn, forbidden: world.forbidden, warningArea: world.warningArea, winnerId: world.winnerId },
+    areas: GAME_AREAS,
+    shop: catalog.filter(({ price }) => price > 0),
+    corpses: world.corpses.filter((corpse) => player && corpse.area === player.area),
+    targets: world.mode === "standard" ? Object.values(world.players).filter((target) => target.id !== playerId && target.alive && player && target.area === player.area).map(({ id, hp, maxHp, level }) => ({ id, hp, maxHp, level })) : []
+  };
+}

@@ -89,6 +89,31 @@ h1 small { display: block; margin-top: 20px; font: 700 clamp(.92rem,2vw,1.2rem)/
 .tutorial-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .tutorial-actions button { min-height: 44px; padding: 0 13px; border: 1px solid #5550a0; color: var(--cyan); background: #17172c; font-weight: 800; }
 .tutorial-actions button:not(:disabled):hover { background: #292751; }
+.game-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; margin-bottom: 14px; border: 1px solid var(--line); background: var(--line); }
+.game-stats > div { display: grid; gap: 4px; padding: 10px 12px; background: #111127; }
+.game-stats span, .game-location span { color: var(--muted); font-size: .66rem; letter-spacing: .08em; }
+.game-stats strong { color: var(--mint); font-size: .9rem; }
+.game-location { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-left: 3px solid var(--cyan); background: #12152c; }
+.game-location strong { color: var(--cyan); } .game-location small { margin-left: auto; color: var(--mint); }
+.game-notice { min-height: 46px; margin: 12px 0; padding: 10px 12px; border: 1px dashed #45426f; background: #0b0b1a; line-height: 1.6; }
+.game-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.game-columns h3, .game-console > h3 { margin: 14px 0 8px; color: #dadbef; font-size: .82rem; letter-spacing: .08em; }
+.map-actions, .game-actions, .target-list, .tactic-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.map-actions button, .game-actions button, .inventory button, .shop-list button, .target-list button, .tactic-list button, .corpse-list button, .equipment button { min-height: 42px; padding: 0 11px; border: 1px solid #5550a0; color: var(--cyan); background: #17172c; font-weight: 800; }
+.tactic-list button.is-active { border-color: var(--mint); color: var(--mint); background: #172b2b; }
+.map-actions button.warn { border-color: var(--coral); color: var(--coral); }
+.encounter-card, .equipment { min-height: 54px; padding: 11px 12px; border: 1px solid #3d3b65; background: #101025; line-height: 1.6; }
+.inventory, .shop-list, .corpse-list { display: grid; gap: 7px; margin-top: 8px; }
+.inventory-row, .shop-row, .corpse-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 9px 10px; border: 1px solid #333157; background: #0e0e20; }
+.inventory-row small, .shop-row small { color: var(--muted); }
+.inventory-controls { display: flex; gap: 5px; }
+.inventory-controls button { min-width: 46px; }
+.game-log { max-height: 190px; overflow: auto; margin: 0; padding: 10px 10px 10px 32px; border: 1px solid #333157; background: #090919; }
+.game-log li { padding: 5px 0; color: #c7c8dc; line-height: 1.5; }
+.game-chat { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 9px; }
+.game-chat input { min-height: 44px; padding: 0 12px; border: 1px solid #45426f; color: var(--ink); background: #0b0b1a; }
+.game-chat button { min-height: 44px; padding: 0 18px; border: 1px solid var(--cyan); color: var(--cyan); background: #17172c; font-weight: 900; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .trial-poster { position: relative; display: grid; place-items: center; aspect-ratio: 16/8; margin: 16px 0; overflow: hidden; border: 1px solid #4d497b; background: radial-gradient(circle at 65% 35%,#5b2e53,transparent 28%),linear-gradient(135deg,#17172c,#282454 50%,#111125); }
 .trial-poster::before, .trial-poster::after { content: ""; position: absolute; background: var(--coral); }
 .trial-poster::before { width: 140%; height: 3px; transform: rotate(-17deg); opacity: .65; } .trial-poster::after { width: 3px; height: 140%; transform: rotate(23deg); opacity: .45; }
@@ -119,6 +144,9 @@ h1 small { display: block; margin-top: 20px; font: 700 clamp(.92rem,2vw,1.2rem)/
   .section-note, .trial-panel > p:not(.section-code), .notice-panel li, .room-table, .form-note { font-size: 1rem; }
   .tutorial-stats { grid-template-columns: 1fr 1fr; }
   .tutorial-actions { display: grid; grid-template-columns: 1fr; }
+  .game-stats { grid-template-columns: 1fr 1fr; }
+  .game-columns { grid-template-columns: 1fr; }
+  .game-actions, .map-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .event-log li { font-size: .95rem; }
   .footer { flex-direction: column; }
 }
