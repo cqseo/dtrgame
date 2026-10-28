@@ -4,9 +4,15 @@ const dbState = byId("db-state");
 const socketState = byId("socket-state");
 const systemMessage = byId("system-message");
 const authStorageKey = "mugen-loop-auth-v1";
+const guestStorageKey = "mugen-loop-guest-v1";
 let authSession = null;
 let tutorialSocket = null;
 let tutorialState = null;
+let guestId = sessionStorage.getItem(guestStorageKey);
+if (!guestId) {
+  guestId = crypto.randomUUID();
+  sessionStorage.setItem(guestStorageKey, guestId);
+}
 
 function setAuthSession(session) {
   authSession = session?.access_token ? session : null;
@@ -29,7 +35,7 @@ function renderAuth() {
     email.value = authSession.user?.email ?? ""; password.value = "";
     note.textContent = `已验证：${authSession.user?.email ?? "轮回玩家"}`;
   } else {
-    note.textContent = "测试账号使用 Supabase 安全认证；新账号可能需要邮箱确认。";
+    note.textContent = "玩法开发阶段可直接以游客身份进入；正式账号稍后统一完善。";
   }
 }
 
@@ -91,22 +97,20 @@ function checkSocket() {
 }
 
 function observeRoom(roomId, label) {
-  if (!authSession?.access_token) {
-    systemMessage.textContent = "请先在右侧登录，再进入房间观测。";
-    byId("login-email").focus();
-    return;
-  }
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   if (roomId === "tutorial" && tutorialSocket) tutorialSocket.close();
   const socket = new WebSocket(`${protocol}//${location.host}/api/rooms/${roomId}/socket`);
   if (roomId === "tutorial") tutorialSocket = socket;
   const timeout = window.setTimeout(() => { socket.close(); systemMessage.textContent = `${label}身份验证超时，请重试。`; }, 8000);
   systemMessage.textContent = `正在验证 ${label} 的玩家身份……`;
-  socket.addEventListener("open", () => socket.send(JSON.stringify({ type: "auth", accessToken: authSession.access_token })));
+  const expectedPlayerId = authSession?.user?.id ?? `guest:${guestId}`;
+  socket.addEventListener("open", () => socket.send(JSON.stringify(authSession?.access_token
+    ? { type: "auth", accessToken: authSession.access_token }
+    : { type: "guest", guestId })));
   socket.addEventListener("message", (event) => {
     try {
       const message = JSON.parse(event.data);
-      if (message.type === "room_event" && message.event?.type === "player_joined" && message.event.player?.id === authSession.user?.id) {
+      if (message.type === "room_event" && message.event?.type === "player_joined" && message.event.player?.id === expectedPlayerId) {
         clearTimeout(timeout); systemMessage.textContent = `${label}身份验证成功，房间状态已同步。`;
         if (roomId === "tutorial") {
           byId("tutorial-console").hidden = false;

@@ -10,6 +10,7 @@ describe("room protocol", () => {
   it("parses supported messages", () => {
     expect(parseClientMessage('{"type":"ping","at":42}')).toEqual({ type: "ping", at: 42 });
     expect(parseClientMessage(JSON.stringify({ type: "auth", accessToken: "a".repeat(64) }))).toEqual({ type: "auth", accessToken: "a".repeat(64) });
+    expect(parseClientMessage('{"type":"guest","guestId":"guest_01"}')).toEqual({ type: "guest", guestId: "guest_01" });
     expect(parseClientMessage('{"type":"action","commandId":"player_01:7","action":"move","payload":{"x":1}}')).toEqual({
       type: "action",
       commandId: "player_01:7",
