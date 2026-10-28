@@ -191,7 +191,8 @@ function renderGame(view, log = "对局状态已同步。", error = "", history 
   byId("game-cycle").textContent = world.cycle;
   byId("game-area").textContent = area?.name ?? player.area;
   byId("game-phase").textContent = !player.alive ? "已死亡" : world.phase === "finished" ? "已结算" : `TURN ${world.turn}`;
-  const warning = world.warningArea === player.area;
+  const warnings = new Set(world.warningAreas ?? (world.warningArea ? [world.warningArea] : []));
+  const warning = warnings.has(player.area);
   byId("game-zone").textContent = world.forbidden.includes(player.area) ? "禁区" : warning ? "即将封锁" : "安全区域";
   byId("game-zone").className = warning || world.forbidden.includes(player.area) ? "coral" : "mint";
   byId("game-notice").textContent = error ? `${log}（${error}）` : log;
@@ -201,11 +202,14 @@ function renderGame(view, log = "对局状态已同步。", error = "", history 
   appendGameLog(log, Boolean(error));
 
   const map = byId("game-map"); map.replaceChildren();
-  for (const neighborId of area?.neighbors ?? []) {
-    const destination = areas.find(({ id }) => id === neighborId);
-    const closed = world.forbidden.includes(neighborId);
-    const button = actionButton(closed ? `${destination.name} · 禁区` : destination.name, () => sendGameAction("game_move", { to: neighborId }), world.warningArea === neighborId || closed ? "warn" : "");
-    button.disabled = closed || !player.alive || Boolean(player.enemy);
+  for (const destination of areas) {
+    const closed = world.forbidden.includes(destination.id);
+    const current = destination.id === player.area;
+    const warningSoon = warnings.has(destination.id);
+    const label = `${destination.grid} · ${destination.name}${closed ? " · 禁区" : warningSoon ? " · 预警" : current ? " · 当前" : ""}`;
+    const button = actionButton(label, () => sendGameAction("game_move", { to: destination.id }), warningSoon || closed ? "warn" : "");
+    button.disabled = closed || current || !player.alive || Boolean(player.enemy);
+    if (current) button.setAttribute("aria-current", "location");
     map.append(button);
   }
 
@@ -231,6 +235,7 @@ function renderGame(view, log = "对局状态已同步。", error = "", history 
   if (player.weapon) equipment.append(actionButton("卸下武器", () => sendGameAction("game_unequip", { slot: "weapon" })));
   if (player.armor) equipment.append(actionButton("卸下护甲", () => sendGameAction("game_unequip", { slot: "armor" })));
   const inventory = byId("game-inventory"); inventory.replaceChildren();
+  inventory.setAttribute("aria-label", `六格背包，已使用 ${player.inventory.length} / 6 格`);
   if (!player.inventory.length) inventory.textContent = "背包为空。";
   for (const item of player.inventory) {
     const row = document.createElement("div"); row.className = "inventory-row";
@@ -255,7 +260,7 @@ function renderGame(view, log = "对局状态已同步。", error = "", history 
     const detail = document.createElement("small"); detail.textContent = ` ${product.kind} · 效果 ${product.power} · ${product.price} LOOP`;
     info.append(name, detail);
     const buy = actionButton("购买", () => sendGameAction("game_shop_buy", { catalogId: product.catalogId }));
-    buy.disabled = !player.alive || player.money < product.price || player.inventory.length >= 7;
+    buy.disabled = !player.alive || player.money < product.price || player.inventory.length >= 6;
     row.append(info, buy); shopList.append(row);
   }
 
