@@ -17,6 +17,11 @@ Initial endpoints:
 - `GET /api/catalog`
 - `GET /api/rooms/:roomId/socket` with a WebSocket upgrade
 
+Room sockets now send a persisted `room_snapshot` on connection. Clients must
+`join` before submitting an `action`; actions include a unique `commandId` and
+receive authoritative, monotonically sequenced room events. The room retains a
+bounded command-id window so reconnects cannot apply the same command twice.
+
 See [Architecture](docs/ARCHITECTURE.md) and [Migration plan](docs/MIGRATION_PLAN.md).
 
 ## Secrets
