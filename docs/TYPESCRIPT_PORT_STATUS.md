@@ -1,0 +1,17 @@
+# ACFUN DTS TypeScript port status
+
+This ledger is generated against the captured Baota baseline. It prevents a partially playable rewrite from being reported as a 1:1 port.
+
+- Modules listed by the legacy loader: **744**
+- Enabled modules: **735**
+- Fully parity-accepted modules: **0**
+- Partially ported modules: **12**
+- Pending modules: **732**
+- Player database fields captured: **124**
+- Automated TypeScript parity tests in this milestone: **43**
+
+Partially ported modules: `player`, `map`, `lvlctl`, `itemmain`, `pose`, `tactic`, `edible`, `explore`, `weather`, `rest`, `wound`, `metman`.
+
+“Partial” means only the named, tested mechanics have been translated. A module can become “complete” only after every code/config/template hook has a parity fixture against `/www/wwwroot/dts-game-test`.
+
+Run `npm run generate:migration` beside the captured legacy source to regenerate the full 744-row JSON ledger at `docs/legacy-module-migration.json`.
