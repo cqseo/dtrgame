@@ -1,6 +1,6 @@
 import { LEGACY_AREAS, LEGACY_MAP_RULES, PROTOTYPE_AREA_ALIASES, isLegacyAreaId, normalizeSavedArea, type LegacyAreaId } from "./legacy-map";
 
-import { WEATHER, TEAM_RULES, detectWeaponFamily, weatherAttack, weatherDefense, weatherDiscoveryChance, type WeaponProficiency, type EquipmentPart } from "./legacy-rules";
+import { WEATHER, TEAM_RULES, detectWeaponFamily, weatherAttack, weatherDefense, weatherDiscoveryChance, FORBIDDEN_RULES, type WeaponProficiency, type EquipmentPart } from "./legacy-rules";
 
 export type AreaId = LegacyAreaId;
 export type ItemKind = "weapon" | "armor" | "heal" | "stamina" | "antidote" | "material" | "trap";
@@ -85,6 +85,8 @@ export interface GameWorldState {
   weatherId: number;
   teams: Record<string, string[]>;
   traps: Array<{ id: string; area: AreaId; owner: string; power: number }>;
+  areaDueAt: number;
+  areaWarned: boolean;
 }
 
 export interface GameTransition {
@@ -139,7 +141,7 @@ function makeItem(world: GameWorldState, definition: Omit<GameItem, "instanceId"
 }
 
 export function createGameWorld(seed = 20261028, mode: GameWorldState["mode"] = "infinite"): GameWorldState {
-  return { mode, phase: "waiting", cycle: 1, turn: 0, seed: seed >>> 0, forbidden: [...LEGACY_MAP_RULES.startForbidden], warningArea: null, warningAreas: [], players: {}, corpses: [], winnerId: null, weatherId: 2, teams: {}, traps: [] };
+  return { mode, phase: "waiting", cycle: 1, turn: 0, seed: seed >>> 0, forbidden: [...LEGACY_MAP_RULES.startForbidden], warningArea: null, warningAreas: [], players: {}, corpses: [], winnerId: null, weatherId: 2, teams: {}, traps: [], areaDueAt: Date.now() + FORBIDDEN_RULES.intervalMs, areaWarned: false };
 }
 
 function createPlayer(world: GameWorldState, playerId: string): GamePlayerState {
@@ -214,6 +216,8 @@ function normalizeSavedWorldAreas(world: GameWorldState): GameWorldState {
   world.weatherId ??= 2;
   world.teams ??= {};
   world.traps ??= [];
+  world.areaDueAt ??= Date.now() + FORBIDDEN_RULES.intervalMs;
+  world.areaWarned ??= world.warningAreas.length > 0;
   for (const corpse of world.corpses) corpse.area = normalizeSavedArea(corpse.area);
   world.forbidden = [...new Set((world.forbidden ?? []).map(normalizeSavedArea))];
   world.warningAreas = (world.warningAreas ?? (world.warningArea ? [world.warningArea] : [])).map(normalizeSavedArea);
@@ -221,49 +225,55 @@ function normalizeSavedWorldAreas(world: GameWorldState): GameWorldState {
   return world;
 }
 
-function advanceWorld(world: GameWorldState): string {
-  world.turn += 1;
-  let notice = "";
-  // The prototype has a turn clock rather than a realtime game clock.
-  // Preserve its pacing here, but restore the legacy four-area waves.
-  if (world.turn % 8 === 5 && world.warningAreas.length === 0) {
-    const available = GAME_AREAS.filter(({ id }) => !world.forbidden.includes(id)).map(({ id }) => id);
-    for (let i = 0; i < LEGACY_MAP_RULES.forbiddenPerWave && available.length; i += 1) {
-      const index = Math.floor(nextRandom(world) * available.length);
-      world.warningAreas.push(available.splice(index, 1)[0]!);
-    }
-    world.warningArea = world.warningAreas[0] ?? null;
-    if (world.warningAreas.length) notice = ` 禁区预告：${world.warningAreas.map((id) => areaById(id).name).join("、")}即将封锁。`;
-  }
-  if (world.turn % 8 === 0 && world.warningAreas.length) {
-    const closed = [...world.warningAreas];
-    world.forbidden.push(...closed);
-    world.warningAreas = []; world.warningArea = null;
-    for (const player of Object.values(world.players)) {
-      if (player.alive && closed.includes(player.area)) { player.hp = 0; player.alive = false; }
-    }
-    notice = ` 新增禁区：${closed.map((id) => areaById(id).name).join("、")}。`;
-    world.weatherId = Math.floor(nextRandom(world) * WEATHER.length);
-    notice += ` 当前天气：${WEATHER[world.weatherId]!.name}。`;
-    if (world.forbidden.length >= GAME_AREAS.length) {
-      if (world.mode === "infinite") {
-        world.cycle += 1;
-        world.forbidden = [...LEGACY_MAP_RULES.startForbidden];
-        notice += ` 轮回重置，进入第 ${world.cycle} 周目。`;
-      } else {
-        world.phase = "finished";
-        notice += " 所有地区已封锁，游戏结束。";
+/** Advance old-style forbidden zones on wall time, not on arbitrary player actions. */
+export function tickAreaClock(world: GameWorldState, now = Date.now()): string {
+  normalizeSavedWorldAreas(world);
+  if (world.phase !== "active") return "";
+  const messages: string[] = [];
+  for (let step = 0; step < 32 && now >= world.areaDueAt && world.phase === "active"; step++) {
+    if (!world.warningAreas.length) {
+      const candidates = GAME_AREAS.map(({ id }) => id).filter((id) => !world.forbidden.includes(id));
+      for (let n = 0; n < FORBIDDEN_RULES.perWave && candidates.length; n++) {
+        const index = Math.floor(nextRandom(world) * candidates.length);
+        world.warningAreas.push(candidates.splice(index, 1)[0]!);
       }
     }
+    const closing = [...world.warningAreas];
+    world.forbidden = [...new Set([...world.forbidden, ...closing])];
+    world.warningAreas = []; world.warningArea = null; world.areaWarned = false;
+    for (const p of Object.values(world.players)) if (p.alive && closing.includes(p.area)) { p.hp = 0; p.alive = false; }
+    world.weatherId = Math.floor(nextRandom(world) * WEATHER.length);
+    messages.push(`新增禁区：${closing.map((id) => areaById(id).name).join("、")}；天气：${WEATHER[world.weatherId]!.name}。`);
+    world.areaDueAt += FORBIDDEN_RULES.intervalMs;
+    if (world.forbidden.length >= GAME_AREAS.length) {
+      if (world.mode === "infinite") { world.cycle += 1; world.forbidden = [...LEGACY_MAP_RULES.startForbidden]; messages.push(`轮回重置，进入第 ${world.cycle} 周目。`); }
+      else { world.phase = "finished"; messages.push("所有地区已封锁，游戏结束。"); }
+    }
   }
-  const joined = Object.values(world.players);
-  const alive = joined.filter(({ alive }) => alive);
+  if (world.phase === "active" && !world.areaWarned && now >= world.areaDueAt - FORBIDDEN_RULES.warnBeforeMs) {
+    const candidates = GAME_AREAS.map(({ id }) => id).filter((id) => !world.forbidden.includes(id));
+    for (let i = 0; i < FORBIDDEN_RULES.perWave && candidates.length; i++) {
+      const index = Math.floor(nextRandom(world) * candidates.length);
+      world.warningAreas.push(candidates.splice(index, 1)[0]!);
+    }
+    world.warningArea = world.warningAreas[0] ?? null; world.areaWarned = true;
+    if (world.warningAreas.length) messages.push(`60 秒禁区预警：${world.warningAreas.map((id) => areaById(id).name).join("、")}。`);
+  }
+  return messages.join(" ");
+}
+export function nextAreaAlarmAt(world: GameWorldState, now = Date.now()): number | null {
+  if (world.phase !== "active") return null;
+  const deadline = world.areaDueAt || (now + FORBIDDEN_RULES.intervalMs);
+  return Math.max(now + 10, world.areaWarned ? deadline : deadline - FORBIDDEN_RULES.warnBeforeMs);
+}
+function advanceWorld(world: GameWorldState): string {
+  world.turn += 1;
+  const joined = Object.values(world.players), alive = joined.filter(({ alive }) => alive);
   if (world.mode === "standard" && joined.length > 1 && alive.length <= 1) {
-    world.phase = "finished";
-    world.winnerId = alive[0]?.id ?? null;
-    notice += world.winnerId ? " 对局结束，最后的幸存者已经产生。" : " 对局结束，无人生还。";
+    world.phase = "finished"; world.winnerId = alive[0]?.id ?? null;
+    return world.winnerId ? " 对局结束，最后的幸存者已经产生。" : " 对局结束，无人生还。";
   }
-  return notice;
+  return "";
 }
 
 function spawnEnemy(world: GameWorldState, player: GamePlayerState): EnemyState {
@@ -347,6 +357,8 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
       world.forbidden = [...LEGACY_MAP_RULES.startForbidden];
       world.warningAreas = [];
       world.warningArea = null;
+      world.areaWarned = false;
+      world.areaDueAt = Date.now() + FORBIDDEN_RULES.intervalMs;
     }
     return success(world, playerId, "restarted", "轮回重启，角色状态已重置。 ");
   }
@@ -600,7 +612,7 @@ export function getGameView(world: GameWorldState, playerId: string) {
     .map(({ id, alive, kills, level, wave }, index) => ({ rank: index + 1, id, alive, kills, level, wave }));
   return {
     player,
-    world: { mode: world.mode, phase: world.phase, cycle: world.cycle, turn: world.turn, forbidden: world.forbidden, warningArea: world.warningArea, warningAreas: world.warningAreas, winnerId: world.winnerId, weatherId: world.weatherId, weather: WEATHER[world.weatherId] ?? WEATHER[2], teams: world.teams },
+    world: { mode: world.mode, phase: world.phase, cycle: world.cycle, turn: world.turn, forbidden: world.forbidden, warningArea: world.warningArea, warningAreas: world.warningAreas, winnerId: world.winnerId, weatherId: world.weatherId, weather: WEATHER[world.weatherId] ?? WEATHER[2], teams: world.teams, areaDueAt: world.areaDueAt },
     areas: GAME_AREAS,
     shop: catalog.filter(({ price }) => price > 0),
     recipes: CRAFT_RECIPES,
