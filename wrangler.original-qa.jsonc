@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "dtrgame-original-backend-qa-20261028",
+  "main": "original-staging/worker-backend-qa-20261028.js",
+  "compatibility_date": "2026-10-28",
+  "workers_dev": true,
+  "services": [
+    {
+      "binding": "ORIGINAL_ASSETS",
+      "service": "dtrgame-original-1to1-staging"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "LEGACY_DB",
+      "database_name": "dtr-original-compat-20261028",
+      "database_id": "07dc0664-2c2b-4627-b94c-a684fbdb43e8"
+    }
+  ]
+}
