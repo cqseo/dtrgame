@@ -3,31 +3,193 @@
  * These are data and deterministic rules, not a claim that the old PHP
  * engine or its 700+ specialized modules have been completely ported.
  * Sources:
- * include/modules/base/weather/config/weather.config.php
+ * /www/wwwroot/dts-game-test/include/modules/base/weather/config/weather.config.php
  * include/modules/base/weapon/weapon/config/weapon.config.php
  * include/modules/base/armor/config/armor.config.php
  * include/modules/base/team/config/team.config.php
  * include/modules/core/map/config/map.config.php
  */
 export const WEATHER = [
-  { name: "晴天", find: 10, encounter: 10, initiative: 10, attack: 10, defense: 10 },
-  { name: "大晴", find: 20, encounter: 20, initiative: 20, attack: 10, defense: 30 },
-  { name: "多云", find: 0, encounter: 0, initiative: 0, attack: 0, defense: 0 },
-  { name: "小雨", find: -2, encounter: -2, initiative: -5, attack: -5, defense: 0 },
-  { name: "暴雨", find: -3, encounter: -3, initiative: -10, attack: -10, defense: -3 },
-  { name: "台风", find: -10, encounter: -10, initiative: -20, attack: -20, defense: -15 },
-  { name: "雷雨", find: -7, encounter: -7, initiative: -15, attack: -15, defense: -10 },
-  { name: "下雪", find: 5, encounter: 5, initiative: 0, attack: 0, defense: 0 },
-  { name: "起雾", find: -10, encounter: -10, initiative: -7, attack: 0, defense: -20 },
-  { name: "浓雾", find: -20, encounter: -20, initiative: -10, attack: 7, defense: -30 },
-  { name: "瘴气", find: 0, encounter: 0, initiative: -10, attack: 20, defense: -50 },
-  { name: "龙卷风", find: -7, encounter: -7, initiative: -5, attack: -7, defense: -5 },
-  { name: "暴风雪", find: -5, encounter: -5, initiative: 0, attack: -20, defense: -20 },
-  { name: "冰雹", find: -30, encounter: -30, initiative: -5, attack: -5, defense: -3 },
-  { name: "离子暴", find: -5, encounter: -5, initiative: -20, attack: -10, defense: -20 },
-  { name: "辐射尘", find: -20, encounter: -20, initiative: -5, attack: -10, defense: 5 },
-  { name: "臭氧洞", find: 0, encounter: 0, initiative: 0, attack: -10, defense: -30 },
-  { name: "极光", find: 20, encounter: 20, initiative: 20, attack: 10, defense: 30 }
+  {
+    "name": "晴天",
+    "find": 10,
+    "encounter": 10,
+    "initiative": 10,
+    "attack": 10,
+    "defense": 10,
+    "fog": false
+  },
+  {
+    "name": "大晴",
+    "find": 20,
+    "encounter": 20,
+    "initiative": 20,
+    "attack": 10,
+    "defense": 30,
+    "fog": false
+  },
+  {
+    "name": "多云",
+    "find": 0,
+    "encounter": 0,
+    "initiative": 0,
+    "attack": 0,
+    "defense": 0,
+    "fog": false
+  },
+  {
+    "name": "小雨",
+    "find": -2,
+    "encounter": -2,
+    "initiative": -5,
+    "attack": -5,
+    "defense": 0,
+    "fog": false
+  },
+  {
+    "name": "暴雨",
+    "find": -3,
+    "encounter": -3,
+    "initiative": -10,
+    "attack": -10,
+    "defense": -3,
+    "fog": false
+  },
+  {
+    "name": "台风",
+    "find": -10,
+    "encounter": -10,
+    "initiative": -20,
+    "attack": -20,
+    "defense": -15,
+    "fog": false
+  },
+  {
+    "name": "雷雨",
+    "find": -7,
+    "encounter": -7,
+    "initiative": -15,
+    "attack": -15,
+    "defense": -10,
+    "fog": false
+  },
+  {
+    "name": "下雪",
+    "find": 5,
+    "encounter": 5,
+    "initiative": 0,
+    "attack": 0,
+    "defense": 0,
+    "fog": false
+  },
+  {
+    "name": "起雾",
+    "find": -10,
+    "encounter": -10,
+    "initiative": -7,
+    "attack": 0,
+    "defense": -20,
+    "fog": true
+  },
+  {
+    "name": "浓雾",
+    "find": -20,
+    "encounter": -20,
+    "initiative": -10,
+    "attack": 7,
+    "defense": -30,
+    "fog": true
+  },
+  {
+    "name": "瘴气",
+    "find": 0,
+    "encounter": 0,
+    "initiative": -10,
+    "attack": 20,
+    "defense": -50,
+    "fog": false
+  },
+  {
+    "name": "龙卷风",
+    "find": -7,
+    "encounter": -7,
+    "initiative": -5,
+    "attack": -7,
+    "defense": -5,
+    "fog": false
+  },
+  {
+    "name": "暴风雪",
+    "find": -5,
+    "encounter": -5,
+    "initiative": 0,
+    "attack": -20,
+    "defense": -20,
+    "fog": true
+  },
+  {
+    "name": "冰雹",
+    "find": -30,
+    "encounter": -30,
+    "initiative": -5,
+    "attack": -5,
+    "defense": -3,
+    "fog": false
+  },
+  {
+    "name": "离子暴",
+    "find": -5,
+    "encounter": -5,
+    "initiative": -20,
+    "attack": -10,
+    "defense": -20,
+    "fog": false
+  },
+  {
+    "name": "辐射尘",
+    "find": -20,
+    "encounter": -20,
+    "initiative": -5,
+    "attack": -10,
+    "defense": 5,
+    "fog": false
+  },
+  {
+    "name": "臭氧洞",
+    "find": 0,
+    "encounter": 0,
+    "initiative": 0,
+    "attack": -10,
+    "defense": -30,
+    "fog": false
+  },
+  {
+    "name": "极光",
+    "find": 20,
+    "encounter": 20,
+    "initiative": 20,
+    "attack": 10,
+    "defense": 30,
+    "fog": false
+  },
+  {
+    "name": "冷气",
+    "find": 20,
+    "encounter": 20,
+    "initiative": 20,
+    "attack": 0,
+    "defense": 0,
+    "fog": false
+  },
+  {
+    "name": "暖气",
+    "find": 20,
+    "encounter": 20,
+    "initiative": 20,
+    "attack": 0,
+    "defense": 0,
+    "fog": false
+  }
 ] as const;
 
 export type WeatherIndex = number;
