@@ -210,6 +210,7 @@ function normalizeSavedWorldAreas(world: GameWorldState): GameWorldState {
   for (const player of Object.values(world.players)) {
     player.area = normalizeSavedArea(player.area);
     player.proficiencies ??= { wp: 0, wk: 0, wg: 0, wc: 0, wd: 0, wf: 0 };
+    if (player.maxSp < 300) { player.maxSp = 300; player.sp = 300; }
     player.armorParts ??= {};
     player.teamId ??= null;
   }
@@ -348,7 +349,17 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
     if (wasFinished) {
       for (const id of Object.keys(world.players)) world.players[id] = createPlayer(world, id);
       world.corpses = [];
-    } else world.players[playerId] = createPlayer(world, playerId);
+      world.teams = {};
+      world.traps = [];
+    } else {
+      const teamId = world.players[playerId]?.teamId;
+      if (teamId && world.teams[teamId]) {
+        const remaining = world.teams[teamId].filter((id) => id !== playerId);
+        if (remaining.length) world.teams[teamId] = remaining;
+        else delete world.teams[teamId];
+      }
+      world.players[playerId] = createPlayer(world, playerId);
+    }
     world.phase = "active";
     world.winnerId = null;
     if (wasFinished || Object.values(world.players).every((entry) => entry.id === playerId || !entry.alive)) {
