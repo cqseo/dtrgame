@@ -146,7 +146,7 @@ describe("authoritative game engine", () => {
 });
 
 describe("extended legacy mechanics", () => {
-  it("applies original 18-weather effects with stable defaults", async () => {
+  it("applies 20 actual Baota weather effects with stable defaults", async () => {
     const { WEATHER, weatherAttack, weatherDefense, weatherDiscoveryChance } = await import("../src/legacy-rules");
     expect(WEATHER).toHaveLength(20);
     expect(WEATHER[18]).toMatchObject({ name: "冷气", find: 20 });
@@ -157,7 +157,7 @@ describe("extended legacy mechanics", () => {
     expect(weatherDiscoveryChance(60, 15, 9)).toBe(55);
   });
   it("creates original-cost teams, enforces 5-player cap and prevents friendly fire", () => {
-    let world = createGameWorld(202);
+    let world = createGameWorld(202, "standard");
     for (let i = 1; i <= 6; i++) world = applyGameAction(world, "p" + i, "game_enter", undefined).world;
     const leader = applyGameAction(world, "p1", "game_team_create", undefined);
     expect(leader.ok).toBe(true);
