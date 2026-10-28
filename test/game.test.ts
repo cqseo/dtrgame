@@ -148,7 +148,9 @@ describe("authoritative game engine", () => {
 describe("extended legacy mechanics", () => {
   it("applies original 18-weather effects with stable defaults", async () => {
     const { WEATHER, weatherAttack, weatherDefense, weatherDiscoveryChance } = await import("../src/legacy-rules");
-    expect(WEATHER).toHaveLength(18);
+    expect(WEATHER).toHaveLength(20);
+    expect(WEATHER[18]).toMatchObject({ name: "冷气", find: 20 });
+    expect(WEATHER[19]).toMatchObject({ name: "暖气", find: 20 });
     expect(WEATHER[10]).toMatchObject({ name: "瘴气", attack: 20, defense: -50 });
     expect(weatherAttack(100, 10)).toBe(120);
     expect(weatherDefense(100, 10)).toBe(50);
@@ -209,5 +211,16 @@ describe("extended legacy mechanics", () => {
     expect(r.world.traps).toHaveLength(1);
     expect(r.world.traps[0]!.owner).toBe("p1");
     expect(r.world.players.p1!.inventory.find((i) => i.instanceId === instanceId)).toBeUndefined();
+  });
+});
+
+
+describe("Baota installed itemmix dataset", () => {
+  it("imports all 465 live-server recipes rather than 373 upstream variants", async () => {
+    const { LEGACY_CRAFT_RULES, findLegacyCraftMatches } = await import("../src/legacy-recipes");
+    expect(LEGACY_CRAFT_RULES).toHaveLength(465);
+    expect(LEGACY_CRAFT_RULES[0]).toMatchObject({ name: "松茸御饭", rawResult: "'松茸御饭','HS',120,20," });
+    expect(LEGACY_CRAFT_RULES[464]).toMatchObject({ name: "白色方块" });
+    expect(findLegacyCraftMatches(["杂炊","松茸"]).some((r) => r.name === "松茸御饭")).toBe(true);
   });
 });
