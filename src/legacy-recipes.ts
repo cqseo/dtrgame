@@ -1,7 +1,7 @@
 /**
  * Imported from the upstream ACFUN DTS PHP itemmix rule configuration.
- * Source: sillycross/dts/include/modules/base/itemmix/itemmix/config/itemmix.config.php
- * All 373 active syntactic rules preserved in source order, including hidden and event-specific rules.
+ * source: /www/wwwroot/dts-game-test/include/modules/base/itemmix/itemmix/config/itemmix.config.php
+ * All 465 active syntactic rules preserved in source order, including hidden and event-specific rules.
  * This is a rule DATA migration, not a full behavior implementation: class gates, item attributes,
  * event flags, status requirements, and specialized effects still need source-level porting and testing.
  */
@@ -23,7 +23,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "松茸御饭",
     "kind": "HS",
-    "rawResult": "'松茸御饭','HS',120,10,"
+    "rawResult": "'松茸御饭','HS',120,20,"
   },
   {
     "id": "recipe_002",
@@ -34,7 +34,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "咖喱面包",
     "kind": "HH",
-    "rawResult": "'咖喱面包','HH',140,2,"
+    "rawResult": "'咖喱面包','HH',140,8,"
   },
   {
     "id": "recipe_003",
@@ -46,7 +46,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "珍珠奶茶",
     "kind": "HB",
-    "rawResult": "'珍珠奶茶','HB',270,9,"
+    "rawResult": "'珍珠奶茶','HB',270,18,"
   },
   {
     "id": "recipe_004",
@@ -128,7 +128,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "禁忌「Four of a Bread」",
     "kind": "HB",
-    "rawResult": "'禁忌「Four of a Bread」','HB',444,4,'z'"
+    "rawResult": "'禁忌「Four of a Bread」','HB',444,1,'z^res_%LiJ%L@N%LiA%L@T$$CMVGhyZWUgb@YgYSBCcmVhZOOAjSxIQiw"
   },
   {
     "id": "recipe_011",
@@ -140,10 +140,22 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "淡定红茶",
     "kind": "HB",
-    "rawResult": "'淡定红茶','HB',200,20,"
+    "rawResult": "'淡定红茶','HB',200,20,'^res_<:comp_itmsk:>{杯子,WC,1,1,,}1^rtype2'"
   },
   {
     "id": "recipe_012",
+    "group": "h",
+    "ingredients": [
+      "护士帽",
+      "白衣",
+      "针筒"
+    ],
+    "name": "「注射天使-莉莉」★3",
+    "kind": "PB3",
+    "rawResult": "'「注射天使-莉莉」★3','PB3',1000,15,'z'"
+  },
+  {
+    "id": "recipe_013",
     "group": "h",
     "ingredients": [
       "凸眼鱼",
@@ -152,10 +164,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "仰望星空派",
     "kind": "HR",
-    "rawResult": "'仰望星空派','HR',30,3,"
+    "rawResult": "'仰望星空派','HR',50,3,"
   },
   {
-    "id": "recipe_013",
+    "id": "recipe_014",
     "group": "h",
     "ingredients": [
       "河豚鱼",
@@ -167,7 +179,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'鲱鱼罐头','PR9',90,10,"
   },
   {
-    "id": "recipe_014",
+    "id": "recipe_015",
     "group": "h",
     "ingredients": [
       "矿泉水",
@@ -179,7 +191,29 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【社系摧泪弹】','PB',3600,5,'zd'"
   },
   {
-    "id": "recipe_015",
+    "id": "recipe_016",
+    "group": "h",
+    "ingredients": [
+      "油炖萌物「金鲤」",
+      "油炖萌物「石斑」"
+    ],
+    "name": "油炖萌物「什锦板栗」",
+    "kind": "HB",
+    "rawResult": "'油炖萌物「什锦板栗」','HB',900,'∞',"
+  },
+  {
+    "id": "recipe_017",
+    "group": "h",
+    "ingredients": [
+      "油炖油炖萌萌金鲤鲤",
+      "油炖油炖萌萌石斑斑"
+    ],
+    "name": "油炖油炖萌萌什锦什锦板板栗栗",
+    "kind": "HB",
+    "rawResult": "'油炖油炖萌萌什锦什锦板板栗栗','HB',1245,'∞',"
+  },
+  {
+    "id": "recipe_018",
     "group": "wc",
     "ingredients": [
       "汽油",
@@ -190,7 +224,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'☆火焰瓶☆','WC',80,50,'ud'"
   },
   {
-    "id": "recipe_016",
+    "id": "recipe_019",
     "group": "wc",
     "ingredients": [
       "幻之使魔",
@@ -201,7 +235,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'灵魂的结晶','WC',180,240,'rn'"
   },
   {
-    "id": "recipe_017",
+    "id": "recipe_020",
     "group": "wc",
     "ingredients": [
       "幻符【杀人玩偶】",
@@ -213,7 +247,18 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'幻葬『夜雾幻影杀人鬼』','WC',400,'∞','krnyN'"
   },
   {
-    "id": "recipe_018",
+    "id": "recipe_021",
+    "group": "wk",
+    "ingredients": [
+      "【红杀铁剑】",
+      "电磁充能手套"
+    ],
+    "name": "【红杀铁剑·雷击】",
+    "kind": "WK",
+    "rawResult": "'【红杀铁剑·雷击】','WK',300,45,'eu^ac1'"
+  },
+  {
+    "id": "recipe_022",
     "group": "wk",
     "ingredients": [
       "西瓜",
@@ -222,10 +267,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "西瓜刀",
     "kind": "WK",
-    "rawResult": "'西瓜刀','WK',99,'∞','c'"
+    "rawResult": "'西瓜刀','WK',99,'∞','ci'"
   },
   {
-    "id": "recipe_019",
+    "id": "recipe_023",
     "group": "wk",
     "ingredients": [
       "针筒",
@@ -236,7 +281,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'毒针','WK',32,20,'p'"
   },
   {
-    "id": "recipe_020",
+    "id": "recipe_024",
     "group": "wk",
     "ingredients": [
       "毒针",
@@ -247,7 +292,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'D.毒针','WK',48,20,'p'"
   },
   {
-    "id": "recipe_021",
+    "id": "recipe_025",
     "group": "wk",
     "ingredients": [
       "D.毒针",
@@ -259,7 +304,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'D.D.D','WK',80,20,'pN'"
   },
   {
-    "id": "recipe_022",
+    "id": "recipe_026",
     "group": "wk",
     "ingredients": [
       "D.D.D",
@@ -274,7 +319,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'D.D.D.D.C','WK',1976,9,'tNy'"
   },
   {
-    "id": "recipe_023",
+    "id": "recipe_027",
     "group": "wk",
     "ingredients": [
       "白色的羽毛",
@@ -285,7 +330,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'凤凰之羽','WK',20,200,'u'"
   },
   {
-    "id": "recipe_024",
+    "id": "recipe_028",
     "group": "wk",
     "ingredients": [
       "白色的羽毛",
@@ -296,7 +341,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'露琪亚之羽','WK',50,200,'i'"
   },
   {
-    "id": "recipe_025",
+    "id": "recipe_029",
     "group": "wk",
     "ingredients": [
       "白色的羽毛",
@@ -310,7 +355,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'纯白片翼','WK',150,200,'iay'"
   },
   {
-    "id": "recipe_026",
+    "id": "recipe_030",
     "group": "wk",
     "ingredients": [
       "纯白片翼",
@@ -321,7 +366,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'纯白双翼','WK',150,200,'kby'"
   },
   {
-    "id": "recipe_027",
+    "id": "recipe_031",
     "group": "wk",
     "ingredients": [
       "白色的羽毛",
@@ -334,7 +379,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'悲叹片翼','WK',3200,200,'aiy'"
   },
   {
-    "id": "recipe_028",
+    "id": "recipe_032",
     "group": "wk",
     "ingredients": [
       "白色的羽毛",
@@ -347,7 +392,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'精灵片翼','WK',300,200,'uidy'"
   },
   {
-    "id": "recipe_029",
+    "id": "recipe_033",
     "group": "wk",
     "ingredients": [
       "『祝福宝石』",
@@ -358,7 +403,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'Azurewrath','WK',82,122,'rci'"
   },
   {
-    "id": "recipe_030",
+    "id": "recipe_034",
     "group": "wk",
     "ingredients": [
       "悲叹之种",
@@ -369,7 +414,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'憎恨裂片','WK',840,76,'rNce'"
   },
   {
-    "id": "recipe_031",
+    "id": "recipe_035",
     "group": "wk",
     "ingredients": [
       "悲叹之种",
@@ -380,7 +425,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★憎恨裂片★','WK',1240,94,'ripe'"
   },
   {
-    "id": "recipe_032",
+    "id": "recipe_036",
     "group": "wk",
     "ingredients": [
       "绿色方块",
@@ -391,18 +436,18 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'沾满绿锈的铜刀','WK',52,52,'pc'"
   },
   {
-    "id": "recipe_033",
-    "group": "hidden",
+    "id": "recipe_037",
+    "group": "wk",
     "ingredients": [
       "沾满绿锈的铜刀",
       "『祝福宝石』"
     ],
     "name": "妖刀【飞叶】",
     "kind": "WK",
-    "rawResult": "'妖刀【飞叶】','WK',5,2,'rpc'"
+    "rawResult": "'妖刀【飞叶】','WK',52,52,'rpc'"
   },
   {
-    "id": "recipe_034",
+    "id": "recipe_038",
     "group": "hidden",
     "ingredients": [
       "妖刀【飞叶】",
@@ -413,7 +458,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'影刀【秋岚】','WK',522,522,'Zrpdc'"
   },
   {
-    "id": "recipe_035",
+    "id": "recipe_039",
     "group": "wk",
     "ingredients": [
       "■DarthNote■",
@@ -421,10 +466,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "夜刀【月影】",
     "kind": "WK",
-    "rawResult": "'夜刀【月影】','WK',130,170,'pc'"
+    "rawResult": "'夜刀【月影】','WK',130,170,'rpc'"
   },
   {
-    "id": "recipe_036",
+    "id": "recipe_040",
     "group": "wk",
     "ingredients": [
       "夜刀【月影】",
@@ -435,7 +480,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'疾风刀【里月影】','WK',570,240,'rdc'"
   },
   {
-    "id": "recipe_037",
+    "id": "recipe_041",
     "group": "wk",
     "ingredients": [
       "夜刀【月影】",
@@ -446,7 +491,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'破岩刀【焰】','WK',660,120,'Hudc'"
   },
   {
-    "id": "recipe_038",
+    "id": "recipe_042",
     "group": "wk",
     "ingredients": [
       "破岩刀【焰】",
@@ -457,7 +502,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'碎光之晓刀','WK',2400,14,'Hdc'"
   },
   {
-    "id": "recipe_039",
+    "id": "recipe_043",
     "group": "wk",
     "ingredients": [
       "夜刀【月影】",
@@ -468,7 +513,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'七星刀【天权】','WK',777,777,'Nnrp'"
   },
   {
-    "id": "recipe_040",
+    "id": "recipe_044",
     "group": "wk",
     "ingredients": [
       "曾经的荣光-深蓝",
@@ -476,10 +521,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "奥义『冰华⑨咲』",
     "kind": "WKF",
-    "rawResult": "'奥义『冰华⑨咲』','WKF',299,'∞','crkN'"
+    "rawResult": "'奥义『冰华⑨咲』','WKF',299,'∞','crkN^ac1'"
   },
   {
-    "id": "recipe_041",
+    "id": "recipe_045",
     "group": "wk",
     "ingredients": [
       "奥义『冰华⑨咲』",
@@ -487,10 +532,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "奥义『超⑨武神霸斩』",
     "kind": "WKF",
-    "rawResult": "'奥义『超⑨武神霸斩』','WKF',999,'∞','rkNaH'"
+    "rawResult": "'奥义『超⑨武神霸斩』','WKF',999,'∞','rkNaH^ac1'"
   },
   {
-    "id": "recipe_042",
+    "id": "recipe_046",
     "group": "wk",
     "ingredients": [
       "原型武器K",
@@ -498,10 +543,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "骨刃",
     "kind": "WK",
-    "rawResult": "'骨刃','WK',130,80,'',"
+    "rawResult": "'骨刃','WK',130,80,'^ac1',"
   },
   {
-    "id": "recipe_043",
+    "id": "recipe_047",
     "group": "wk",
     "ingredients": [
       "骨刃",
@@ -512,10 +557,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "轰剑【虎眼】",
     "kind": "WK",
-    "rawResult": "'轰剑【虎眼】','WK',360,200,'',"
+    "rawResult": "'轰剑【虎眼】','WK',360,200,'^ac1',"
   },
   {
-    "id": "recipe_044",
+    "id": "recipe_048",
     "group": "wk",
     "ingredients": [
       "轰剑【虎眼】",
@@ -525,10 +570,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "吼剑【地咬】",
     "kind": "WK",
-    "rawResult": "'吼剑【地咬】','WK',840,120,'',"
+    "rawResult": "'吼剑【地咬】','WK',840,120,'N^ac1',"
   },
   {
-    "id": "recipe_045",
+    "id": "recipe_049",
     "group": "wk",
     "ingredients": [
       "轰剑【虎眼】",
@@ -538,24 +583,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "吼剑【地咬】",
     "kind": "WK",
-    "rawResult": "'吼剑【地咬】','WK',840,120,'',"
+    "rawResult": "'吼剑【地咬】','WK',840,120,'N^ac1',"
   },
   {
-    "id": "recipe_046",
-    "group": "wk",
-    "ingredients": [
-      "吼剑【地咬】",
-      "大型闹钟",
-      "GS【伪Hand_Sonic】",
-      "【逆转的女神】",
-      "触手的力量"
-    ],
-    "name": "冲剑【虎啸】",
-    "kind": "WK",
-    "rawResult": "'冲剑【虎啸】','WK',3170,250,'',"
-  },
-  {
-    "id": "recipe_047",
+    "id": "recipe_050",
     "group": "wk",
     "ingredients": [
       "吼剑【地咬】",
@@ -567,10 +598,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "冲剑【虎啸】",
     "kind": "WK",
-    "rawResult": "'冲剑【虎啸】','WK',4320,250,'',"
+    "rawResult": "'冲剑【虎啸】','WK',4320,250,'Nr^ac1',"
   },
   {
-    "id": "recipe_048",
+    "id": "recipe_051",
     "group": "wk",
     "ingredients": [
       "冲剑【虎啸】",
@@ -580,45 +611,58 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "绝冲剑【虎王】",
     "kind": "WK",
-    "rawResult": "'绝冲剑【虎王】','WK',7290,2350,'Nrd'"
-  },
-  {
-    "id": "recipe_049",
-    "group": "wk",
-    "ingredients": [
-      "绝冲剑【虎王】",
-      "最终战术『蝎尾』"
-    ],
-    "name": "绝冲大剑【神威】",
-    "kind": "WK",
-    "rawResult": "'绝冲大剑【神威】','WK',80000,'∞','ZNnyrdf'"
-  },
-  {
-    "id": "recipe_050",
-    "group": "wk",
-    "ingredients": [
-      "冰封的『Oathkeeper』",
-      "火把"
-    ],
-    "name": "『Oathkeeper』",
-    "kind": "WK",
-    "rawResult": "'『Oathkeeper』','WK',300,10,'u'"
-  },
-  {
-    "id": "recipe_051",
-    "group": "wk",
-    "ingredients": [
-      "冰封的『Oathkeeper』",
-      "解冻药水"
-    ],
-    "name": "『Oathkeeper』",
-    "kind": "WK",
-    "rawResult": "'『Oathkeeper』','WK',300,10,'u'"
+    "rawResult": "'绝冲剑【虎王】','WK',7290,2350,'Nnrd^ac1'"
   },
   {
     "id": "recipe_052",
     "group": "wk",
     "ingredients": [
+      "冲剑【虎啸】",
+      "GOTHIC的ID卡",
+      "头奖壶 777",
+      "『呜——上上下下左右左右BABA！』"
+    ],
+    "name": "绝冲剑【虎王】",
+    "kind": "WK",
+    "rawResult": "'绝冲剑【虎王】','WK',7290,2350,'Nnrd^ac1'"
+  },
+  {
+    "id": "recipe_053",
+    "group": "wk",
+    "ingredients": [
+      "绝冲剑【虎王】",
+      "最终战术『剑海』"
+    ],
+    "name": "绝冲大剑【神威】",
+    "kind": "WK",
+    "rawResult": "'绝冲大剑【神威】','WK',80000,'∞','ZNnyrdh^ac1'"
+  },
+  {
+    "id": "recipe_054",
+    "group": "hidden",
+    "ingredients": [
+      "冰封的『Oathkeeper』",
+      "火把"
+    ],
+    "name": "『Oathkeeper』",
+    "kind": "WK",
+    "rawResult": "'『Oathkeeper』','WK',300,10,'u'"
+  },
+  {
+    "id": "recipe_055",
+    "group": "wk",
+    "ingredients": [
+      "冰封的『Oathkeeper』",
+      "解冻药水"
+    ],
+    "name": "『Oathkeeper』",
+    "kind": "WK",
+    "rawResult": "'『Oathkeeper』','WK',300,10,'u'"
+  },
+  {
+    "id": "recipe_056",
+    "group": "hidden",
+    "ingredients": [
       "冰封的『Oblivion』",
       "火把"
     ],
@@ -627,7 +671,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『Oblivion』','WK',300,10,'i'"
   },
   {
-    "id": "recipe_053",
+    "id": "recipe_057",
     "group": "wk",
     "ingredients": [
       "冰封的『Oblivion』",
@@ -638,7 +682,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『Oblivion』','WK',300,10,'i'"
   },
   {
-    "id": "recipe_054",
+    "id": "recipe_058",
     "group": "wk",
     "ingredients": [
       "『Oathkeeper』",
@@ -649,7 +693,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『Two Become One』','WK',450,20,'ui'"
   },
   {
-    "id": "recipe_055",
+    "id": "recipe_059",
     "group": "wp",
     "ingredients": [
       "电击鞭",
@@ -661,7 +705,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『T-LINK念动冲拳』','WP',180,'∞','e'"
   },
   {
-    "id": "recipe_056",
+    "id": "recipe_060",
     "group": "wp",
     "ingredients": [
       "☆电击器☆",
@@ -673,7 +717,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『T-LINK念动冲拳』','WP',240,'∞','e'"
   },
   {
-    "id": "recipe_057",
+    "id": "recipe_061",
     "group": "wp",
     "ingredients": [
       "『T-LINK念动冲拳』",
@@ -684,7 +728,29 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『T-LINK天上天下念动连击拳』','WP',240,'∞','erN'"
   },
   {
-    "id": "recipe_058",
+    "id": "recipe_062",
+    "group": "wp",
+    "ingredients": [
+      "『T-LINK天上天下念动连击拳』",
+      "某种机械设备"
+    ],
+    "name": "『作战队形R』",
+    "kind": "WP",
+    "rawResult": "'『作战队形R』','WP',600,'∞','erNLd'"
+  },
+  {
+    "id": "recipe_063",
+    "group": "wp",
+    "ingredients": [
+      "『作战队形R』",
+      "『高性能双重激光』"
+    ],
+    "name": "『T-LINK天上天下一击必杀炮』",
+    "kind": "WPD",
+    "rawResult": "'『T-LINK天上天下一击必杀炮』','WPD',3000,'∞','erNLdZ'"
+  },
+  {
+    "id": "recipe_064",
     "group": "wp",
     "ingredients": [
       "冰沙",
@@ -696,7 +762,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'冰棍棒','WP',19,39,'ir'"
   },
   {
-    "id": "recipe_059",
+    "id": "recipe_065",
     "group": "wp",
     "ingredients": [
       "【北斗百裂拳】",
@@ -707,7 +773,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【北斗有情破颜拳】','WP',390,100,'drny'"
   },
   {
-    "id": "recipe_060",
+    "id": "recipe_066",
     "group": "wp",
     "ingredients": [
       "☆金属拳套☆",
@@ -718,7 +784,18 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'☆简易火箭飞拳☆','WP',160,'∞','cd'"
   },
   {
-    "id": "recipe_061",
+    "id": "recipe_067",
+    "group": "wp",
+    "ingredients": [
+      "☆金属拳套☆",
+      "能量弹药"
+    ],
+    "name": "☆简易火箭飞拳☆",
+    "kind": "WP",
+    "rawResult": "'☆简易火箭飞拳☆','WP',160,'∞','cd'"
+  },
+  {
+    "id": "recipe_068",
     "group": "wp",
     "ingredients": [
       "☆简易火箭飞拳☆",
@@ -729,7 +806,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★火箭飞拳★','WP',400,'∞','cdN'"
   },
   {
-    "id": "recipe_062",
+    "id": "recipe_069",
     "group": "wp",
     "ingredients": [
       "《哲♂学》",
@@ -741,7 +818,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'森之妖精的棍棒','WP',200,60,'re'"
   },
   {
-    "id": "recipe_063",
+    "id": "recipe_070",
     "group": "wp",
     "ingredients": [
       "『祝福宝石』",
@@ -752,7 +829,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'萨卡兰姆神圣棍棒','WP',150,140,'Nwcy'"
   },
   {
-    "id": "recipe_064",
+    "id": "recipe_071",
     "group": "wp",
     "ingredients": [
       "悲叹之种",
@@ -763,7 +840,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'妖邪必败','WP',1540,200,'Nfcy'"
   },
   {
-    "id": "recipe_065",
+    "id": "recipe_072",
     "group": "wp",
     "ingredients": [
       "『延展御柱』",
@@ -772,21 +849,21 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "御柱「Meteoric Onbashira」",
     "kind": "WP",
-    "rawResult": "'御柱「Meteoric Onbashira」','WP',200,50,'Nir'"
+    "rawResult": "'御柱「Meteoric Onbashira」','WP',200,140,'NirZ'"
   },
   {
-    "id": "recipe_066",
+    "id": "recipe_073",
     "group": "wp",
     "ingredients": [
       "手机",
-      "手枪子弹"
+      "实体子弹"
     ],
     "name": "『诺基亚』",
     "kind": "WP",
-    "rawResult": "'『诺基亚』','WP',50,9999,'N'"
+    "rawResult": "'『诺基亚』','WP',50,9999,'Nw'"
   },
   {
-    "id": "recipe_067",
+    "id": "recipe_074",
     "group": "wp",
     "ingredients": [
       "『诺基亚』",
@@ -796,12 +873,35 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
       "防弹背心",
       "防弹背心"
     ],
-    "name": "『曾经的荣光-诺基亚』",
+    "name": "『诺基亚3210』",
     "kind": "WP",
-    "rawResult": "'『曾经的荣光-诺基亚』','WP',255,9999,'NAZ'"
+    "rawResult": "'『诺基亚3210』','WP',321,9999,'NAa^ac1Z'"
   },
   {
-    "id": "recipe_068",
+    "id": "recipe_075",
+    "group": "wp",
+    "ingredients": [
+      "『诺基亚3210』[+4]",
+      "数据……碎片"
+    ],
+    "name": "『曾经的荣光-诺基亚』",
+    "kind": "WP",
+    "rawResult": "'『曾经的荣光-诺基亚』','WP',1865,'∞','NAaR^ac1^alt_<:comp_itmsk:>{A}1Z'"
+  },
+  {
+    "id": "recipe_076",
+    "group": "wp",
+    "ingredients": [
+      "『诺基亚3210』[+4]",
+      "数据……碎片",
+      "★王家之盾★"
+    ],
+    "name": "『曾经的荣光-诺基亚』",
+    "kind": "WP",
+    "rawResult": "'『曾经的荣光-诺基亚』','WP',1865,'∞','NAaR^ac1^wc1^alt_<:comp_itmsk:>{DB}1Z'"
+  },
+  {
+    "id": "recipe_077",
     "group": "wp",
     "ingredients": [
       "葱娘の葱",
@@ -809,10 +909,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "葱娘V4X的合成器",
     "kind": "WP",
-    "rawResult": "'葱娘V4X的合成器','WP',200,50,'tr'"
+    "rawResult": "'葱娘V4X的合成器','WP',200,50,'tr^sa2'"
   },
   {
-    "id": "recipe_069",
+    "id": "recipe_078",
     "group": "wp",
     "ingredients": [
       "MIKU的原味内裤",
@@ -820,10 +920,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "MIKU V4X的双马尾",
     "kind": "WP",
-    "rawResult": "'MIKU V4X的双马尾','WP',600,100,'miku'"
+    "rawResult": "'MIKU V4X的双马尾','WP',600,100,'miku^sa4'"
   },
   {
-    "id": "recipe_070",
+    "id": "recipe_079",
     "group": "wp_mrm",
     "ingredients": [
       "雏人形",
@@ -835,7 +935,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【人形降临】','WP',66,666,'t'"
   },
   {
-    "id": "recipe_071",
+    "id": "recipe_080",
     "group": "wp_mrm",
     "ingredients": [
       "【人形降临】",
@@ -847,7 +947,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【人形降临·白恶魔】','WP',666,666,'etAj'"
   },
   {
-    "id": "recipe_072",
+    "id": "recipe_081",
     "group": "wp_mrm",
     "ingredients": [
       "【人形降临·白恶魔】",
@@ -859,7 +959,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【人形降临·光魔】','WP',666,666,'trdj'"
   },
   {
-    "id": "recipe_073",
+    "id": "recipe_082",
     "group": "wp_mrm",
     "ingredients": [
       "【人形降临·光魔】",
@@ -871,7 +971,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【人形降临·神忌】','WP',6666,666,'tbrdj'"
   },
   {
-    "id": "recipe_074",
+    "id": "recipe_083",
     "group": "wp_mrm",
     "ingredients": [
       "【人形降临·忌影】",
@@ -883,7 +983,31 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【人形降临·皇祸】','WP',6666,666,'kBrdj'"
   },
   {
-    "id": "recipe_075",
+    "id": "recipe_084",
+    "group": "wp_mrm",
+    "ingredients": [
+      "【人形降临·光魔】",
+      "『红杀铁剑·淘沙』",
+      "悲叹之种"
+    ],
+    "name": "【人形降临·神忌】",
+    "kind": "WP",
+    "rawResult": "'【人形降临·神忌】','WP',6666,666,'tbrdj'"
+  },
+  {
+    "id": "recipe_085",
+    "group": "wp_mrm",
+    "ingredients": [
+      "【人形降临·忌影】",
+      "幻符『幻破想械』",
+      "悲叹之种"
+    ],
+    "name": "【人形降临·皇祸】",
+    "kind": "WP",
+    "rawResult": "'【人形降临·皇祸】','WP',6666,666,'kBrdj'"
+  },
+  {
+    "id": "recipe_086",
     "group": "wp_mrm",
     "ingredients": [
       "【人形降临·血鬼】",
@@ -895,7 +1019,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【人形降临·终堕天】','WP',6666,666,'fyrdj'"
   },
   {
-    "id": "recipe_076",
+    "id": "recipe_087",
     "group": "wp_mrm",
     "ingredients": [
       "【人形降临·终堕天】",
@@ -907,7 +1031,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【死神降临】','WP',6666,666,'nyNdrv'"
   },
   {
-    "id": "recipe_077",
+    "id": "recipe_088",
     "group": "wp_mrm",
     "ingredients": [
       "【人形降临·终堕天】",
@@ -919,7 +1043,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【死神降临】','WP',6666,666,'ByNdrv'"
   },
   {
-    "id": "recipe_078",
+    "id": "recipe_089",
     "group": "wp_mrm",
     "ingredients": [
       "【人形降临·终堕天】",
@@ -931,7 +1055,40 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【死神降临】','WP',6666,666,'bBNdrv'"
   },
   {
-    "id": "recipe_079",
+    "id": "recipe_090",
+    "group": "wp_mrm",
+    "ingredients": [
+      "【人形降临·终堕天】",
+      "『染星之弓·斯黛拉』"
+    ],
+    "name": "【死神降临】",
+    "kind": "WP",
+    "rawResult": "'【死神降临】','WP',6666,666,'nyNdrv'"
+  },
+  {
+    "id": "recipe_091",
+    "group": "wp_mrm",
+    "ingredients": [
+      "【人形降临·终堕天】",
+      "真 爽 铳 V.J.A."
+    ],
+    "name": "【死神降临】",
+    "kind": "WP",
+    "rawResult": "'【死神降临】','WP',6666,666,'ByNdrv'"
+  },
+  {
+    "id": "recipe_092",
+    "group": "wp_mrm",
+    "ingredients": [
+      "【人形降临·终堕天】",
+      "ACME牌·公开招标·自我防护套装"
+    ],
+    "name": "【死神降临】",
+    "kind": "WP",
+    "rawResult": "'【死神降临】','WP',6666,666,'bBNdrv'"
+  },
+  {
+    "id": "recipe_093",
     "group": "wp_mrm",
     "ingredients": [
       "【死神降临】",
@@ -943,7 +1100,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【死神绝界】','WP',6666,666,'ZBbdrV'"
   },
   {
-    "id": "recipe_080",
+    "id": "recipe_094",
     "group": "wg",
     "ingredients": [
       "『环形激光』",
@@ -955,20 +1112,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『红石光束炮』','WG',240,360,'ud'"
   },
   {
-    "id": "recipe_081",
-    "group": "hidden",
-    "ingredients": [
-      "红宝石方块",
-      "蓝宝石方块",
-      "绿宝石方块",
-      "非法枪械部件"
-    ],
-    "name": "『宝石光束炮-试作型』",
-    "kind": "WG",
-    "rawResult": "'『宝石光束炮-试作型』','WG',1800,144,'ndo'"
-  },
-  {
-    "id": "recipe_082",
+    "id": "recipe_095",
     "group": "wg",
     "ingredients": [
       "老式火枪",
@@ -980,7 +1124,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★发条式突击步枪★','WG',150,100,'r'"
   },
   {
-    "id": "recipe_083",
+    "id": "recipe_096",
     "group": "wg",
     "ingredients": [
       "『60mm火神炮』",
@@ -992,7 +1136,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『迷你鲨』','WG',20,12,'r'"
   },
   {
-    "id": "recipe_084",
+    "id": "recipe_097",
     "group": "wg",
     "ingredients": [
       "『120mm火神炮』",
@@ -1004,7 +1148,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『迷你鲨』','WG',30,12,'r'"
   },
   {
-    "id": "recipe_085",
+    "id": "recipe_098",
     "group": "wg",
     "ingredients": [
       "『迷你鲨』",
@@ -1016,7 +1160,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『巨兽鲨』','WG',180,240,'rc'"
   },
   {
-    "id": "recipe_086",
+    "id": "recipe_099",
     "group": "wg",
     "ingredients": [
       "『巨兽鲨』",
@@ -1028,7 +1172,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『No.101 寂静荣誉方舟骑士鲨』','WG',404,101,'rkc'"
   },
   {
-    "id": "recipe_087",
+    "id": "recipe_100",
     "group": "wg",
     "ingredients": [
       "喷雾器罐",
@@ -1040,7 +1184,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★简易火焰放射器★','WG',150,160,'uo'"
   },
   {
-    "id": "recipe_088",
+    "id": "recipe_101",
     "group": "wg",
     "ingredients": [
       "★阔剑地雷★",
@@ -1052,7 +1196,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【定向阔剑发射器】','WG',810,3,'dNoy'"
   },
   {
-    "id": "recipe_089",
+    "id": "recipe_102",
     "group": "wg",
     "ingredients": [
       "★阔剑地雷★",
@@ -1063,7 +1207,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【定向阔剑发射器】','WG',810,3,'dNoy'"
   },
   {
-    "id": "recipe_090",
+    "id": "recipe_103",
     "group": "wg",
     "ingredients": [
       "★M-200狙击步枪★",
@@ -1074,11 +1218,11 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【磁轨狙击步枪】','WJ',240,12,'eno'"
   },
   {
-    "id": "recipe_091",
+    "id": "recipe_104",
     "group": "wg",
     "ingredients": [
-      "『高性能双重激光』",
-      "『高性能双重激光』",
+      "『高性能环形激光』",
+      "『高性能黑洞激光』",
       "『高性能双重激光』"
     ],
     "name": "☆金色闪光☆",
@@ -1086,7 +1230,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'☆金色闪光☆','WJ',700,1,'NS'"
   },
   {
-    "id": "recipe_092",
+    "id": "recipe_105",
     "group": "wg",
     "ingredients": [
       "恐龙玩偶",
@@ -1098,7 +1242,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'观铃的嘎哦嘎哦恐龙喷火分队','WG',333,10,'ufr'"
   },
   {
-    "id": "recipe_093",
+    "id": "recipe_106",
     "group": "wg",
     "ingredients": [
       "水濑 名雪的半身像",
@@ -1110,7 +1254,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'佐佑理学姐的塑料水枪','WG',333,10,'ikr'"
   },
   {
-    "id": "recipe_094",
+    "id": "recipe_107",
     "group": "wg",
     "ingredients": [
       "『高性能环形激光』",
@@ -1122,7 +1266,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【质子撞击炮】','WG',450,300,'ud'"
   },
   {
-    "id": "recipe_095",
+    "id": "recipe_108",
     "group": "wg",
     "ingredients": [
       "『高性能黑洞激光』",
@@ -1134,7 +1278,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【重力冲击炮】','WG',450,300,'Nd'"
   },
   {
-    "id": "recipe_096",
+    "id": "recipe_109",
     "group": "wg",
     "ingredients": [
       "『高性能双重激光』",
@@ -1146,7 +1290,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【最终鬼畜兵器】','WG',640,300,'uNd'"
   },
   {
-    "id": "recipe_097",
+    "id": "recipe_110",
     "group": "wg",
     "ingredients": [
       "【最终鬼畜兵器】",
@@ -1158,7 +1302,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【霜火协奏曲】','WG',1024,256,'rNuwde'"
   },
   {
-    "id": "recipe_098",
+    "id": "recipe_111",
     "group": "hidden",
     "ingredients": [
       "诚实与魔法",
@@ -1170,7 +1314,20 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'我剥光了小马才做出来的【彩虹光束炮】','WG',777,777,'uiwepd'"
   },
   {
-    "id": "recipe_099",
+    "id": "recipe_112",
+    "group": "wg",
+    "ingredients": [
+      "红宝石方块",
+      "蓝宝石方块",
+      "绿宝石方块",
+      "非法枪械部件"
+    ],
+    "name": "『宝石光束炮-试作型』",
+    "kind": "WG",
+    "rawResult": "'『宝石光束炮-试作型』','WG',1800,144,'ndo'"
+  },
+  {
+    "id": "recipe_113",
     "group": "wd",
     "ingredients": [
       "轻油",
@@ -1181,7 +1338,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'火药','X',1,1,"
   },
   {
-    "id": "recipe_100",
+    "id": "recipe_114",
     "group": "wd",
     "ingredients": [
       "信管",
@@ -1192,7 +1349,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★炸药★','WD',160,60,'d'"
   },
   {
-    "id": "recipe_101",
+    "id": "recipe_115",
     "group": "wd",
     "ingredients": [
       "导火线",
@@ -1203,7 +1360,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★炸药★','WD',160,60,'d'"
   },
   {
-    "id": "recipe_102",
+    "id": "recipe_116",
     "group": "wd",
     "ingredients": [
       "水",
@@ -1214,7 +1371,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'水鸳鸯','WD',50,36,'d'"
   },
   {
-    "id": "recipe_103",
+    "id": "recipe_117",
     "group": "wd",
     "ingredients": [
       "★炸药★",
@@ -1225,7 +1382,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★C4★','WD',250,20,'d'"
   },
   {
-    "id": "recipe_104",
+    "id": "recipe_118",
     "group": "wd",
     "ingredients": [
       "探测器电池",
@@ -1236,7 +1393,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'☆自爆电池☆','WD',140,32,'d'"
   },
   {
-    "id": "recipe_105",
+    "id": "recipe_119",
     "group": "wd",
     "ingredients": [
       "☆自爆电池☆",
@@ -1248,7 +1405,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'脉冲蓄电池','WD',140,60,'ed'"
   },
   {
-    "id": "recipe_106",
+    "id": "recipe_120",
     "group": "wd",
     "ingredients": [
       "☆自爆电池☆",
@@ -1260,7 +1417,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'镭射蓄电池','WD',150,96,'yed'"
   },
   {
-    "id": "recipe_107",
+    "id": "recipe_121",
     "group": "wd",
     "ingredients": [
       "伏特加",
@@ -1268,10 +1425,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "深水炸弹『depth charge』",
     "kind": "WD",
-    "rawResult": "'深水炸弹『depth charge』','WD',133,45,'d'"
+    "rawResult": "'深水炸弹『depth charge』','WD',133,45,'d^ac1'"
   },
   {
-    "id": "recipe_108",
+    "id": "recipe_122",
     "group": "wd",
     "ingredients": [
       "深水炸弹『depth charge』",
@@ -1279,10 +1436,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "莫洛托夫鸡尾酒",
     "kind": "WD",
-    "rawResult": "'莫洛托夫鸡尾酒','WD',150,40,'ud'"
+    "rawResult": "'莫洛托夫鸡尾酒','WD',150,40,'ud^ac1'"
   },
   {
-    "id": "recipe_109",
+    "id": "recipe_123",
     "group": "wd",
     "ingredients": [
       "咖啡酒",
@@ -1290,11 +1447,11 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
       "伏特加"
     ],
     "name": "奇怪的三色饮料",
-    "kind": "HB",
-    "rawResult": "'奇怪的三色饮料','HB',133,2"
+    "kind": "HB^ac1",
+    "rawResult": "'奇怪的三色饮料','HB^ac1',133,2"
   },
   {
-    "id": "recipe_110",
+    "id": "recipe_124",
     "group": "wd",
     "ingredients": [
       "奇怪的三色饮料",
@@ -1303,10 +1460,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "B-52轰炸机",
     "kind": "WD",
-    "rawResult": "'B-52轰炸机','WD',160,35,'ud'"
+    "rawResult": "'B-52轰炸机','WD',160,35,'ud^ac1'"
   },
   {
-    "id": "recipe_111",
+    "id": "recipe_125",
     "group": "wd",
     "ingredients": [
       "密封的酒瓶",
@@ -1315,10 +1472,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "烈焰风暴",
     "kind": "WD",
-    "rawResult": "'烈焰风暴','WD',92,300,'urdZ'"
+    "rawResult": "'烈焰风暴','WD',92,300,'urdZ^ac1'"
   },
   {
-    "id": "recipe_112",
+    "id": "recipe_126",
     "group": "wd",
     "ingredients": [
       "密封的酒瓶",
@@ -1327,10 +1484,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "烈焰风暴",
     "kind": "WD",
-    "rawResult": "'烈焰风暴','WD',92,250,'urdZ'"
+    "rawResult": "'烈焰风暴','WD',92,250,'urdZ^ac1'"
   },
   {
-    "id": "recipe_113",
+    "id": "recipe_127",
     "group": "wd",
     "ingredients": [
       "伏特加",
@@ -1342,7 +1499,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【烈焰红唇】','HB',233,2"
   },
   {
-    "id": "recipe_114",
+    "id": "recipe_128",
     "group": "wd",
     "ingredients": [
       "【烈焰红唇】",
@@ -1350,10 +1507,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "★血腥玛丽★Bloody Mary",
     "kind": "WD",
-    "rawResult": "'★血腥玛丽★Bloody Mary','WD',310,150,'dw'"
+    "rawResult": "'★血腥玛丽★Bloody Mary','WD',310,150,'dw^ac1'"
   },
   {
-    "id": "recipe_115",
+    "id": "recipe_129",
     "group": "wd",
     "ingredients": [
       "伏特加",
@@ -1365,7 +1522,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【燃烧的鸡尾酒】','HB',233,2"
   },
   {
-    "id": "recipe_116",
+    "id": "recipe_130",
     "group": "wd",
     "ingredients": [
       "【燃烧的鸡尾酒】",
@@ -1373,10 +1530,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "★公牛子弹★Bull Shot",
     "kind": "WD",
-    "rawResult": "'★公牛子弹★Bull Shot','WD',210,300,'dr'"
+    "rawResult": "'★公牛子弹★Bull Shot','WD',210,300,'dr^ac1'"
   },
   {
-    "id": "recipe_117",
+    "id": "recipe_131",
     "group": "wd",
     "ingredients": [
       "★血腥玛丽★Bloody Mary",
@@ -1385,10 +1542,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "★血腥公牛★Bloody Bull",
     "kind": "WD",
-    "rawResult": "'★血腥公牛★Bloody Bull','WD',520,450,'dwry'"
+    "rawResult": "'★血腥公牛★Bloody Bull','WD',520,450,'dwry^ac1'"
   },
   {
-    "id": "recipe_118",
+    "id": "recipe_132",
     "group": "wd",
     "ingredients": [
       "焦臭的哑弹",
@@ -1401,7 +1558,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'☆主体思想的光芒☆','WD',166,66,'dN'"
   },
   {
-    "id": "recipe_119",
+    "id": "recipe_133",
     "group": "wd",
     "ingredients": [
       "变形的哑弹",
@@ -1414,7 +1571,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'☆天降伟人的指示☆','WD',166,66,'dc'"
   },
   {
-    "id": "recipe_120",
+    "id": "recipe_134",
     "group": "wd",
     "ingredients": [
       "☆主体思想的光芒☆",
@@ -1425,7 +1582,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★核弹袭击★','WD',2333,3,'dry'"
   },
   {
-    "id": "recipe_121",
+    "id": "recipe_135",
     "group": "wd",
     "ingredients": [
       "☆自爆电池☆",
@@ -1436,7 +1593,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'寒冰炸弹','WD',260,45,'i'"
   },
   {
-    "id": "recipe_122",
+    "id": "recipe_136",
     "group": "wd",
     "ingredients": [
       "『祝福宝石』",
@@ -1448,7 +1605,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★幽灵冲击★','WD',320,200,'Nn'"
   },
   {
-    "id": "recipe_123",
+    "id": "recipe_137",
     "group": "wd",
     "ingredients": [
       "★幽灵冲击★",
@@ -1460,7 +1617,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'奥术飞弹','WD',400,300,'Nnr'"
   },
   {
-    "id": "recipe_124",
+    "id": "recipe_138",
     "group": "wd",
     "ingredients": [
       "寒冰炸弹",
@@ -1469,10 +1626,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "★BIUBIUBIU★",
     "kind": "WD",
-    "rawResult": "'★BIUBIUBIU★','WD',600,400,'ZnyNdr'"
+    "rawResult": "'★BIUBIUBIU★','WD',600,400,'ZnyNdr^ac1'"
   },
   {
-    "id": "recipe_125",
+    "id": "recipe_139",
     "group": "d",
     "ingredients": [
       "数据……碎片",
@@ -1481,10 +1638,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "黑色夺魂曲",
     "kind": "DB",
-    "rawResult": "'黑色夺魂曲','DB',57,77,'ZBb'"
+    "rawResult": "'黑色夺魂曲','DB',1777,777,'ZBb'"
   },
   {
-    "id": "recipe_126",
+    "id": "recipe_140",
     "group": "d",
     "ingredients": [
       "『午夜钟声』",
@@ -1496,18 +1653,19 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'电子马克笔','DA',53,75,'Z'"
   },
   {
-    "id": "recipe_127",
+    "id": "recipe_141",
     "group": "d",
     "ingredients": [
       "探测器电池",
-      "实验装甲A"
+      "实验装甲A",
+      "电子马克笔"
     ],
     "name": "电磁充能手套",
     "kind": "DA",
     "rawResult": "'电磁充能手套','DA',45,15,'E'"
   },
   {
-    "id": "recipe_128",
+    "id": "recipe_142",
     "group": "item",
     "ingredients": [
       "生命探测器",
@@ -1515,10 +1673,57 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "广域生命探测器",
     "kind": "ER",
-    "rawResult": "'广域生命探测器','ER',1,1,2"
+    "rawResult": "'广域生命探测器','ER',1,1,'^rdsk2'"
   },
   {
-    "id": "recipe_129",
+    "id": "recipe_143",
+    "group": "item",
+    "ingredients": [
+      "广域生命探测器",
+      "笔记本电脑",
+      "某种电子零件"
+    ],
+    "name": "高清型生命探测器",
+    "kind": "ER",
+    "rawResult": "'高清型生命探测器','ER',1,1,'^rdsk10'"
+  },
+  {
+    "id": "recipe_144",
+    "group": "item",
+    "ingredients": [
+      "广域生命探测器",
+      "精神界面",
+      "某种电子零件"
+    ],
+    "name": "心灵式生命探测器",
+    "kind": "ER",
+    "rawResult": "'心灵式生命探测器','ER',1,1,'^rdsk18'"
+  },
+  {
+    "id": "recipe_145",
+    "group": "item",
+    "ingredients": [
+      "广域生命探测器",
+      "弱点探测器",
+      "某种电子零件"
+    ],
+    "name": "避难所生命探测器",
+    "kind": "ER",
+    "rawResult": "'避难所生命探测器','ER',1,1,'^rdsk34'"
+  },
+  {
+    "id": "recipe_146",
+    "group": "item",
+    "ingredients": [
+      "高清型生命探测器",
+      "心灵式生命探测器"
+    ],
+    "name": "电子战型探测器",
+    "kind": "ER",
+    "rawResult": "'电子战型探测器','ER',1,1,'^rdsk26'"
+  },
+  {
+    "id": "recipe_147",
     "group": "item",
     "ingredients": [
       "安雅人体冰雕",
@@ -1526,10 +1731,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "武器师安雅的奖赏",
     "kind": "Y",
-    "rawResult": "'武器师安雅的奖赏','Y',1,1,"
+    "rawResult": "'武器师安雅的奖赏','Y',1,1,2"
   },
   {
-    "id": "recipe_130",
+    "id": "recipe_148",
     "group": "item",
     "ingredients": [
       "安雅人体冰雕",
@@ -1540,7 +1745,42 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'武器师安雅的奖赏','Y',1,1,"
   },
   {
-    "id": "recipe_131",
+    "id": "recipe_149",
+    "group": "item",
+    "ingredients": [
+      "幻铁的改造结晶",
+      "解冻药水"
+    ],
+    "name": "武器改造晶体·山铜",
+    "kind": "EI",
+    "rawResult": "'武器改造晶体·山铜','EI',1,1,"
+  },
+  {
+    "id": "recipe_150",
+    "group": "item",
+    "ingredients": [
+      "幻铁的改造结晶",
+      "解冻药水",
+      "『祝福宝石』"
+    ],
+    "name": "武器改造晶体·精钢",
+    "kind": "EI",
+    "rawResult": "'武器改造晶体·精钢','EI',1,1,1"
+  },
+  {
+    "id": "recipe_151",
+    "group": "item",
+    "ingredients": [
+      "幻铁的改造结晶",
+      "解冻药水",
+      "翡翠方块"
+    ],
+    "name": "武器改造晶体·绯金",
+    "kind": "EI",
+    "rawResult": "'武器改造晶体·绯金','EI',1,1,2"
+  },
+  {
+    "id": "recipe_152",
     "group": "item",
     "ingredients": [
       "手机",
@@ -1551,7 +1791,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'移动PC','EE',1,1,"
   },
   {
-    "id": "recipe_132",
+    "id": "recipe_153",
     "group": "item",
     "ingredients": [
       "原型武器G",
@@ -1562,7 +1802,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'电磁发射装置','X',1,1,''"
   },
   {
-    "id": "recipe_133",
+    "id": "recipe_154",
     "group": "item",
     "ingredients": [
       "社员专用的ID卡",
@@ -1574,19 +1814,19 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'游戏解除钥匙','Y',1,1,"
   },
   {
-    "id": "recipe_134",
+    "id": "recipe_155",
     "group": "item",
     "ingredients": [
       "★荆棘式电子地雷★",
       "★阔剑地雷★",
-      "★全图不唯一的野生巨大香蕉★"
+      "★全图唯一的野生巨大香蕉★"
     ],
     "name": "★一发逆转神话★",
     "kind": "TNc",
     "rawResult": "'★一发逆转神话★','TNc',1,1,'x'"
   },
   {
-    "id": "recipe_135",
+    "id": "recipe_156",
     "group": "item",
     "ingredients": [
       "水",
@@ -1598,7 +1838,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'风祭河水','Y',1,1,'x'"
   },
   {
-    "id": "recipe_136",
+    "id": "recipe_157",
     "group": "item",
     "ingredients": [
       "水",
@@ -1610,7 +1850,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'仪水镜','Y',1,1,'x'"
   },
   {
-    "id": "recipe_137",
+    "id": "recipe_158",
     "group": "item",
     "ingredients": [
       "风祭河水",
@@ -1623,7 +1863,18 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'八咫镜','DH',1,1,'bx'"
   },
   {
-    "id": "recipe_138",
+    "id": "recipe_159",
+    "group": "item",
+    "ingredients": [
+      "空白符卡",
+      "《魔女的魔导书》"
+    ],
+    "name": "《魔导师速成攻略》",
+    "kind": "VF",
+    "rawResult": "'《魔导师速成攻略》','VF',233,'1',''"
+  },
+  {
+    "id": "recipe_160",
     "group": "item",
     "ingredients": [
       "《チト的日记》",
@@ -1635,7 +1886,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【More One Night】','ss',200,1,'h'"
   },
   {
-    "id": "recipe_139",
+    "id": "recipe_161",
     "group": "pokemon",
     "ingredients": [
       "《小黄的草帽》",
@@ -1647,7 +1898,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'《小黄的精灵球》','WC',233,'∞','ce',"
   },
   {
-    "id": "recipe_140",
+    "id": "recipe_162",
     "group": "pokemon",
     "ingredients": [
       "《小黄的精灵球》",
@@ -1658,56 +1909,18 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'《小黄的超级球》','WC',233,'∞','Zrce'"
   },
   {
-    "id": "recipe_141",
-    "group": "pokemon",
-    "ingredients": [
-      "《小黄的精灵球》",
-      "《小黄的收服特训》",
-      "露琪亚之羽"
-    ],
-    "name": "《小黄的超级球》",
-    "kind": "WC",
-    "rawResult": "'《小黄的超级球》','WC',233,'∞','Zrice'"
-  },
-  {
-    "id": "recipe_142",
-    "group": "pokemon",
-    "ingredients": [
-      "《小黄的精灵球》",
-      "《小黄的收服特训》",
-      "凤凰之羽"
-    ],
-    "name": "《小黄的超级球》",
-    "kind": "WC",
-    "rawResult": "'《小黄的超级球》','WC',233,'∞','Zruce'"
-  },
-  {
-    "id": "recipe_143",
-    "group": "pokemon",
-    "ingredients": [
-      "《小黄的精灵球》",
-      "《小黄的收服特训》",
-      "露琪亚之羽",
-      "凤凰之羽"
-    ],
-    "name": "《小黄的超级球》",
-    "kind": "WC",
-    "rawResult": "'《小黄的超级球》','WC',233,'∞','Zriuce'"
-  },
-  {
-    "id": "recipe_144",
+    "id": "recipe_163",
     "group": "pokemon",
     "ingredients": [
       "《小黄的超级球》",
-      "《小黄的常磐之力》",
-      "《小黄的收服特训》"
+      "《小黄的常磐之力》"
     ],
     "name": "《小黄的大师球》",
     "kind": "WC",
-    "rawResult": "'《小黄的大师球》','WC',386,'∞','ZcrdNe'"
+    "rawResult": "'《小黄的大师球》','WC',493,'∞','ZcrdNe'"
   },
   {
-    "id": "recipe_145",
+    "id": "recipe_164",
     "group": "pokemon",
     "ingredients": [
       "《小黄的超级球》",
@@ -1717,10 +1930,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "《小黄的大师球》",
     "kind": "WC",
-    "rawResult": "'《小黄的大师球》','WC',493,'∞','ZcrdNeiu'"
+    "rawResult": "'《小黄的大师球》','WC',1997,'∞','ZcrdNeiu'"
   },
   {
-    "id": "recipe_146",
+    "id": "recipe_165",
     "group": "pokemon",
     "ingredients": [
       "《小黄的精灵球》",
@@ -1731,7 +1944,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'小黄的『十万伏特』','WC',251,'∞','cewH'"
   },
   {
-    "id": "recipe_147",
+    "id": "recipe_166",
     "group": "pokemon",
     "ingredients": [
       "小黄的『十万伏特』",
@@ -1744,7 +1957,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'小黄的『百万伏特』','WC',493,'∞','cewrnj'"
   },
   {
-    "id": "recipe_148",
+    "id": "recipe_167",
     "group": "pokemon",
     "ingredients": [
       "小黄的『百万伏特』",
@@ -1757,7 +1970,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'小黄的『伏特攻击』','WC',649,'∞','cedrnZ'"
   },
   {
-    "id": "recipe_149",
+    "id": "recipe_168",
     "group": "pokemon",
     "ingredients": [
       "小黄的『伏特攻击』",
@@ -1767,10 +1980,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "小黄的『皮卡必杀击』",
     "kind": "WC",
-    "rawResult": "'小黄的『皮卡必杀击』','WC',721,'∞','cetdHrnZ'"
+    "rawResult": "'小黄的『皮卡必杀击』','WC',2016,'∞','cetdHrnZ'"
   },
   {
-    "id": "recipe_150",
+    "id": "recipe_169",
     "group": "key",
     "ingredients": [
       "月宫 亚由的半身像",
@@ -1782,7 +1995,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'四季流转的咏叹调','WP',750,1,'N'"
   },
   {
-    "id": "recipe_151",
+    "id": "recipe_170",
     "group": "key",
     "ingredients": [
       "天泽 郁末的半身像",
@@ -1794,7 +2007,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'旁观轮回的覆唱诗','WK',750,1,'n'"
   },
   {
-    "id": "recipe_152",
+    "id": "recipe_171",
     "group": "key",
     "ingredients": [
       "神北 小毬的半身像",
@@ -1806,7 +2019,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'天然属性也是很可怕的！','WD',160,46,'zd'"
   },
   {
-    "id": "recipe_153",
+    "id": "recipe_172",
     "group": "key",
     "ingredients": [
       "四季流转的咏叹调",
@@ -1817,7 +2030,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【KEY系催泪弹】','WD',3600,5,'zd'"
   },
   {
-    "id": "recipe_154",
+    "id": "recipe_173",
     "group": "key",
     "ingredients": [
       "手机",
@@ -1830,7 +2043,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【KEY系未来弹】','WP',860,5,'zdy'"
   },
   {
-    "id": "recipe_155",
+    "id": "recipe_174",
     "group": "key",
     "ingredients": [
       "提示纸条K",
@@ -1843,7 +2056,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【KEY系生命弹】','WG',860,5,'zdry'"
   },
   {
-    "id": "recipe_156",
+    "id": "recipe_175",
     "group": "key",
     "ingredients": [
       "水",
@@ -1856,7 +2069,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'生命之源','Z',1200,1,'z'"
   },
   {
-    "id": "recipe_157",
+    "id": "recipe_176",
     "group": "key",
     "ingredients": [
       "生命之源",
@@ -1868,7 +2081,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'红色的丝带','DB',1200,1,'Aa'"
   },
   {
-    "id": "recipe_158",
+    "id": "recipe_177",
     "group": "key",
     "ingredients": [
       "生命之源",
@@ -1880,7 +2093,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'红色的丝带','DA',1200,1,'Aa'"
   },
   {
-    "id": "recipe_159",
+    "id": "recipe_178",
     "group": "key",
     "ingredients": [
       "生命之源",
@@ -1892,7 +2105,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'红色的丝带','WP',1200,1,'u'"
   },
   {
-    "id": "recipe_160",
+    "id": "recipe_179",
     "group": "key",
     "ingredients": [
       "生命之源",
@@ -1904,7 +2117,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'红色的丝带','WK',1200,1,'N'"
   },
   {
-    "id": "recipe_161",
+    "id": "recipe_180",
     "group": "key",
     "ingredients": [
       "红色的丝带",
@@ -1916,7 +2129,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'【KEY系燃烧弹】','WF',4800,2,'Nuzy'"
   },
   {
-    "id": "recipe_162",
+    "id": "recipe_181",
     "group": "key",
     "ingredients": [
       "生命之源",
@@ -1927,7 +2140,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'舍身成就之羁绊','WCF',233,20,'Z'"
   },
   {
-    "id": "recipe_163",
+    "id": "recipe_182",
     "group": "key",
     "ingredients": [
       "生命之源",
@@ -1938,7 +2151,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'微小日常之爱恋','WKG',233,20,'Z'"
   },
   {
-    "id": "recipe_164",
+    "id": "recipe_183",
     "group": "key",
     "ingredients": [
       "生命之源",
@@ -1949,7 +2162,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'无尽散花之涅磐','WKP',233,20,'Z'"
   },
   {
-    "id": "recipe_165",
+    "id": "recipe_184",
     "group": "key",
     "ingredients": [
       "生命之源",
@@ -1960,7 +2173,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'无法推卸的命运','WDG',233,20,'Z'"
   },
   {
-    "id": "recipe_166",
+    "id": "recipe_185",
     "group": "key",
     "ingredients": [
       "生命之源",
@@ -1971,7 +2184,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'破灭未来的残光','WKF',233,20,'Z'"
   },
   {
-    "id": "recipe_167",
+    "id": "recipe_186",
     "group": "key",
     "ingredients": [
       "生命之源",
@@ -1982,7 +2195,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'来自未来的奇迹','WCP',233,20,'Z'"
   },
   {
-    "id": "recipe_168",
+    "id": "recipe_187",
     "group": "key",
     "ingredients": [
       "生命之源",
@@ -1993,7 +2206,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'该物品不存在！','ss',98,98,'Z'"
   },
   {
-    "id": "recipe_169",
+    "id": "recipe_188",
     "group": "key",
     "ingredients": [
       "红色的丝带",
@@ -2007,7 +2220,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'篝酱的奇迹☆丝带～刃','WK',4200,100,'cjN'"
   },
   {
-    "id": "recipe_170",
+    "id": "recipe_189",
     "group": "cube",
     "ingredients": [
       "绿色方块",
@@ -2018,7 +2231,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'炙热的绶带','DH',180,80,"
   },
   {
-    "id": "recipe_171",
+    "id": "recipe_190",
     "group": "cube",
     "ingredients": [
       "红色方块",
@@ -2029,7 +2242,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'坚强戒指','DA',180,80,"
   },
   {
-    "id": "recipe_172",
+    "id": "recipe_191",
     "group": "cube",
     "ingredients": [
       "金色方块",
@@ -2040,7 +2253,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'活力之靴','DF',180,80,"
   },
   {
-    "id": "recipe_173",
+    "id": "recipe_192",
     "group": "cube",
     "ingredients": [
       "红色方块",
@@ -2051,7 +2264,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'红宝石方块','X',1,1,"
   },
   {
-    "id": "recipe_174",
+    "id": "recipe_193",
     "group": "cube",
     "ingredients": [
       "金色方块",
@@ -2062,7 +2275,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'蓝宝石方块','X',1,1,"
   },
   {
-    "id": "recipe_175",
+    "id": "recipe_194",
     "group": "cube",
     "ingredients": [
       "蓝色方块",
@@ -2073,7 +2286,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'绿宝石方块','X',1,1,"
   },
   {
-    "id": "recipe_176",
+    "id": "recipe_195",
     "group": "cube",
     "ingredients": [
       "金色方块",
@@ -2084,7 +2297,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'心金方块','X',1,1,"
   },
   {
-    "id": "recipe_177",
+    "id": "recipe_196",
     "group": "cube",
     "ingredients": [
       "银色方块",
@@ -2095,7 +2308,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'魂银方块','X',1,1,"
   },
   {
-    "id": "recipe_178",
+    "id": "recipe_197",
     "group": "cube",
     "ingredients": [
       "黄色方块",
@@ -2106,7 +2319,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'翡翠方块','X',1,1,"
   },
   {
-    "id": "recipe_179",
+    "id": "recipe_198",
     "group": "cube",
     "ingredients": [
       "红宝石方块",
@@ -2117,7 +2330,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'绿宝石方块','X',1,2,"
   },
   {
-    "id": "recipe_180",
+    "id": "recipe_199",
     "group": "cube",
     "ingredients": [
       "绿宝石方块",
@@ -2128,7 +2341,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'黄色的宝石枪','WG',240,180,'e'"
   },
   {
-    "id": "recipe_181",
+    "id": "recipe_200",
     "group": "cube",
     "ingredients": [
       "绿宝石方块",
@@ -2139,7 +2352,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'红色的宝石刀','WK',240,180,'u'"
   },
   {
-    "id": "recipe_182",
+    "id": "recipe_201",
     "group": "cube",
     "ingredients": [
       "绿宝石方块",
@@ -2150,7 +2363,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'蓝色的宝石锤','WP',240,180,'i'"
   },
   {
-    "id": "recipe_183",
+    "id": "recipe_202",
     "group": "cube",
     "ingredients": [
       "绿宝石方块",
@@ -2161,7 +2374,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'绿色的宝石镖','WC',240,180,'p'"
   },
   {
-    "id": "recipe_184",
+    "id": "recipe_203",
     "group": "cube",
     "ingredients": [
       "绿宝石方块",
@@ -2172,7 +2385,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'金色的宝石炸弹','WD',240,180,'d'"
   },
   {
-    "id": "recipe_185",
+    "id": "recipe_204",
     "group": "cube",
     "ingredients": [
       "绿宝石方块",
@@ -2183,7 +2396,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'银色的宝石符卡','WF',240,180,'w'"
   },
   {
-    "id": "recipe_186",
+    "id": "recipe_205",
     "group": "cube",
     "ingredients": [
       "绿宝石方块",
@@ -2194,7 +2407,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'心金色的宝石弓','WB',240,'∞','c'"
   },
   {
-    "id": "recipe_187",
+    "id": "recipe_206",
     "group": "cube",
     "ingredients": [
       "绿宝石方块",
@@ -2205,7 +2418,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'魂银色的宝石重炮','WJ',240,'∞','c'"
   },
   {
-    "id": "recipe_188",
+    "id": "recipe_207",
     "group": "hidden",
     "ingredients": [
       "绿宝石方块",
@@ -2216,7 +2429,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'黄鸡的宝石大炮','WJ',1,1,'uiwepo'"
   },
   {
-    "id": "recipe_189",
+    "id": "recipe_208",
     "group": "cube",
     "ingredients": [
       "红色的宝石刀",
@@ -2227,7 +2440,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★恐惧的黑色安息日★','WK',240,320,'rudy'"
   },
   {
-    "id": "recipe_190",
+    "id": "recipe_209",
     "group": "cube",
     "ingredients": [
       "银色的宝石符卡",
@@ -2238,7 +2451,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★失落的银色镇魂歌★','WF',240,320,'rwdy'"
   },
   {
-    "id": "recipe_191",
+    "id": "recipe_210",
     "group": "cube",
     "ingredients": [
       "绿宝石方块",
@@ -2249,7 +2462,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'水晶宝石盾','DA',240,180,'PC'"
   },
   {
-    "id": "recipe_192",
+    "id": "recipe_211",
     "group": "cube",
     "ingredients": [
       "绿宝石方块",
@@ -2260,7 +2473,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'珍珠头盔','DH',360,180,'KDa'"
   },
   {
-    "id": "recipe_193",
+    "id": "recipe_212",
     "group": "cube",
     "ingredients": [
       "绿宝石方块",
@@ -2271,7 +2484,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'钻石靴子','DF',360,180,'GFa'"
   },
   {
-    "id": "recipe_194",
+    "id": "recipe_213",
     "group": "cube",
     "ingredients": [
       "绿宝石方块",
@@ -2282,7 +2495,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'翡翠色的假宝石','A',240,180,'mL'"
   },
   {
-    "id": "recipe_195",
+    "id": "recipe_214",
     "group": "cube",
     "ingredients": [
       "红宝石方块",
@@ -2293,7 +2506,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'深红色的项链','A',240,180,'aM'"
   },
   {
-    "id": "recipe_196",
+    "id": "recipe_215",
     "group": "cube",
     "ingredients": [
       "蓝宝石方块",
@@ -2304,7 +2517,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'蔚蓝色的项链','A',240,180,'Hc'"
   },
   {
-    "id": "recipe_197",
+    "id": "recipe_216",
     "group": "cube",
     "ingredients": [
       "红宝石方块",
@@ -2315,7 +2528,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'终极红宝石之秘药','HB',386,76,'z'"
   },
   {
-    "id": "recipe_198",
+    "id": "recipe_217",
     "group": "cube",
     "ingredients": [
       "蓝宝石方块",
@@ -2326,7 +2539,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'始源蓝宝石之秘药','MV',76,2,'z'"
   },
   {
-    "id": "recipe_199",
+    "id": "recipe_218",
     "group": "cube",
     "ingredients": [
       "黄色方块",
@@ -2338,7 +2551,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★高压电击★','WD',152,251,'red'"
   },
   {
-    "id": "recipe_200",
+    "id": "recipe_219",
     "group": "cube",
     "ingredients": [
       "红色方块",
@@ -2350,7 +2563,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★烈焰冲撞★','WP',152,76,'ru'"
   },
   {
-    "id": "recipe_201",
+    "id": "recipe_220",
     "group": "cube",
     "ingredients": [
       "绿色方块",
@@ -2362,7 +2575,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★飞叶快刀★','WK',152,76,'Zrp'"
   },
   {
-    "id": "recipe_202",
+    "id": "recipe_221",
     "group": "cube",
     "ingredients": [
       "蓝色方块",
@@ -2374,7 +2587,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★急冻光线★','WG',152,251,'ric'"
   },
   {
-    "id": "recipe_203",
+    "id": "recipe_222",
     "group": "cube",
     "ingredients": [
       "金色方块",
@@ -2386,7 +2599,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★齿轮飞碟★','WC',152,386,'rd'"
   },
   {
-    "id": "recipe_204",
+    "id": "recipe_223",
     "group": "cube",
     "ingredients": [
       "银色方块",
@@ -2398,7 +2611,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★精神破坏★','WF',152,251,'rw'"
   },
   {
-    "id": "recipe_205",
+    "id": "recipe_224",
     "group": "cube",
     "ingredients": [
       "水晶方块",
@@ -2410,7 +2623,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★灭亡之歌★','TN',960,2,"
   },
   {
-    "id": "recipe_206",
+    "id": "recipe_225",
     "group": "cube",
     "ingredients": [
       "白色方块",
@@ -2422,7 +2635,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★交织火焰★','WJ',76,1,'ui'"
   },
   {
-    "id": "recipe_207",
+    "id": "recipe_226",
     "group": "cube",
     "ingredients": [
       "黑色方块",
@@ -2434,19 +2647,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'★交织闪电★','WJ',76,1,'ew'"
   },
   {
-    "id": "recipe_208",
-    "group": "hidden",
-    "ingredients": [
-      "黄鸡方块",
-      "黄鸡方块",
-      "黄鸡方块"
-    ],
-    "name": "★黄鸡风暴★",
-    "kind": "WK",
-    "rawResult": "'★黄鸡风暴★','WK',90,35,'rpd'"
-  },
-  {
-    "id": "recipe_209",
+    "id": "recipe_227",
     "group": "cube",
     "ingredients": [
       "X方块",
@@ -2457,7 +2658,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'MEGA宝石方块','X',1,1,''"
   },
   {
-    "id": "recipe_210",
+    "id": "recipe_228",
     "group": "cube",
     "ingredients": [
       "MEGA宝石方块",
@@ -2468,7 +2669,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'火精灵之焰','WG',386,'∞','u'"
   },
   {
-    "id": "recipe_211",
+    "id": "recipe_229",
     "group": "cube",
     "ingredients": [
       "MEGA宝石方块",
@@ -2479,7 +2680,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'叶精灵之刃','WK',386,'∞','p'"
   },
   {
-    "id": "recipe_212",
+    "id": "recipe_230",
     "group": "cube",
     "ingredients": [
       "MEGA宝石方块",
@@ -2490,7 +2691,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'水精灵之波','WC',386,'∞','i'"
   },
   {
-    "id": "recipe_213",
+    "id": "recipe_231",
     "group": "cube",
     "ingredients": [
       "MEGA宝石方块",
@@ -2501,7 +2702,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'雷精灵之闪','WP',386,'∞','e'"
   },
   {
-    "id": "recipe_214",
+    "id": "recipe_232",
     "group": "cube",
     "ingredients": [
       "MEGA宝石方块",
@@ -2509,10 +2710,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "冰精灵之镜",
     "kind": "DB",
-    "rawResult": "'冰精灵之镜','DB',386,493,'AI'"
+    "rawResult": "'冰精灵之镜','DB',386,'∞','AI'"
   },
   {
-    "id": "recipe_215",
+    "id": "recipe_233",
     "group": "cube",
     "ingredients": [
       "MEGA宝石方块",
@@ -2523,7 +2724,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'太阳精灵之光','WD',386,'∞','d'"
   },
   {
-    "id": "recipe_216",
+    "id": "recipe_234",
     "group": "cube",
     "ingredients": [
       "MEGA宝石方块",
@@ -2534,7 +2735,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'月亮精灵之影','WF',386,'∞','w'"
   },
   {
-    "id": "recipe_217",
+    "id": "recipe_235",
     "group": "cube",
     "ingredients": [
       "MEGA宝石方块",
@@ -2545,7 +2746,97 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'仙子精灵之吻','WJ',251,'∞','n'"
   },
   {
-    "id": "recipe_218",
+    "id": "recipe_236",
+    "group": "cube",
+    "ingredients": [
+      "黄鸡方块",
+      "黄鸡方块",
+      "黄鸡方块"
+    ],
+    "name": "★黄鸡风暴★",
+    "kind": "WK",
+    "rawResult": "'★黄鸡风暴★','WK',90,35,'rpd'"
+  },
+  {
+    "id": "recipe_237",
+    "group": "cube",
+    "ingredients": [
+      "★黄鸡风暴★",
+      "★黄鸡风暴★",
+      "★黄鸡风暴★"
+    ],
+    "name": "★黄鸡经世★",
+    "kind": "WP",
+    "rawResult": "'★黄鸡经世★','WP',88888,8888,'rpdBb'"
+  },
+  {
+    "id": "recipe_238",
+    "group": "wf",
+    "ingredients": [
+      "空白符卡",
+      "夜雀歌谱"
+    ],
+    "name": "声符『枭的夜鸣声』",
+    "kind": "WF",
+    "rawResult": "'声符『枭的夜鸣声』','WF',30,'∞','w'"
+  },
+  {
+    "id": "recipe_239",
+    "group": "wf",
+    "ingredients": [
+      "声符『枭的夜鸣声』",
+      "《灵系指南》"
+    ],
+    "name": "夜盲『夜雀之歌』",
+    "kind": "WF",
+    "rawResult": "'夜盲『夜雀之歌』','WF',30,'∞','w^alt_<:comp_itmsk:>{ss}1'"
+  },
+  {
+    "id": "recipe_240",
+    "group": "wf",
+    "ingredients": [
+      "空白符卡",
+      "雏人形"
+    ],
+    "name": "疵符『破裂的护身符』",
+    "kind": "WF",
+    "rawResult": "'疵符『破裂的护身符』','WF',30,'∞','p'"
+  },
+  {
+    "id": "recipe_241",
+    "group": "wf",
+    "ingredients": [
+      "疵符『破裂的护身符』",
+      "《灵系指南》"
+    ],
+    "name": "创符『流刑人形』",
+    "kind": "WF",
+    "rawResult": "'创符『流刑人形』','WF',30,'∞','p^alt_<:comp_itmsk:>{A}1'"
+  },
+  {
+    "id": "recipe_242",
+    "group": "wf",
+    "ingredients": [
+      "空白符卡",
+      "被遗忘的伞"
+    ],
+    "name": "伞符『雨伞的星之交响』",
+    "kind": "WF",
+    "rawResult": "'伞符『雨伞的星之交响』','WF',40,'∞','i'"
+  },
+  {
+    "id": "recipe_243",
+    "group": "wf",
+    "ingredients": [
+      "伞符『雨伞的星之交响』",
+      "《灵系指南》"
+    ],
+    "name": "雨伞『超防水干爽伞妖』",
+    "kind": "WF",
+    "rawResult": "'雨伞『超防水干爽伞妖』','WF',40,'∞','iI^alt_<:comp_itmsk:>{DAS}1'"
+  },
+  {
+    "id": "recipe_244",
     "group": "wf",
     "ingredients": [
       "空白符卡",
@@ -2556,7 +2847,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'霊符「夢想妙珠」','WF',40,'∞','r'"
   },
   {
-    "id": "recipe_219",
+    "id": "recipe_245",
     "group": "wf",
     "ingredients": [
       "空白符卡",
@@ -2568,7 +2859,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'阴阳玉','WFC',90,'∞','d'"
   },
   {
-    "id": "recipe_220",
+    "id": "recipe_246",
     "group": "wf",
     "ingredients": [
       "霊符「夢想妙珠」",
@@ -2579,7 +2870,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'宝符「陰陽宝玉」','WFC',150,'∞','cd'"
   },
   {
-    "id": "recipe_221",
+    "id": "recipe_247",
     "group": "wf",
     "ingredients": [
       "宝符「陰陽宝玉」",
@@ -2587,10 +2878,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "霊符「夢想封印」",
     "kind": "WF",
-    "rawResult": "'霊符「夢想封印」','WF',150,'∞','cnd'"
+    "rawResult": "'霊符「夢想封印」','WF',180,'∞','cnd'"
   },
   {
-    "id": "recipe_222",
+    "id": "recipe_248",
     "group": "wf",
     "ingredients": [
       "霊符「夢想封印」",
@@ -2601,7 +2892,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'神技「八方鬼縛陣」','WFD',240,'∞','crd'"
   },
   {
-    "id": "recipe_223",
+    "id": "recipe_249",
     "group": "wf",
     "ingredients": [
       "霊符「夢想封印」",
@@ -2613,7 +2904,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'神技「八方龍殺陣」','WFD',320,'∞','crd'"
   },
   {
-    "id": "recipe_224",
+    "id": "recipe_250",
     "group": "wf",
     "ingredients": [
       "神技「八方鬼縛陣」",
@@ -2626,7 +2917,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'神霊「夢想封印 瞬」','WFD',300,'∞','cnrdZ'"
   },
   {
-    "id": "recipe_225",
+    "id": "recipe_251",
     "group": "wf",
     "ingredients": [
       "神技「八方龍殺陣」",
@@ -2639,7 +2930,33 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'神霊「夢想封印 瞬」','WFD',450,'∞','cnrdZ'"
   },
   {
-    "id": "recipe_226",
+    "id": "recipe_252",
+    "group": "wf",
+    "ingredients": [
+      "神技「八方鬼縛陣」",
+      "原型武器F",
+      "原型武器D",
+      "『海丽丝』的追踪记录"
+    ],
+    "name": "神霊「夢想封印 瞬」",
+    "kind": "WFD",
+    "rawResult": "'神霊「夢想封印 瞬」','WFD',300,'∞','cnrdZ'"
+  },
+  {
+    "id": "recipe_253",
+    "group": "wf",
+    "ingredients": [
+      "神技「八方龍殺陣」",
+      "原型武器F",
+      "原型武器D",
+      "『海丽丝』的追踪记录"
+    ],
+    "name": "神霊「夢想封印 瞬」",
+    "kind": "WFD",
+    "rawResult": "'神霊「夢想封印 瞬」','WFD',450,'∞','cnrdZ'"
+  },
+  {
+    "id": "recipe_254",
     "group": "wf",
     "ingredients": [
       "神霊「夢想封印 瞬」",
@@ -2650,7 +2967,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「夢想天生」','WFD',32767,'∞','cnrtdZ'"
   },
   {
-    "id": "recipe_227",
+    "id": "recipe_255",
     "group": "wf",
     "ingredients": [
       "空白符卡",
@@ -2661,7 +2978,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'星符『星尘狂欢』','WF',60,'∞','u'"
   },
   {
-    "id": "recipe_228",
+    "id": "recipe_256",
     "group": "wf",
     "ingredients": [
       "空白符卡",
@@ -2673,7 +2990,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'迷你八卦炉','WFG',90,'∞','u'"
   },
   {
-    "id": "recipe_229",
+    "id": "recipe_257",
     "group": "wf",
     "ingredients": [
       "星符『星尘狂欢』",
@@ -2684,7 +3001,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'恋符「非定向光线」','WFG',150,'∞','cf'"
   },
   {
-    "id": "recipe_230",
+    "id": "recipe_258",
     "group": "wf",
     "ingredients": [
       "恋符「非定向光线」",
@@ -2692,10 +3009,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "恋符「极限火花」",
     "kind": "WF",
-    "rawResult": "'恋符「极限火花」','WF',150,'∞','cNf'"
+    "rawResult": "'恋符「极限火花」','WF',180,'∞','cNf'"
   },
   {
-    "id": "recipe_231",
+    "id": "recipe_259",
     "group": "wf",
     "ingredients": [
       "恋符「极限火花」",
@@ -2706,7 +3023,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'光符「地球光」','WFJ',360,'∞','cfd'"
   },
   {
-    "id": "recipe_232",
+    "id": "recipe_260",
     "group": "wf",
     "ingredients": [
       "恋符「极限火花」",
@@ -2718,7 +3035,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'光击「击月」','WFJ',480,'∞','cfd'"
   },
   {
-    "id": "recipe_233",
+    "id": "recipe_261",
     "group": "wf",
     "ingredients": [
       "光符「地球光」",
@@ -2731,7 +3048,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'星符「龙陨星」','WFJ',400,'∞','cNfdZ'"
   },
   {
-    "id": "recipe_234",
+    "id": "recipe_262",
     "group": "wf",
     "ingredients": [
       "光击「击月」",
@@ -2744,18 +3061,91 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'星符「龙陨星」','WFJ',600,'∞','cNfdZ'"
   },
   {
-    "id": "recipe_235",
+    "id": "recipe_263",
+    "group": "wf",
+    "ingredients": [
+      "光符「地球光」",
+      "原型武器F",
+      "原型武器G",
+      "『海丽丝』的追踪记录"
+    ],
+    "name": "星符「龙陨星」",
+    "kind": "WFJ",
+    "rawResult": "'星符「龙陨星」','WFJ',400,'∞','cNfdZ'"
+  },
+  {
+    "id": "recipe_264",
+    "group": "wf",
+    "ingredients": [
+      "光击「击月」",
+      "原型武器F",
+      "原型武器G",
+      "『海丽丝』的追踪记录"
+    ],
+    "name": "星符「龙陨星」",
+    "kind": "WFJ",
+    "rawResult": "'星符「龙陨星」','WFJ',600,'∞','cNfdZ'"
+  },
+  {
+    "id": "recipe_265",
     "group": "wf",
     "ingredients": [
       "星符「龙陨星」",
       "最终战术『银花』"
     ],
-    "name": "「掠日彗星」",
+    "name": "魔炮「超究极火花」",
     "kind": "WFJ",
-    "rawResult": "'「掠日彗星」','WFJ',77000,'∞','cNyfdZ'"
+    "rawResult": "'魔炮「超究极火花」','WFJ',77000,'∞','cNyfdZ'"
   },
   {
-    "id": "recipe_236",
+    "id": "recipe_266",
+    "group": "wf",
+    "ingredients": [
+      "星符「龙陨星」",
+      "最终战术『蝎尾』"
+    ],
+    "name": "「掠日彗星」",
+    "kind": "WFP",
+    "rawResult": "'「掠日彗星」','WFP',89000,'∞','cNyfdZ'"
+  },
+  {
+    "id": "recipe_267",
+    "group": "wf",
+    "ingredients": [
+      "霊符「夢想妙珠」",
+      "御币",
+      "幻之使魔"
+    ],
+    "name": "妖器「无慈悲御币」",
+    "kind": "WPF",
+    "rawResult": "'妖器「无慈悲御币」','WPF',200,180,'NLd^eqpsk37'"
+  },
+  {
+    "id": "recipe_268",
+    "group": "wf",
+    "ingredients": [
+      "星符『星尘狂欢』",
+      "蘑菇",
+      "幻之使魔"
+    ],
+    "name": "妖器「黑暗火花」",
+    "kind": "WGF",
+    "rawResult": "'妖器「黑暗火花」','WGF',200,180,'uf^eqpsk465'"
+  },
+  {
+    "id": "recipe_269",
+    "group": "wf",
+    "ingredients": [
+      "时符『Private Square』",
+      "『永恒的温柔』",
+      "幻之使魔"
+    ],
+    "name": "妖器「银色异次元」",
+    "kind": "WCF",
+    "rawResult": "'妖器「银色异次元」','WCF',200,180,'ik^eqpsk273'"
+  },
+  {
+    "id": "recipe_270",
     "group": "wf",
     "ingredients": [
       "空白符卡",
@@ -2766,7 +3156,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'秘术『一子单传的弹幕』','WF',70,'∞','d'"
   },
   {
-    "id": "recipe_237",
+    "id": "recipe_271",
     "group": "wf",
     "ingredients": [
       "空白符卡",
@@ -2777,7 +3167,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'时符『Private Square』','WF',150,'∞','I'"
   },
   {
-    "id": "recipe_238",
+    "id": "recipe_272",
     "group": "wf",
     "ingredients": [
       "空白符卡",
@@ -2788,7 +3178,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'幽鬼剑『妖童饿鬼之断食』','WF',150,'∞','c'"
   },
   {
-    "id": "recipe_239",
+    "id": "recipe_273",
     "group": "wf",
     "ingredients": [
       "空白符卡",
@@ -2799,7 +3189,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'鬼火『超高密度燐祸术』','WF',170,'∞','u'"
   },
   {
-    "id": "recipe_240",
+    "id": "recipe_274",
     "group": "wf",
     "ingredients": [
       "空白符卡",
@@ -2810,7 +3200,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'风符『风神一扇』','WF',250,'∞','d'"
   },
   {
-    "id": "recipe_241",
+    "id": "recipe_275",
     "group": "wf",
     "ingredients": [
       "空白符卡",
@@ -2822,7 +3212,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'冰符『Icicle Fall』','WF',9,'∞','ir'"
   },
   {
-    "id": "recipe_242",
+    "id": "recipe_276",
     "group": "wf",
     "ingredients": [
       "冰符『Icicle Fall』",
@@ -2834,7 +3224,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'曾经的荣光-深蓝','WF',99,'∞','cri'"
   },
   {
-    "id": "recipe_243",
+    "id": "recipe_277",
     "group": "wf",
     "ingredients": [
       "空白符卡",
@@ -2846,7 +3236,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'紫奥义『弹幕结界』','WF',320,'∞','rd'"
   },
   {
-    "id": "recipe_244",
+    "id": "recipe_278",
     "group": "wf",
     "ingredients": [
       "时符『Private Square』",
@@ -2858,7 +3248,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『咲夜的世界』','WF',120,'∞','ir'"
   },
   {
-    "id": "recipe_245",
+    "id": "recipe_279",
     "group": "wf",
     "ingredients": [
       "『咲夜的世界』",
@@ -2870,7 +3260,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『收缩的世界』','WF',450,'∞','ircy'"
   },
   {
-    "id": "recipe_246",
+    "id": "recipe_280",
     "group": "wf",
     "ingredients": [
       "幽鬼剑『妖童饿鬼之断食』",
@@ -2882,7 +3272,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'空观剑『六根清净斩』','WF',360,'∞','rc'"
   },
   {
-    "id": "recipe_247",
+    "id": "recipe_281",
     "group": "wf",
     "ingredients": [
       "鲜红的生血",
@@ -2891,10 +3281,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "神枪『Spear The Gungnir』",
     "kind": "WF",
-    "rawResult": "'神枪『Spear The Gungnir』','WF',5500,'1','c'"
+    "rawResult": "'神枪『Spear The Gungnir』','WF',5500,1,'c'"
   },
   {
-    "id": "recipe_248",
+    "id": "recipe_282",
     "group": "wf",
     "ingredients": [
       "《东方幻想乡》",
@@ -2906,43 +3296,68 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'梦幻『幻月』','WF',900,'∞','rdcm'"
   },
   {
-    "id": "recipe_249",
+    "id": "recipe_283",
     "group": "wf",
     "ingredients": [
-      "空白符卡",
-      "《魔女的魔导书》"
+      "■魔剑－雷瓦丁■",
+      "☆残页的魔导书☆",
+      "触手的力量"
     ],
-    "name": "《魔导师速成攻略》",
-    "kind": "VF",
-    "rawResult": "'《魔导师速成攻略》','VF',233,'1',''"
-  },
-  {
-    "id": "recipe_250",
-    "group": "wf",
-    "ingredients": [
-      "空白符卡",
-      "★制御棒★",
-      "日符「Royal Flare」"
-    ],
-    "name": "『地狱的人造太阳』",
+    "name": "秘弹『之后就一个人都没有了吗？』",
     "kind": "WF",
-    "rawResult": "'『地狱的人造太阳』','WF',666,'∞',"
+    "rawResult": "'秘弹『之后就一个人都没有了吗？』','WF',7700,1,'NZ'"
   },
   {
-    "id": "recipe_251",
+    "id": "recipe_284",
     "group": "wf",
     "ingredients": [
-      "日&月符『Royal Diamond Ring』",
-      "梦幻『幻月』",
-      "神枪『Spear The Gungnir』",
-      "紫奥义『弹幕结界』"
+      "「妖怪测谎机」",
+      "☆守矢神签☆",
+      "触手的力量"
+    ],
+    "name": "『被厌恶者的哲学』",
+    "kind": "WF",
+    "rawResult": "'『被厌恶者的哲学』','WF',8800,1,'nZ'"
+  },
+  {
+    "id": "recipe_285",
+    "group": "wf",
+    "ingredients": [
+      "正体不明的UFO",
+      "被遗忘的伞",
+      "触手的力量"
+    ],
+    "name": "『平安京的恶梦』",
+    "kind": "WF",
+    "rawResult": "'『平安京的恶梦』','WF',9900,1,'LZ'"
+  },
+  {
+    "id": "recipe_286",
+    "group": "wf",
+    "ingredients": [
+      "秘弹『之后就一个人都没有了吗？』",
+      "『被厌恶者的哲学』",
+      "『平安京的恶梦』"
     ],
     "name": "模式『EX』",
     "kind": "WF",
-    "rawResult": "'模式『EX』','WF',72000,'∞','crdyZB'"
+    "rawResult": "'模式『EX』','WF',72000,'∞','crZyVLn'"
   },
   {
-    "id": "recipe_252",
+    "id": "recipe_287",
+    "group": "wf",
+    "ingredients": [
+      "南京挂花鸭",
+      "「西贡直升机」",
+      "【北斗百裂拳】",
+      "《东方永夜抄》"
+    ],
+    "name": "★ 大 四 喜 ★",
+    "kind": "WF",
+    "rawResult": "'★ 大 四 喜 ★','WF',4444,'∞','ZrnyLh'"
+  },
+  {
+    "id": "recipe_288",
     "group": "wf_pn",
     "ingredients": [
       "红色方块",
@@ -2954,7 +3369,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'火符「Agni Shine」','WF',60,'∞','uU'"
   },
   {
-    "id": "recipe_253",
+    "id": "recipe_289",
     "group": "wf_pn",
     "ingredients": [
       "蓝色方块",
@@ -2966,7 +3381,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'水符「Princess Undine」','WF',70,'∞','iI'"
   },
   {
-    "id": "recipe_254",
+    "id": "recipe_290",
     "group": "wf_pn",
     "ingredients": [
       "绿色方块",
@@ -2978,7 +3393,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'木符「Sylphy Horn」','WF',80,'∞','wW'"
   },
   {
-    "id": "recipe_255",
+    "id": "recipe_291",
     "group": "wf_pn",
     "ingredients": [
       "心金方块",
@@ -2990,7 +3405,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'金符「Metal Fatigue」','WF',130,'∞','eE'"
   },
   {
-    "id": "recipe_256",
+    "id": "recipe_292",
     "group": "wf_pn",
     "ingredients": [
       "翡翠方块",
@@ -3002,7 +3417,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'土符「Lazy Trilithon」','WF',150,'∞','Nc'"
   },
   {
-    "id": "recipe_257",
+    "id": "recipe_293",
     "group": "wf_pn",
     "ingredients": [
       "火符「Agni Shine」",
@@ -3016,7 +3431,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'火水木金土符『贤者之石』','WF',5000,'∞','uipwe'"
   },
   {
-    "id": "recipe_258",
+    "id": "recipe_294",
     "group": "wf_pn",
     "ingredients": [
       "火符「Agni Shine」",
@@ -3028,7 +3443,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'火符『Akiba Summer』','WF',220,'∞','uUf'"
   },
   {
-    "id": "recipe_259",
+    "id": "recipe_295",
     "group": "wf_pn",
     "ingredients": [
       "水符「Princess Undine」",
@@ -3040,7 +3455,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'水符『Jerry Fish Princess』','WF',90,'∞','riI'"
   },
   {
-    "id": "recipe_260",
+    "id": "recipe_296",
     "group": "wf_pn",
     "ingredients": [
       "木符「Sylphy Horn」",
@@ -3052,7 +3467,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'木符『Green Storm』','WF',230,'∞','wWtN'"
   },
   {
-    "id": "recipe_261",
+    "id": "recipe_297",
     "group": "wf_pn",
     "ingredients": [
       "金符「Metal Fatigue」",
@@ -3064,7 +3479,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'金符『Silver Dragon』','WF',200,'∞','eEn'"
   },
   {
-    "id": "recipe_262",
+    "id": "recipe_298",
     "group": "wf_pn",
     "ingredients": [
       "土符「Lazy Trilithon」",
@@ -3076,7 +3491,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'土符『Trilithon Shake』','WF',180,'∞','dc'"
   },
   {
-    "id": "recipe_263",
+    "id": "recipe_299",
     "group": "wf_pn",
     "ingredients": [
       "火符『Akiba Summer』",
@@ -3090,7 +3505,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'火水木金土符『贤者之石-上级』','WF',5000,'∞','uipwerd'"
   },
   {
-    "id": "recipe_264",
+    "id": "recipe_300",
     "group": "wf_pn",
     "ingredients": [
       "土符「Lazy Trilithon」",
@@ -3099,10 +3514,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "土&水符『Noachian Deluge』",
     "kind": "WF",
-    "rawResult": "'土&水符『Noachian Deluge』','WF',220,'50','ic'"
+    "rawResult": "'土&水符『Noachian Deluge』','WF',220,'∞','ic'"
   },
   {
-    "id": "recipe_265",
+    "id": "recipe_301",
     "group": "wf_pn",
     "ingredients": [
       "土符「Lazy Trilithon」",
@@ -3114,7 +3529,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'火&土符『Lava Cromlech』','WF',240,180,'d'"
   },
   {
-    "id": "recipe_266",
+    "id": "recipe_302",
     "group": "wf_pn",
     "ingredients": [
       "水符「Princess Undine」",
@@ -3125,7 +3540,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'金&水符『Mercury Poison』','WF',94,'∞','paZ'"
   },
   {
-    "id": "recipe_267",
+    "id": "recipe_303",
     "group": "wf_pn",
     "ingredients": [
       "金符「Metal Fatigue」",
@@ -3137,7 +3552,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'火&金符『St. Elmo Pillar』','WF',330,'∞','ndfc'"
   },
   {
-    "id": "recipe_268",
+    "id": "recipe_304",
     "group": "wf_pn",
     "ingredients": [
       "水符『Jerry Fish Princess』",
@@ -3150,7 +3565,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'水&月符『Silent Deluge』','WF',233,'∞','kZz'"
   },
   {
-    "id": "recipe_269",
+    "id": "recipe_305",
     "group": "wf_pn",
     "ingredients": [
       "向日葵",
@@ -3162,7 +3577,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'日符「Royal Flare」-劣','WF',80,'∞','dc'"
   },
   {
-    "id": "recipe_270",
+    "id": "recipe_306",
     "group": "wf_pn",
     "ingredients": [
       "月光碎片",
@@ -3174,7 +3589,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'月符「Silent Serena」-劣','WF',40,'∞','rc'"
   },
   {
-    "id": "recipe_271",
+    "id": "recipe_307",
     "group": "wf_pn",
     "ingredients": [
       "日符「Royal Flare」-劣",
@@ -3185,7 +3600,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'日符「Royal Flare」','WF',270,'∞','udc'"
   },
   {
-    "id": "recipe_272",
+    "id": "recipe_308",
     "group": "wf_pn",
     "ingredients": [
       "月符「Silent Serena」-劣",
@@ -3196,7 +3611,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'月符「Silent Serena」','WF',120,'∞','irc'"
   },
   {
-    "id": "recipe_273",
+    "id": "recipe_309",
     "group": "wf_pn",
     "ingredients": [
       "月符「Silent Serena」",
@@ -3207,7 +3622,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'日&月符『Royal Diamond Ring』','WF',432,'∞','riud'"
   },
   {
-    "id": "recipe_274",
+    "id": "recipe_310",
     "group": "wf_pn",
     "ingredients": [
       "月符「Silent Serena」-劣",
@@ -3218,7 +3633,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'日&月符『Royal Diamond Ring』-劣','WF',99,999,'zzzzz'"
   },
   {
-    "id": "recipe_275",
+    "id": "recipe_311",
     "group": "wf_pn",
     "ingredients": [
       "月符「Silent Serena」",
@@ -3231,7 +3646,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'月月火水木金金符『年中无休』（笑）','WF',65500,'∞','rdnNc'"
   },
   {
-    "id": "recipe_276",
+    "id": "recipe_312",
     "group": "wf_pn",
     "ingredients": [
       "月符「Silent Serena」",
@@ -3244,8 +3659,90 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'月月火水木金金符『年中无休』','WF',65500,'∞','rdnyNcZ'"
   },
   {
-    "id": "recipe_277",
-    "group": "wf_ks",
+    "id": "recipe_313",
+    "group": "ut",
+    "ingredients": [
+      "空白符卡",
+      "怨灵",
+      "走失的猫咪"
+    ],
+    "name": "猫符「怨灵猫乱步」",
+    "kind": "WF",
+    "rawResult": "'猫符「怨灵猫乱步」','WF',99,'∞','up'"
+  },
+  {
+    "id": "recipe_314",
+    "group": "ut",
+    "ingredients": [
+      "空白符卡",
+      "「僵尸之主」 ★4",
+      "妖精的羽翼"
+    ],
+    "name": "咒精「Zombie Fairy」",
+    "kind": "WF",
+    "rawResult": "'咒精「Zombie Fairy」','WF',166,'∞','pd'"
+  },
+  {
+    "id": "recipe_315",
+    "group": "ut",
+    "ingredients": [
+      "食堂的盒饭",
+      "凸眼鱼",
+      "轮椅"
+    ],
+    "name": "★小推车★",
+    "kind": "DFS",
+    "rawResult": "'★小推车★','DFS',177,'∞','PG'"
+  },
+  {
+    "id": "recipe_316",
+    "group": "ut",
+    "ingredients": [
+      "猫符「怨灵猫乱步」",
+      "咒精「Zombie Fairy」",
+      "★小推车★"
+    ],
+    "name": "「死体繁华街」",
+    "kind": "WF",
+    "rawResult": "'「死体繁华街」','WF',333,'∞','uwpd'"
+  },
+  {
+    "id": "recipe_317",
+    "group": "ut",
+    "ingredients": [
+      "空白符卡",
+      "蛇符【神代大蛇】",
+      "「D.D.乌鸦」 ★1"
+    ],
+    "name": "地狱波动炮",
+    "kind": "WF",
+    "rawResult": "'地狱波动炮','WF',233,'∞','Yz'"
+  },
+  {
+    "id": "recipe_318",
+    "group": "ut",
+    "ingredients": [
+      "地狱波动炮",
+      "★制御棒★"
+    ],
+    "name": "爆符『百万耀斑』",
+    "kind": "WF",
+    "rawResult": "'爆符『百万耀斑』','WF',666,'∞','Yz'"
+  },
+  {
+    "id": "recipe_319",
+    "group": "ut",
+    "ingredients": [
+      "爆符『百万耀斑』",
+      "日符「Royal Flare」"
+    ],
+    "name": "『地狱的人造太阳』",
+    "kind": "WF",
+    "rawResult": "'『地狱的人造太阳』','WF',6666,'∞','Yz'"
+  },
+  {
+    "id": "recipe_320",
+    "group": "ut",
     "ingredients": [
       "空白符卡",
       "生命探测器",
@@ -3256,8 +3753,8 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'想起「恐怖催眠术」','WF',65,100,'cd'"
   },
   {
-    "id": "recipe_278",
-    "group": "wf_ks",
+    "id": "recipe_321",
+    "group": "ut",
     "ingredients": [
       "空白符卡",
       "广域生命探测器",
@@ -3268,8 +3765,8 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'想起「恐怖催眠术」','WF',80,100,'cd'"
   },
   {
-    "id": "recipe_279",
-    "group": "wf_ks",
+    "id": "recipe_322",
+    "group": "ut",
     "ingredients": [
       "空白符卡",
       "小五拖鞋"
@@ -3279,8 +3776,8 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'想起「恐怖催眠术」','WF',90,'∞','cd'"
   },
   {
-    "id": "recipe_280",
-    "group": "wf_ks",
+    "id": "recipe_323",
+    "group": "ut",
     "ingredients": [
       "想起「恐怖催眠术」",
       "鬼火『超高密度燐祸术』"
@@ -3290,8 +3787,8 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'想起「户隐山之投」','WF',150,'∞','cf'"
   },
   {
-    "id": "recipe_281",
-    "group": "wf_ks",
+    "id": "recipe_324",
+    "group": "ut",
     "ingredients": [
       "想起「户隐山之投」",
       "☆博丽护符☆",
@@ -3302,8 +3799,8 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'想起「蒙蒙迷雾」','WF',400,'∞','cfa'"
   },
   {
-    "id": "recipe_282",
-    "group": "wf_ks",
+    "id": "recipe_325",
+    "group": "ut",
     "ingredients": [
       "想起「恐怖催眠术」",
       "风符『风神一扇』"
@@ -3313,8 +3810,8 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'想起「风神木叶隐身术」','WF',230,'∞','cd'"
   },
   {
-    "id": "recipe_283",
-    "group": "wf_ks",
+    "id": "recipe_326",
+    "group": "ut",
     "ingredients": [
       "想起「风神木叶隐身术」",
       "☆守矢神签☆",
@@ -3326,8 +3823,8 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'想起「鸟居旋风」','WF',230,'∞','ctr'"
   },
   {
-    "id": "recipe_284",
-    "group": "wf_ks",
+    "id": "recipe_327",
+    "group": "ut",
     "ingredients": [
       "想起「恐怖催眠术」",
       "蓝色方块",
@@ -3338,8 +3835,8 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'想起「Mercury Poison」','WF',94,'∞','cpa'"
   },
   {
-    "id": "recipe_285",
-    "group": "wf_ks",
+    "id": "recipe_328",
+    "group": "ut",
     "ingredients": [
       "想起「Mercury Poison」",
       "红色方块",
@@ -3351,8 +3848,8 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'想起「贤者之石」','WF',500,'∞','cuipwe'"
   },
   {
-    "id": "recipe_286",
-    "group": "wf_ks",
+    "id": "recipe_329",
+    "group": "ut",
     "ingredients": [
       "想起「蒙蒙迷雾」",
       "想起「鸟居旋风」",
@@ -3363,7 +3860,92 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'想起「朦胧记忆中的金阁寺」','WF',55555,'∞','cyfkt'"
   },
   {
-    "id": "recipe_287",
+    "id": "recipe_330",
+    "group": "ut",
+    "ingredients": [
+      "空白符卡",
+      "岩石",
+      "精神制剂",
+      "☆残页的魔导书☆"
+    ],
+    "name": "表象「弹幕偏执症」",
+    "kind": "WF",
+    "rawResult": "'表象「弹幕偏执症」','WF',100,514,'nNZ'"
+  },
+  {
+    "id": "recipe_331",
+    "group": "ut",
+    "ingredients": [
+      "圣石之种",
+      "黑蔷薇龙 ★7",
+      "黑色方块"
+    ],
+    "name": "「黑色花园」",
+    "kind": "A",
+    "rawResult": "'「黑色花园」','A',1,1,'Ac'"
+  },
+  {
+    "id": "recipe_332",
+    "group": "ut",
+    "ingredients": [
+      "微小日常之爱恋",
+      "寂寞",
+      "『祝福宝石』"
+    ],
+    "name": "复燃「恋爱的埋火」",
+    "kind": "DH",
+    "rawResult": "'复燃「恋爱的埋火」','DH',1,1,'B'"
+  },
+  {
+    "id": "recipe_333",
+    "group": "ut",
+    "ingredients": [
+      "表象「弹幕偏执症」",
+      "「黑色花园」",
+      "复燃「恋爱的埋火」"
+    ],
+    "name": "「带刺的蔷薇园」",
+    "kind": "WFC",
+    "rawResult": "'「带刺的蔷薇园」','WFC',233,'∞','rdnN'"
+  },
+  {
+    "id": "recipe_334",
+    "group": "ut",
+    "ingredients": [
+      "想起「恐怖催眠术」",
+      "表象「弹幕偏执症」[+5]",
+      "空想爆弹 ~ 出乎意料"
+    ],
+    "name": "本能「本我的解放」",
+    "kind": "WF",
+    "rawResult": "'本能「本我的解放」','WF',514,'∞','rnNL'"
+  },
+  {
+    "id": "recipe_335",
+    "group": "ut",
+    "ingredients": [
+      "想起「恐怖催眠术」",
+      "悲叹之种",
+      "『真空内爆弹』"
+    ],
+    "name": "抑制「Super Ego」",
+    "kind": "WF",
+    "rawResult": "'抑制「Super Ego」','WF',514,'∞','idyN'"
+  },
+  {
+    "id": "recipe_336",
+    "group": "ut",
+    "ingredients": [
+      "「带刺的蔷薇园」",
+      "本能「本我的解放」",
+      "抑制「Super Ego」"
+    ],
+    "name": "『地底蔷薇』",
+    "kind": "WFD",
+    "rawResult": "'『地底蔷薇』','WFD',51415,'∞','rBfknyLZ'"
+  },
+  {
+    "id": "recipe_337",
     "group": "madoka",
     "ingredients": [
       "最终战术『剑海』",
@@ -3374,7 +3956,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'魔导迷城『恋沫』','WK',70000,'∞','Zkcrd'"
   },
   {
-    "id": "recipe_288",
+    "id": "recipe_338",
     "group": "madoka",
     "ingredients": [
       "最终战术『心火』",
@@ -3385,33 +3967,33 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'魔导迷城『愚刑』','WD',70000,'∞','Lcrd'"
   },
   {
-    "id": "recipe_289",
+    "id": "recipe_339",
     "group": "madoka",
     "ingredients": [
-      "最终战术『心火』[+8]",
+      "最终战术『心火』[+7]",
       "最终战术『光矢』"
     ],
     "name": "概念武装『破则』",
-    "kind": "WF",
-    "rawResult": "'概念武装『破则』','WF',20110424,'∞','EnkaNxhyLd'"
+    "kind": "WFB",
+    "rawResult": "'概念武装『破则』','WFB',20110424,'∞','myBEstFriendchAN'"
   },
   {
-    "id": "recipe_290",
+    "id": "recipe_340",
     "group": "madoka",
     "ingredients": [
       "魔导迷城『愚刑』",
-      "魔导迷城『恋沫』[+5]",
-      "魔导迷城『糖风』[+5]",
-      "最终战术『蝎尾』[+5]",
-      "最终战术『银花』[+5]",
-      "最终战术『光矢』[+5]"
+      "魔导迷城『恋沫』[+4]",
+      "魔导迷城『糖风』[+4]",
+      "最终战术『蝎尾』[+4]",
+      "最终战术『银花』[+4]",
+      "最终战术『光矢』[+4]"
     ],
     "name": "狱魇之都『泷庭』",
     "kind": "WFJ",
     "rawResult": "'狱魇之都『泷庭』','WFJ',20131026,'∞','LOVxMad'"
   },
   {
-    "id": "recipe_291",
+    "id": "recipe_341",
     "group": "ocg",
     "ingredients": [
       "「被封印的艾克佐迪亚」",
@@ -3425,18 +4007,18 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「被封印的黑暗大法师」','WC',8192,1,"
   },
   {
-    "id": "recipe_292",
+    "id": "recipe_342",
     "group": "ocg",
     "ingredients": [
       "「被封印的黑暗大法师」",
       "★神卡认证★"
     ],
-    "name": "『黑暗大法师』",
+    "name": "『究极封印神 艾克佐迪亚』",
     "kind": "WC12",
-    "rawResult": "'『黑暗大法师』','WC12',8192,'∞','AaZ'"
+    "rawResult": "'『究极封印神 艾克佐迪亚』','WC12',8192,'∞','AaZdv'"
   },
   {
-    "id": "recipe_293",
+    "id": "recipe_343",
     "group": "ocg",
     "ingredients": [
       "「隼骑士」-仮",
@@ -3447,7 +4029,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「隼骑士」 ★3','WC03',100,'∞','rj'"
   },
   {
-    "id": "recipe_294",
+    "id": "recipe_344",
     "group": "ocg",
     "ingredients": [
       "「V-喷气虎」-仮",
@@ -3458,7 +4040,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「V-喷气虎」 ★4','WC04',160,'180','p'"
   },
   {
-    "id": "recipe_295",
+    "id": "recipe_345",
     "group": "ocg",
     "ingredients": [
       "「W-弹射飞翼」-仮",
@@ -3469,7 +4051,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「W-弹射飞翼」 ★4','WC04',130,'150','u'"
   },
   {
-    "id": "recipe_296",
+    "id": "recipe_346",
     "group": "ocg",
     "ingredients": [
       "「X-首领加农」-仮",
@@ -3480,7 +4062,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「X-首领加农」 ★4','WC04',180,'150','i'"
   },
   {
-    "id": "recipe_297",
+    "id": "recipe_347",
     "group": "ocg",
     "ingredients": [
       "「Y-龙头」-仮",
@@ -3491,7 +4073,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「Y-龙头」 ★4','WC04',150,'160','e'"
   },
   {
-    "id": "recipe_298",
+    "id": "recipe_348",
     "group": "ocg",
     "ingredients": [
       "「Z-金属履带」-仮",
@@ -3502,7 +4084,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「Z-金属履带」 ★4','WC04',150,'130','w'"
   },
   {
-    "id": "recipe_299",
+    "id": "recipe_349",
     "group": "ocg",
     "ingredients": [
       "「V-喷气虎」 ★4",
@@ -3513,7 +4095,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「VW-强击虎」 ★6','WC06',200,'∞','pu'"
   },
   {
-    "id": "recipe_300",
+    "id": "recipe_350",
     "group": "ocg",
     "ingredients": [
       "「X-首领加农」 ★4",
@@ -3525,7 +4107,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「XYZ-神龙炮」 ★8','WC08',280,'∞','iew'"
   },
   {
-    "id": "recipe_301",
+    "id": "recipe_351",
     "group": "ocg",
     "ingredients": [
       "「VW-强击虎」 ★6",
@@ -3536,7 +4118,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「VWXYZ-神龙强击炮」 ★8','WC08',320,'∞','puiewy'"
   },
   {
-    "id": "recipe_302",
+    "id": "recipe_352",
     "group": "ocg",
     "ingredients": [
       "「V-喷气虎」 ★4",
@@ -3550,7 +4132,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「VWXYZ-神龙强击炮」 ★8','WC08',450,'∞','puiewy'"
   },
   {
-    "id": "recipe_303",
+    "id": "recipe_353",
     "group": "ocg",
     "ingredients": [
       "「绝对防御将军」-仮",
@@ -3561,7 +4143,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「绝对防御将军」 ★6','WC06',250,'∞','A'"
   },
   {
-    "id": "recipe_304",
+    "id": "recipe_354",
     "group": "ocg",
     "ingredients": [
       "「人造人-念力震慑者」-仮",
@@ -3572,7 +4154,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「人造人-念力震慑者」 ★6','WC06',240,'∞','NM'"
   },
   {
-    "id": "recipe_305",
+    "id": "recipe_355",
     "group": "ocg",
     "ingredients": [
       "「恶魔召唤」-仮",
@@ -3583,7 +4165,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「恶魔召唤」 ★6','WC06',250,'∞','c'"
   },
   {
-    "id": "recipe_306",
+    "id": "recipe_356",
     "group": "ocg",
     "ingredients": [
       "「真紅眼黑龍」-仮",
@@ -3594,7 +4176,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「真紅眼黑龍」 ★7','WC07',240,'∞','u'"
   },
   {
-    "id": "recipe_307",
+    "id": "recipe_357",
     "group": "ocg",
     "ingredients": [
       "「真紅眼黑龍」 ★7",
@@ -3605,18 +4187,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「真紅眼闇龍」 ★9','WC09',2400,'∞','cruZ'"
   },
   {
-    "id": "recipe_308",
-    "group": "ocg",
-    "ingredients": [
-      "「真紅眼黑龍」 ★7",
-      "「金属化·魔法反射装甲」"
-    ],
-    "name": "「真紅眼黑龍鐵龍」 ★9",
-    "kind": "WC08",
-    "rawResult": "'「真紅眼黑龍鐵龍」 ★9','WC08',280,'∞','uA'"
-  },
-  {
-    "id": "recipe_309",
+    "id": "recipe_358",
     "group": "ocg",
     "ingredients": [
       "「恶魔召唤」 ★6",
@@ -3627,7 +4198,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「暗黑魔龙」 ★9','WC09',320,'∞','cru'"
   },
   {
-    "id": "recipe_310",
+    "id": "recipe_359",
     "group": "ocg",
     "ingredients": [
       "「左轮手枪龙」-仮",
@@ -3638,7 +4209,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「左轮手枪龙」 ★7','WC07',260,'∞','r'"
   },
   {
-    "id": "recipe_311",
+    "id": "recipe_360",
     "group": "ocg",
     "ingredients": [
       "「破龙剑士」-仮",
@@ -3649,7 +4220,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「破龙剑士」 ★7','WC07',260,'∞','cC'"
   },
   {
-    "id": "recipe_312",
+    "id": "recipe_361",
     "group": "ocg",
     "ingredients": [
       "「黑魔术师」-仮",
@@ -3660,7 +4231,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「黑魔术师」 ★7','WC07',250,'∞','cC'"
   },
   {
-    "id": "recipe_313",
+    "id": "recipe_362",
     "group": "ocg",
     "ingredients": [
       "「黑魔术师」 ★7",
@@ -3671,7 +4242,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「超魔导剑士-黑暗帕拉丁」 ★8','WC08',300,'∞','crdZy'"
   },
   {
-    "id": "recipe_314",
+    "id": "recipe_363",
     "group": "ocg",
     "ingredients": [
       "「青眼白龙」-仮",
@@ -3682,19 +4253,19 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「青眼白龙」 ★8','WC08',300,'∞','d'"
   },
   {
-    "id": "recipe_315",
+    "id": "recipe_364",
     "group": "ocg",
     "ingredients": [
       "「青眼白龙」 ★8",
       "「青眼白龙」 ★8",
       "「青眼白龙」 ★8"
     ],
-    "name": "「青眼究极龙」 ★10",
-    "kind": "WC10",
-    "rawResult": "'「青眼究极龙」 ★10','WC10',450,'∞','rdZ'"
+    "name": "「青眼究极龙」 ★12",
+    "kind": "WC12",
+    "rawResult": "'「青眼究极龙」 ★12','WC12',450,'∞','rdNZ'"
   },
   {
-    "id": "recipe_316",
+    "id": "recipe_365",
     "group": "ocg",
     "ingredients": [
       "「奥西里斯之天空龙」-仮",
@@ -3705,7 +4276,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『奥西里斯之天空龙』 ★10','WC10',4000,'∞','ncrtZ'"
   },
   {
-    "id": "recipe_317",
+    "id": "recipe_366",
     "group": "ocg",
     "ingredients": [
       "「欧贝利斯克之巨神兵」-仮",
@@ -3716,7 +4287,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『欧贝利斯克之巨神兵』 ★10','WC10',4000,'∞','NcrkZ'"
   },
   {
-    "id": "recipe_318",
+    "id": "recipe_367",
     "group": "ocg",
     "ingredients": [
       "「太阳神之翼神龙」-仮",
@@ -3727,7 +4298,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『太阳神之翼神龙』 ★10','WC10',4000,'∞','ycrfZ'"
   },
   {
-    "id": "recipe_319",
+    "id": "recipe_368",
     "group": "ocg",
     "ingredients": [
       "『奥西里斯之天空龙』 ★10",
@@ -3736,10 +4307,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "◎光之创造神 哈拉克提◎",
     "kind": "WC",
-    "rawResult": "'◎光之创造神 哈拉克提◎','WC',111210,'∞','nyNrfktZ'"
+    "rawResult": "'◎光之创造神 哈拉克提◎','WC',111210,'∞','nyNrfktZv'"
   },
   {
-    "id": "recipe_320",
+    "id": "recipe_369",
     "group": "ocg",
     "ingredients": [
       "「电子龙」-仮",
@@ -3750,7 +4321,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「电子龙」 ★5','WC05',200,'∞','ej'"
   },
   {
-    "id": "recipe_321",
+    "id": "recipe_370",
     "group": "ocg",
     "ingredients": [
       "「电子龙」 ★5",
@@ -3762,7 +4333,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「电子终结龙」 ★10','WC10',240,'∞','Nnrc'"
   },
   {
-    "id": "recipe_322",
+    "id": "recipe_371",
     "group": "ocg",
     "ingredients": [
       "「电子终结龙」 ★10",
@@ -3774,7 +4345,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「电子天龙头」 ★10','WC10',1200,'∞','ZNnrc'"
   },
   {
-    "id": "recipe_323",
+    "id": "recipe_372",
     "group": "ocg",
     "ingredients": [
       "「骷髅指挥」-仮",
@@ -3785,7 +4356,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「骷髅指挥」 ★4','WC04',100,'∞','rj'"
   },
   {
-    "id": "recipe_324",
+    "id": "recipe_373",
     "group": "ocg",
     "ingredients": [
       "「僵尸之主」-仮",
@@ -3796,7 +4367,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「僵尸之主」 ★4','WC04',170,'90','pj'"
   },
   {
-    "id": "recipe_325",
+    "id": "recipe_374",
     "group": "ocg",
     "ingredients": [
       "「死灵之颜」-仮",
@@ -3807,7 +4378,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「死灵之颜」 ★4','WC04',170,'∞','ej'"
   },
   {
-    "id": "recipe_326",
+    "id": "recipe_375",
     "group": "ocg",
     "ingredients": [
       "「吸血鬼领主」-仮",
@@ -3818,7 +4389,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「吸血鬼领主」 ★5','WC05',200,'∞','Aaj'"
   },
   {
-    "id": "recipe_327",
+    "id": "recipe_376",
     "group": "ocg",
     "ingredients": [
       "水灵使-艾莉娅 ★3",
@@ -3829,7 +4400,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'凭依装着-艾莉娅 ★4','WC04',160,'130','ij'"
   },
   {
-    "id": "recipe_328",
+    "id": "recipe_377",
     "group": "ocg",
     "ingredients": [
       "火灵使-希塔 ★3",
@@ -3840,7 +4411,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'凭依装着-希塔 ★4','WC04',160,'160','uj'"
   },
   {
-    "id": "recipe_329",
+    "id": "recipe_378",
     "group": "ocg",
     "ingredients": [
       "风灵使-薇茵 ★3",
@@ -3851,7 +4422,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'凭依装着-薇茵 ★4','WC04',160,'160','cj'"
   },
   {
-    "id": "recipe_330",
+    "id": "recipe_379",
     "group": "ocg",
     "ingredients": [
       "暗灵使-达克 ★3",
@@ -3862,7 +4433,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'凭依装着-达克 ★4','WC04',160,'160','pj'"
   },
   {
-    "id": "recipe_331",
+    "id": "recipe_380",
     "group": "ocg",
     "ingredients": [
       "地灵使-奥丝 ★3",
@@ -3873,7 +4444,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'凭依装着-奥丝 ★4','WC04',160,'160','wj'"
   },
   {
-    "id": "recipe_332",
+    "id": "recipe_381",
     "group": "ocg",
     "ingredients": [
       "光灵使-莱娜 ★3",
@@ -3884,7 +4455,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'凭依装着-莱娜 ★4','WC04',160,'160','ej'"
   },
   {
-    "id": "recipe_333",
+    "id": "recipe_382",
     "group": "ocg",
     "ingredients": [
       "凭依装着-达克 ★4",
@@ -3896,7 +4467,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'友谊天使 ★4','WC04',100,'∞','pwe'"
   },
   {
-    "id": "recipe_334",
+    "id": "recipe_383",
     "group": "ocg",
     "ingredients": [
       "凭依装着-艾莉娅 ★4",
@@ -3908,7 +4479,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'魔法幽灵 ★4','WC04',100,'∞','iuc'"
   },
   {
-    "id": "recipe_335",
+    "id": "recipe_384",
     "group": "hidden",
     "ingredients": [
       "凭依装着-艾莉娅 ★4",
@@ -3923,7 +4494,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'买力头破你~卖力头破你~','WC',450,'∞','uiewp'"
   },
   {
-    "id": "recipe_336",
+    "id": "recipe_385",
     "group": "ocg",
     "ingredients": [
       "友谊天使 ★4",
@@ -3934,29 +4505,29 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'卖力头破你','WC',233,'∞','uiewp'"
   },
   {
-    "id": "recipe_337",
+    "id": "recipe_386",
     "group": "ocg",
     "ingredients": [
       "武器手套 ★4 -仮",
       "☆四星认证☆"
     ],
     "name": "武器手套 ★4",
-    "kind": "DA04",
-    "rawResult": "'武器手套 ★4','DA04',180,120,'c^001'"
+    "kind": "DAS04",
+    "rawResult": "'武器手套 ★4','DAS04',180,120,'c^001'"
   },
   {
-    "id": "recipe_338",
+    "id": "recipe_387",
     "group": "ocg",
     "ingredients": [
       "甲化铠骨骼 ★6 -仮",
       "☆六星认证☆"
     ],
     "name": "甲化铠骨骼 ★6",
-    "kind": "DB06",
-    "rawResult": "'甲化铠骨骼 ★6','DB06',250,160,'GD^001'"
+    "kind": "DBS06",
+    "rawResult": "'甲化铠骨骼 ★6','DBS06',250,160,'GD^001'"
   },
   {
-    "id": "recipe_339",
+    "id": "recipe_388",
     "group": "ocg",
     "ingredients": [
       "英豪冠军 草雉剑王",
@@ -3964,10 +4535,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "英♂豪冠军 断♂肛♂剑♂王 ☆4",
     "kind": "WK",
-    "rawResult": "'英♂豪冠军 断♂肛♂剑♂王 ☆4','WK',444,'∞','Znd'"
+    "rawResult": "'英♂豪冠军 断♂肛♂剑♂王 ☆4','WK',444,'∞','Znd^xyz4'"
   },
   {
-    "id": "recipe_340",
+    "id": "recipe_389",
     "group": "ocg",
     "ingredients": [
       "始祖守护者 提拉斯 ☆5 -仮",
@@ -3975,10 +4546,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "始祖守护者 提拉斯 ☆5",
     "kind": "WC",
-    "rawResult": "'始祖守护者 提拉斯 ☆5','WC',222,'∞','fwi'"
+    "rawResult": "'始祖守护者 提拉斯 ☆5','WC',260,'∞','fwi^xyz5'"
   },
   {
-    "id": "recipe_341",
+    "id": "recipe_390",
     "group": "ocg",
     "ingredients": [
       "流星龙 ★10 -仮",
@@ -3989,7 +4560,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'流星龙 ★10','WC10',500,'∞','rjt^001'"
   },
   {
-    "id": "recipe_342",
+    "id": "recipe_391",
     "group": "ocg",
     "ingredients": [
       "红莲魔龙 ★8 -仮",
@@ -4000,7 +4571,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'红莲魔龙 ★8','WC08',500,'25','du^001'"
   },
   {
-    "id": "recipe_343",
+    "id": "recipe_392",
     "group": "ocg",
     "ingredients": [
       "红莲魔龙 ★8",
@@ -4008,10 +4579,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "真红魔龙/爆裂体 ★10",
     "kind": "WC10",
-    "rawResult": "'真红魔龙/爆裂体 ★10','WC10',250,'∞','dZ'"
+    "rawResult": "'真红魔龙/爆裂体 ★10','WC10',300,'∞','dZ'"
   },
   {
-    "id": "recipe_344",
+    "id": "recipe_393",
     "group": "ocg",
     "ingredients": [
       "星尘龙 ★8",
@@ -4022,7 +4593,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'星尘龙/爆裂体 ★10','WC10',627,'∞','mr'"
   },
   {
-    "id": "recipe_345",
+    "id": "recipe_394",
     "group": "ocg",
     "ingredients": [
       "机巧将军 无零 ★7 -仮",
@@ -4033,7 +4604,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'机巧将军 无零 ★7','WC07',400,'∞','ZA^001'"
   },
   {
-    "id": "recipe_346",
+    "id": "recipe_395",
     "group": "ocg",
     "ingredients": [
       "生命激流龙 ★8-仮",
@@ -4044,7 +4615,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'生命激流龙 ★8','WC08',290,'∞','cZs^001^002'"
   },
   {
-    "id": "recipe_347",
+    "id": "recipe_396",
     "group": "ocg",
     "ingredients": [
       "正义盟军 光明守望者 ★8 -仮",
@@ -4055,7 +4626,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'正义盟军 光明守望者 ★8','WC08',260,'∞','rZ^001'"
   },
   {
-    "id": "recipe_348",
+    "id": "recipe_397",
     "group": "ocg",
     "ingredients": [
       "救世魔龙 ★10-仮",
@@ -4066,7 +4637,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「救世魔龙」 ★10','WC10',1200,'∞','cuf^001'"
   },
   {
-    "id": "recipe_349",
+    "id": "recipe_398",
     "group": "ocg",
     "ingredients": [
       "救世星龙 ★10-仮",
@@ -4077,7 +4648,18 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「救世星龙」 ★10','WC10',900,'∞','cwt^001'"
   },
   {
-    "id": "recipe_350",
+    "id": "recipe_399",
+    "group": "ocg",
+    "ingredients": [
+      "『真红莲超新星龙』 ★12 -仮",
+      "★神卡认证★"
+    ],
+    "name": "『真红莲超新星龙』 ★12",
+    "kind": "WC12",
+    "rawResult": "'『真红莲超新星龙』 ★12','WC12',5500,'∞','rfdbZy^001'"
+  },
+  {
+    "id": "recipe_400",
     "group": "ocg",
     "ingredients": [
       "『流天类星龙』 ★12(OCG)-仮",
@@ -4088,7 +4670,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『流天类星龙』 ★12','WC12',4000,'∞','mcrtZy^001'"
   },
   {
-    "id": "recipe_351",
+    "id": "recipe_401",
     "group": "ocg",
     "ingredients": [
       "『流天类星龙』 ★12 -仮",
@@ -4099,7 +4681,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『流天类星龙』 ★12','WC12',16000,'∞','crtZny^001'"
   },
   {
-    "id": "recipe_352",
+    "id": "recipe_402",
     "group": "ocg",
     "ingredients": [
       "No39.希望皇 霍普 ☆4",
@@ -4107,10 +4689,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "闪光No.39 希望皇 霍普·电光皇 ☆5",
     "kind": "WC",
-    "rawResult": "'闪光No.39 希望皇 霍普·电光皇 ☆5','WC',600,'∞','be'"
+    "rawResult": "'闪光No.39 希望皇 霍普·电光皇 ☆5','WC',600,'∞','be^xyz5'"
   },
   {
-    "id": "recipe_353",
+    "id": "recipe_403",
     "group": "ocg",
     "ingredients": [
       "☆五星认证☆",
@@ -4122,7 +4704,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「调整中」','WC',573,573,'z'"
   },
   {
-    "id": "recipe_354",
+    "id": "recipe_404",
     "group": "ocg",
     "ingredients": [
       "「调整中」",
@@ -4133,10 +4715,21 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「禁卡表」','WC',573,'∞','konami'"
   },
   {
-    "id": "recipe_355",
+    "id": "recipe_405",
     "group": "ocg",
     "ingredients": [
-      "「效果遮蒙者」-仮",
+      "「黄金卿 埃尔德里奇」-仮",
+      "☆十星认证☆"
+    ],
+    "name": "「黄金卿 埃尔德里奇」 ★10",
+    "kind": "WC10",
+    "rawResult": "'「黄金卿 埃尔德里奇」 ★10','WC10',3500,'∞','j'"
+  },
+  {
+    "id": "recipe_406",
+    "group": "ocg",
+    "ingredients": [
+      "「效果遮蒙者」 ★1-仮",
       "☆手坑认证☆"
     ],
     "name": "「效果遮蒙者」 ★1",
@@ -4144,10 +4737,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「效果遮蒙者」 ★1','WC01',0,'∞','Bs'"
   },
   {
-    "id": "recipe_356",
+    "id": "recipe_407",
     "group": "ocg",
     "ingredients": [
-      "「幽鬼兔」-仮",
+      "「幽鬼兔」 ★3-仮",
       "☆手坑认证☆"
     ],
     "name": "「幽鬼兔」 ★3",
@@ -4155,10 +4748,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「幽鬼兔」 ★3','WC03',50,'∞','dbs'"
   },
   {
-    "id": "recipe_357",
+    "id": "recipe_408",
     "group": "ocg",
     "ingredients": [
-      "「浮幽樱」-仮",
+      "「浮幽樱」 ★3-仮",
       "☆手坑认证☆"
     ],
     "name": "「浮幽樱」 ★3",
@@ -4166,10 +4759,10 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「浮幽樱」 ★3','WC03',50,'∞','pnys'"
   },
   {
-    "id": "recipe_358",
+    "id": "recipe_409",
     "group": "ocg",
     "ingredients": [
-      "「灰流呜啦啦」",
+      "「灰流呜啦啦」 ★3",
       "☆手坑认证☆"
     ],
     "name": "「灰流丽」 ★3",
@@ -4177,30 +4770,53 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'「灰流丽」 ★3','WC03',50,'∞','fkts'"
   },
   {
-    "id": "recipe_359",
+    "id": "recipe_410",
+    "group": "ocg",
+    "ingredients": [
+      "「D.D.乌鸦」 ★1-仮",
+      "☆手坑认证☆"
+    ],
+    "name": "「D.D.乌鸦」 ★1",
+    "kind": "WC01",
+    "rawResult": "'「D.D.乌鸦」 ★1','WC01',100,'∞','^ac1z'"
+  },
+  {
+    "id": "recipe_411",
+    "group": "ocg",
+    "ingredients": [
+      "抒情歌鸲-合唱小琉璃 ☆1 -仮",
+      "夜雀歌谱",
+      "『祝福宝石』"
+    ],
+    "name": "抒情歌鸲-合唱小琉璃 ☆1",
+    "kind": "DA",
+    "rawResult": "'抒情歌鸲-合唱小琉璃 ☆1','DA',220,'∞','wA^sv1^sa4^xyz1'"
+  },
+  {
+    "id": "recipe_412",
     "group": "ocg",
     "ingredients": [
       "彼岸的旅人 但丁 ☆3",
       "☆四星认证☆"
     ],
-    "name": "彼岸的旅人 但丁 ☆3（攻表）",
+    "name": "彼岸的旅人 但丁 ☆3（攻击表示）",
     "kind": "WC",
-    "rawResult": "'彼岸的旅人 但丁 ☆3（攻表）','WC',250,'∞','uR'"
+    "rawResult": "'彼岸的旅人 但丁 ☆3（攻击表示）','WC',180,'∞','uR^xyz3'"
   },
   {
-    "id": "recipe_360",
+    "id": "recipe_413",
     "group": "ocg",
     "ingredients": [
-      "彼岸的旅人 但丁 ☆3（攻表）",
+      "彼岸的旅人 但丁 ☆3（攻击表示）",
       "☆叠♂放☆",
       "☆六星认证☆"
     ],
     "name": "永远的淑女 贝阿特丽切 ☆6",
     "kind": "WC",
-    "rawResult": "'永远的淑女 贝阿特丽切 ☆6','WC',320,'∞','urR'"
+    "rawResult": "'永远的淑女 贝阿特丽切 ☆6','WC',320,'∞','urR^xyz6'"
   },
   {
-    "id": "recipe_361",
+    "id": "recipe_414",
     "group": "ocg",
     "ingredients": [
       "电子龙·新星 ☆5",
@@ -4209,10 +4825,34 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     ],
     "name": "电子龙·无限 ☆5",
     "kind": "WC",
-    "rawResult": "'电子龙·无限 ☆5','WC',250,'∞','rdnya'"
+    "rawResult": "'电子龙·无限 ☆5','WC',250,'∞','rdnya^xyz5'"
   },
   {
-    "id": "recipe_362",
+    "id": "recipe_415",
+    "group": "ocg",
+    "ingredients": [
+      "星圣 欧米伽星云 ☆4",
+      "☆六星认证☆"
+    ],
+    "name": "星圣神龙 托勒密星团M7 ☆6",
+    "kind": "DFS",
+    "rawResult": "'星圣神龙 托勒密星团M7 ☆6','DFS',270,'∞','HNn^xyz6'"
+  },
+  {
+    "id": "recipe_416",
+    "group": "ocg",
+    "ingredients": [
+      "宵星之机神 丁吉尔苏 ☆8 -仮",
+      "某种机械设备",
+      "钢琴线",
+      "☆八星认证☆"
+    ],
+    "name": "宵星之机神 丁吉尔苏 ☆8",
+    "kind": "WC",
+    "rawResult": "'宵星之机神 丁吉尔苏 ☆8','WC',260,'∞','dA^sa3Z^xyz8'"
+  },
+  {
+    "id": "recipe_417",
     "group": "hidden",
     "ingredients": [
       "歌词卡片【海洋】",
@@ -4224,7 +4864,19 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'破灭之诗','Y',1,1,95"
   },
   {
-    "id": "recipe_363",
+    "id": "recipe_418",
+    "group": "hidden",
+    "ingredients": [
+      "『随心所欲的虚拟笔』",
+      "『铭刻记忆的单词本』",
+      "『命定身体的契约书』"
+    ],
+    "name": "破灭之诗",
+    "kind": "Y",
+    "rawResult": "'破灭之诗','Y',1,1,95"
+  },
+  {
+    "id": "recipe_419",
     "group": "hidden",
     "ingredients": [
       "矿泉水",
@@ -4236,7 +4888,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'Untainted Glory','A',1,1,'Z'"
   },
   {
-    "id": "recipe_364",
+    "id": "recipe_420",
     "group": "hidden",
     "ingredients": [
       "矿泉水",
@@ -4248,19 +4900,18 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'Untainted Glory','A',1,1,'Z'"
   },
   {
-    "id": "recipe_365",
+    "id": "recipe_421",
     "group": "hidden",
     "ingredients": [
-      "COCO☆酱",
-      "YES♂SIR",
-      "鼓舞士气的头带"
+      "「空想道具」",
+      "「空想道具」"
     ],
-    "name": "FFF团集体出动",
-    "kind": "WG",
-    "rawResult": "'FFF团集体出动','WG',100000,998,'BbdcN'"
+    "name": "「空想道具」",
+    "kind": "X",
+    "rawResult": "'「空想道具」','X',1,1,'z'"
   },
   {
-    "id": "recipe_366",
+    "id": "recipe_422",
     "group": "hidden",
     "ingredients": [
       "武神之魂",
@@ -4271,7 +4922,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『C.H.A.O.S』','Y',1,1,"
   },
   {
-    "id": "recipe_367",
+    "id": "recipe_423",
     "group": "hidden",
     "ingredients": [
       "《黑熊语录》",
@@ -4282,7 +4933,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『C.H.A.O.S』','Y',1,1,"
   },
   {
-    "id": "recipe_368",
+    "id": "recipe_424",
     "group": "hidden",
     "ingredients": [
       "《董子语录》",
@@ -4293,7 +4944,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『C.H.A.O.S』','Y',1,1,"
   },
   {
-    "id": "recipe_369",
+    "id": "recipe_425",
     "group": "hidden",
     "ingredients": [
       "圣光啊!你有看到那个敌人吗！",
@@ -4304,7 +4955,18 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『C.H.A.O.S』','Y',1,1,"
   },
   {
-    "id": "recipe_370",
+    "id": "recipe_426",
+    "group": "hidden",
+    "ingredients": [
+      "解离之楔",
+      "琉璃血"
+    ],
+    "name": "『C.H.A.O.S』",
+    "kind": "Y",
+    "rawResult": "'『C.H.A.O.S』','Y',1,1,"
+  },
+  {
+    "id": "recipe_427",
     "group": "hidden",
     "ingredients": [
       "黑色碎片",
@@ -4315,7 +4977,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'黑色发卡','X',1,1,"
   },
   {
-    "id": "recipe_371",
+    "id": "recipe_428",
     "group": "hidden",
     "ingredients": [
       "『T.E.R.R.A』",
@@ -4327,7 +4989,7 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'『G.A.M.E.O.V.E.R』','Y',1,1,"
   },
   {
-    "id": "recipe_372",
+    "id": "recipe_429",
     "group": "hidden",
     "ingredients": [
       "提示纸条K",
@@ -4338,15 +5000,400 @@ export const LEGACY_CRAFT_RULES: readonly LegacyCraftRule[] = [
     "rawResult": "'提示纸条Y','WC',1,1,'zd'"
   },
   {
-    "id": "recipe_373",
+    "id": "recipe_430",
     "group": "hidden",
     "ingredients": [
-      "【红杀铁剑】",
-      "电磁充能手套"
+      "红色方块",
+      "Y方块"
     ],
-    "name": "【红杀铁剑·雷击】",
-    "kind": "WK",
-    "rawResult": "'【红杀铁剑·雷击】','WK',300,45,'ned'"
+    "name": "金色方块",
+    "kind": "X",
+    "rawResult": "'金色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_431",
+    "group": "hidden",
+    "ingredients": [
+      "红色方块",
+      "Y方块"
+    ],
+    "name": "黑色方块",
+    "kind": "X",
+    "rawResult": "'黑色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_432",
+    "group": "hidden",
+    "ingredients": [
+      "金色方块",
+      "Y方块"
+    ],
+    "name": "红色方块",
+    "kind": "X",
+    "rawResult": "'红色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_433",
+    "group": "hidden",
+    "ingredients": [
+      "金色方块",
+      "Y方块"
+    ],
+    "name": "黑色方块",
+    "kind": "X",
+    "rawResult": "'黑色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_434",
+    "group": "hidden",
+    "ingredients": [
+      "黑色方块",
+      "Y方块"
+    ],
+    "name": "红色方块",
+    "kind": "X",
+    "rawResult": "'红色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_435",
+    "group": "hidden",
+    "ingredients": [
+      "黑色方块",
+      "Y方块"
+    ],
+    "name": "金色方块",
+    "kind": "X",
+    "rawResult": "'金色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_436",
+    "group": "hidden",
+    "ingredients": [
+      "绿色方块",
+      "Y方块"
+    ],
+    "name": "黄色方块",
+    "kind": "X",
+    "rawResult": "'黄色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_437",
+    "group": "hidden",
+    "ingredients": [
+      "绿色方块",
+      "Y方块"
+    ],
+    "name": "白色方块",
+    "kind": "X",
+    "rawResult": "'白色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_438",
+    "group": "hidden",
+    "ingredients": [
+      "黄色方块",
+      "Y方块"
+    ],
+    "name": "绿色方块",
+    "kind": "X",
+    "rawResult": "'绿色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_439",
+    "group": "hidden",
+    "ingredients": [
+      "黄色方块",
+      "Y方块"
+    ],
+    "name": "白色方块",
+    "kind": "X",
+    "rawResult": "'白色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_440",
+    "group": "hidden",
+    "ingredients": [
+      "白色方块",
+      "Y方块"
+    ],
+    "name": "绿色方块",
+    "kind": "X",
+    "rawResult": "'绿色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_441",
+    "group": "hidden",
+    "ingredients": [
+      "白色方块",
+      "Y方块"
+    ],
+    "name": "黄色方块",
+    "kind": "X",
+    "rawResult": "'黄色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_442",
+    "group": "hidden",
+    "ingredients": [
+      "蓝色方块",
+      "Y方块"
+    ],
+    "name": "银色方块",
+    "kind": "X",
+    "rawResult": "'银色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_443",
+    "group": "hidden",
+    "ingredients": [
+      "蓝色方块",
+      "Y方块"
+    ],
+    "name": "水晶方块",
+    "kind": "X",
+    "rawResult": "'水晶方块','X',1,1,"
+  },
+  {
+    "id": "recipe_444",
+    "group": "hidden",
+    "ingredients": [
+      "银色方块",
+      "Y方块"
+    ],
+    "name": "蓝色方块",
+    "kind": "X",
+    "rawResult": "'蓝色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_445",
+    "group": "hidden",
+    "ingredients": [
+      "银色方块",
+      "Y方块"
+    ],
+    "name": "水晶方块",
+    "kind": "X",
+    "rawResult": "'水晶方块','X',1,1,"
+  },
+  {
+    "id": "recipe_446",
+    "group": "hidden",
+    "ingredients": [
+      "水晶方块",
+      "Y方块"
+    ],
+    "name": "蓝色方块",
+    "kind": "X",
+    "rawResult": "'蓝色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_447",
+    "group": "hidden",
+    "ingredients": [
+      "水晶方块",
+      "Y方块"
+    ],
+    "name": "银色方块",
+    "kind": "X",
+    "rawResult": "'银色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_448",
+    "group": "hidden",
+    "ingredients": [
+      "红色方块",
+      "X方块"
+    ],
+    "name": "绿色方块",
+    "kind": "X",
+    "rawResult": "'绿色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_449",
+    "group": "hidden",
+    "ingredients": [
+      "红色方块",
+      "X方块"
+    ],
+    "name": "蓝色方块",
+    "kind": "X",
+    "rawResult": "'蓝色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_450",
+    "group": "hidden",
+    "ingredients": [
+      "绿色方块",
+      "X方块"
+    ],
+    "name": "红色方块",
+    "kind": "X",
+    "rawResult": "'红色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_451",
+    "group": "hidden",
+    "ingredients": [
+      "绿色方块",
+      "X方块"
+    ],
+    "name": "蓝色方块",
+    "kind": "X",
+    "rawResult": "'蓝色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_452",
+    "group": "hidden",
+    "ingredients": [
+      "蓝色方块",
+      "X方块"
+    ],
+    "name": "红色方块",
+    "kind": "X",
+    "rawResult": "'红色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_453",
+    "group": "hidden",
+    "ingredients": [
+      "蓝色方块",
+      "X方块"
+    ],
+    "name": "绿色方块",
+    "kind": "X",
+    "rawResult": "'绿色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_454",
+    "group": "hidden",
+    "ingredients": [
+      "金色方块",
+      "X方块"
+    ],
+    "name": "黄色方块",
+    "kind": "X",
+    "rawResult": "'黄色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_455",
+    "group": "hidden",
+    "ingredients": [
+      "金色方块",
+      "X方块"
+    ],
+    "name": "银色方块",
+    "kind": "X",
+    "rawResult": "'银色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_456",
+    "group": "hidden",
+    "ingredients": [
+      "黄色方块",
+      "X方块"
+    ],
+    "name": "金色方块",
+    "kind": "X",
+    "rawResult": "'金色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_457",
+    "group": "hidden",
+    "ingredients": [
+      "黄色方块",
+      "X方块"
+    ],
+    "name": "银色方块",
+    "kind": "X",
+    "rawResult": "'银色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_458",
+    "group": "hidden",
+    "ingredients": [
+      "银色方块",
+      "X方块"
+    ],
+    "name": "金色方块",
+    "kind": "X",
+    "rawResult": "'金色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_459",
+    "group": "hidden",
+    "ingredients": [
+      "银色方块",
+      "X方块"
+    ],
+    "name": "黄色方块",
+    "kind": "X",
+    "rawResult": "'黄色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_460",
+    "group": "hidden",
+    "ingredients": [
+      "黑色方块",
+      "X方块"
+    ],
+    "name": "白色方块",
+    "kind": "X",
+    "rawResult": "'白色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_461",
+    "group": "hidden",
+    "ingredients": [
+      "黑色方块",
+      "X方块"
+    ],
+    "name": "水晶方块",
+    "kind": "X",
+    "rawResult": "'水晶方块','X',1,1,"
+  },
+  {
+    "id": "recipe_462",
+    "group": "hidden",
+    "ingredients": [
+      "白色方块",
+      "X方块"
+    ],
+    "name": "黑色方块",
+    "kind": "X",
+    "rawResult": "'黑色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_463",
+    "group": "hidden",
+    "ingredients": [
+      "白色方块",
+      "X方块"
+    ],
+    "name": "水晶方块",
+    "kind": "X",
+    "rawResult": "'水晶方块','X',1,1,"
+  },
+  {
+    "id": "recipe_464",
+    "group": "hidden",
+    "ingredients": [
+      "水晶方块",
+      "X方块"
+    ],
+    "name": "黑色方块",
+    "kind": "X",
+    "rawResult": "'黑色方块','X',1,1,"
+  },
+  {
+    "id": "recipe_465",
+    "group": "hidden",
+    "ingredients": [
+      "水晶方块",
+      "X方块"
+    ],
+    "name": "白色方块",
+    "kind": "X",
+    "rawResult": "'白色方块','X',1,1,"
   }
 ];
 
