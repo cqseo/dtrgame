@@ -79,6 +79,16 @@ h1 small { display: block; margin-top: 20px; font: 700 clamp(.92rem,2vw,1.2rem)/
 .secondary-button:hover { background: #20234b; }
 .logout-button { width: 100%; }
 .form-note { min-height: 38px; margin: 4px 0 0; color: var(--muted); font-size: .72rem; line-height: 1.6; } .form-note.is-error { color: var(--coral); }
+.tutorial-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; margin-bottom: 14px; background: var(--line); border: 1px solid var(--line); }
+.tutorial-stats > div { display: grid; gap: 5px; padding: 12px; background: #111127; }
+.tutorial-stats span, .tutorial-objective span { color: var(--muted); font-size: .7rem; letter-spacing: .08em; }
+.tutorial-stats strong { color: var(--mint); font-size: .86rem; }
+.tutorial-objective { display: grid; gap: 7px; padding: 14px; border-left: 3px solid var(--cyan); background: #12152c; }
+.tutorial-objective strong { font-size: .9rem; line-height: 1.6; }
+.tutorial-log { min-height: 48px; margin: 12px 0; padding: 10px 12px; color: #d4d4e7; background: #0b0b1a; border: 1px dashed #45426f; line-height: 1.6; }
+.tutorial-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.tutorial-actions button { min-height: 44px; padding: 0 13px; border: 1px solid #5550a0; color: var(--cyan); background: #17172c; font-weight: 800; }
+.tutorial-actions button:not(:disabled):hover { background: #292751; }
 .trial-poster { position: relative; display: grid; place-items: center; aspect-ratio: 16/8; margin: 16px 0; overflow: hidden; border: 1px solid #4d497b; background: radial-gradient(circle at 65% 35%,#5b2e53,transparent 28%),linear-gradient(135deg,#17172c,#282454 50%,#111125); }
 .trial-poster::before, .trial-poster::after { content: ""; position: absolute; background: var(--coral); }
 .trial-poster::before { width: 140%; height: 3px; transform: rotate(-17deg); opacity: .65; } .trial-poster::after { width: 3px; height: 140%; transform: rotate(23deg); opacity: .45; }
@@ -107,6 +117,8 @@ h1 small { display: block; margin-top: 20px; font: 700 clamp(.92rem,2vw,1.2rem)/
   .room-table td::before { content: attr(data-label); color: var(--muted); font-size: .68rem; }
   .room-table td:nth-child(2), .room-table td:nth-child(5), .room-table td:last-child { grid-column: 1/-1; } .room-table td:last-child { border-bottom: 0; } .room-action { width: 100%; }
   .section-note, .trial-panel > p:not(.section-code), .notice-panel li, .room-table, .form-note { font-size: 1rem; }
+  .tutorial-stats { grid-template-columns: 1fr 1fr; }
+  .tutorial-actions { display: grid; grid-template-columns: 1fr; }
   .event-log li { font-size: .95rem; }
   .footer { flex-direction: column; }
 }

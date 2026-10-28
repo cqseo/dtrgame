@@ -25,6 +25,12 @@ Actions include a unique `commandId` and
 receive authoritative, monotonically sequenced room events. The room retains a
 bounded command-id window so reconnects cannot apply the same command twice.
 
+The authenticated `tutorial` room includes the first playable legacy-parity
+slice: movement and exploration each cost 15 SP, discoveries are picked up
+separately, consumables can apply a harmful status, and the matching purifier
+removes it. Tutorial progress is stored per authenticated player in the room's
+Durable Object.
+
 See [Architecture](docs/ARCHITECTURE.md) and [Migration plan](docs/MIGRATION_PLAN.md).
 
 ## Secrets

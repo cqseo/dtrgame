@@ -1,4 +1,5 @@
 import { isValidRoomId, parseClientMessage } from "./protocol";
+import { applyTutorialAction, type TutorialState } from "./tutorial";
 
 const ROOM_STATE_KEY = "room-state-v1";
 const MAX_RECENT_COMMANDS = 256;
@@ -10,9 +11,11 @@ interface RoomPlayer {
 }
 
 interface StoredRoomState {
+  roomId?: string;
   sequence: number;
   players: Record<string, RoomPlayer>;
   recentCommandIds: string[];
+  tutorialPlayers?: Record<string, TutorialState>;
 }
 
 interface SocketAttachment {
@@ -110,7 +113,9 @@ function routeRoomSocket(request: Request, env: Env, roomId: string): Response |
     return json({ error: "websocket_upgrade_required" }, { status: 426 });
   }
   const id = env.GAME_ROOMS.idFromName(roomId);
-  return env.GAME_ROOMS.get(id).fetch(request);
+  const headers = new Headers(request.headers);
+  headers.set("x-dtr-room-id", roomId);
+  return env.GAME_ROOMS.get(id).fetch(new Request(request, { headers }));
 }
 
 async function getPublicCatalog(env: Env): Promise<Response> {
@@ -197,12 +202,17 @@ export class GameRoom implements DurableObject {
     if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
       return json({ error: "websocket_upgrade_required" }, { status: 426 });
     }
+    await this.ready;
+    const roomId = request.headers.get("x-dtr-room-id");
+    if (!this.room.roomId && roomId) {
+      this.room.roomId = roomId;
+      await this.persist();
+    }
     const pair = new WebSocketPair();
     const client = pair[0];
     const server = pair[1];
     this.state.acceptWebSocket(server);
     server.serializeAttachment({ connectedAt: Date.now() } satisfies SocketAttachment);
-    await this.ready;
     server.send(JSON.stringify(this.snapshot()));
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -242,6 +252,10 @@ export class GameRoom implements DurableObject {
       this.room.sequence += 1;
       await this.persist();
       this.broadcast({ type: "room_event", sequence: this.room.sequence, event: { type: "player_joined", player: this.room.players[playerId] } });
+      const tutorialState = this.room.tutorialPlayers?.[playerId];
+      if (this.room.roomId === "tutorial" && tutorialState) {
+        socket.send(JSON.stringify({ type: "tutorial_state", state: tutorialState, log: "训练状态已恢复。" }));
+      }
       return;
     }
 
@@ -255,6 +269,20 @@ export class GameRoom implements DurableObject {
       socket.send(JSON.stringify({ type: "command_ack", commandId: message.commandId, duplicate: true, sequence: this.room.sequence }));
       return;
     }
+    let tutorialResult: ReturnType<typeof applyTutorialAction> | undefined;
+    if (message.action.startsWith("tutorial_")) {
+      if (this.room.roomId !== "tutorial") {
+        socket.send(JSON.stringify({ type: "error", code: "tutorial_room_required" }));
+        return;
+      }
+      tutorialResult = applyTutorialAction(this.room.tutorialPlayers?.[attachment.playerId], message.action, message.payload);
+      if (!tutorialResult.ok) {
+        socket.send(JSON.stringify({ type: "tutorial_state", state: tutorialResult.state, error: tutorialResult.code, log: tutorialResult.log }));
+        return;
+      }
+      this.room.tutorialPlayers ??= {};
+      this.room.tutorialPlayers[attachment.playerId] = tutorialResult.state;
+    }
     this.room.recentCommandIds.push(message.commandId);
     this.room.recentCommandIds = this.room.recentCommandIds.slice(-MAX_RECENT_COMMANDS);
     this.room.sequence += 1;
@@ -263,7 +291,14 @@ export class GameRoom implements DurableObject {
     this.broadcast({
       type: "room_event",
       sequence: this.room.sequence,
-      event: { type: "action", playerId: attachment.playerId, action: message.action, payload: message.payload, commandId: message.commandId }
+      event: {
+        type: "action",
+        playerId: attachment.playerId,
+        action: message.action,
+        payload: message.payload,
+        commandId: message.commandId,
+        ...(tutorialResult ? { tutorial: tutorialResult.state, log: tutorialResult.log } : {})
+      }
     });
   }
 

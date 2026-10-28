@@ -5,6 +5,8 @@ const socketState = byId("socket-state");
 const systemMessage = byId("system-message");
 const authStorageKey = "mugen-loop-auth-v1";
 let authSession = null;
+let tutorialSocket = null;
+let tutorialState = null;
 
 function setAuthSession(session) {
   authSession = session?.access_token ? session : null;
@@ -95,7 +97,9 @@ function observeRoom(roomId, label) {
     return;
   }
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+  if (roomId === "tutorial" && tutorialSocket) tutorialSocket.close();
   const socket = new WebSocket(`${protocol}//${location.host}/api/rooms/${roomId}/socket`);
+  if (roomId === "tutorial") tutorialSocket = socket;
   const timeout = window.setTimeout(() => { socket.close(); systemMessage.textContent = `${label}身份验证超时，请重试。`; }, 8000);
   systemMessage.textContent = `正在验证 ${label} 的玩家身份……`;
   socket.addEventListener("open", () => socket.send(JSON.stringify({ type: "auth", accessToken: authSession.access_token })));
@@ -103,13 +107,54 @@ function observeRoom(roomId, label) {
     try {
       const message = JSON.parse(event.data);
       if (message.type === "room_event" && message.event?.type === "player_joined" && message.event.player?.id === authSession.user?.id) {
-        clearTimeout(timeout); systemMessage.textContent = `${label}身份验证成功，房间状态已同步。`; socket.close();
+        clearTimeout(timeout); systemMessage.textContent = `${label}身份验证成功，房间状态已同步。`;
+        if (roomId === "tutorial") {
+          byId("tutorial-console").hidden = false;
+          sendTutorialAction("tutorial_start");
+          byId("tutorial-console").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+        } else socket.close();
+      } else if (message.type === "tutorial_state") {
+        renderTutorial(message.state, message.log, message.error);
+      } else if (message.type === "room_event" && message.event?.type === "action" && message.event.tutorial) {
+        renderTutorial(message.event.tutorial, message.event.log);
       } else if (message.type === "error" && message.code === "auth_invalid") {
         clearTimeout(timeout); setAuthSession(null); systemMessage.textContent = "登录状态已失效，请重新登录。"; socket.close();
       }
     } catch { /* Ignore malformed frames. */ }
   });
   socket.addEventListener("error", () => { clearTimeout(timeout); systemMessage.textContent = `${label}实时通道连接失败。`; }, { once: true });
+}
+
+function sendTutorialAction(action) {
+  if (!tutorialSocket || tutorialSocket.readyState !== WebSocket.OPEN) {
+    byId("tutorial-log").textContent = "教程通道未连接，请重新点击“观测”。";
+    return;
+  }
+  const payload = action === "tutorial_move" ? { to: "旧站台" } : undefined;
+  tutorialSocket.send(JSON.stringify({
+    type: "action",
+    commandId: crypto.randomUUID(),
+    action,
+    ...(payload ? { payload } : {})
+  }));
+}
+
+function renderTutorial(state, log = "状态已同步。", error = "") {
+  tutorialState = state;
+  byId("tutorial-hp").textContent = `${state.hp} / ${state.maxHp}`;
+  byId("tutorial-sp").textContent = `${state.sp} / ${state.maxSp}`;
+  byId("tutorial-area").textContent = state.area;
+  byId("tutorial-condition").textContent = state.status === "poisoned" ? "中毒" : "正常";
+  byId("tutorial-condition").className = state.status === "poisoned" ? "coral" : "mint";
+  byId("tutorial-objective").textContent = state.objective;
+  byId("tutorial-log").textContent = error ? `${log}（${error}）` : log;
+  byId("tutorial-status").textContent = state.completed ? "已完成" : `STEP ${state.step + 1}`;
+  const enabledAt = {
+    tutorial_move: [0], tutorial_search: [1, 3], tutorial_pickup: [2, 4], tutorial_use_ration: [5], tutorial_use_purifier: [6]
+  };
+  document.querySelectorAll("[data-tutorial-action]").forEach((button) => {
+    button.disabled = state.completed || !enabledAt[button.dataset.tutorialAction].includes(state.step);
+  });
 }
 
 async function checkWorker() {
@@ -177,5 +222,9 @@ byId("logout-button").addEventListener("click", async () => {
   try { if (token) await authRequest("logout", {}, token); } catch { /* Local logout still clears the session. */ }
   finally { setAuthSession(null); setAuthBusy(false); }
 });
+
+document.querySelectorAll("[data-tutorial-action]").forEach((button) => button.addEventListener("click", () => {
+  sendTutorialAction(button.dataset.tutorialAction);
+}));
 
 updateClock(); setInterval(updateClock, 1000); restoreAuth(); checkWorker();
