@@ -1,5 +1,25 @@
 import { isValidRoomId, parseClientMessage } from "./protocol";
 
+const ROOM_STATE_KEY = "room-state-v1";
+const MAX_RECENT_COMMANDS = 256;
+
+interface RoomPlayer {
+  id: string;
+  joinedAt: number;
+  lastSeenAt: number;
+}
+
+interface StoredRoomState {
+  sequence: number;
+  players: Record<string, RoomPlayer>;
+  recentCommandIds: string[];
+}
+
+interface SocketAttachment {
+  connectedAt: number;
+  playerId?: string;
+}
+
 export interface Env {
   ASSETS: Fetcher;
   GAME_ROOMS: DurableObjectNamespace;
@@ -77,7 +97,33 @@ export default {
 } satisfies ExportedHandler<Env>;
 
 export class GameRoom implements DurableObject {
-  constructor(private readonly state: DurableObjectState) {}
+  private room: StoredRoomState = { sequence: 0, players: {}, recentCommandIds: [] };
+  private readonly ready: Promise<void>;
+
+  constructor(private readonly state: DurableObjectState) {
+    this.ready = this.state.blockConcurrencyWhile(async () => {
+      this.room = (await this.state.storage.get<StoredRoomState>(ROOM_STATE_KEY)) ?? this.room;
+    });
+  }
+
+  private snapshot(): { type: "room_snapshot"; sequence: number; players: RoomPlayer[] } {
+    return {
+      type: "room_snapshot",
+      sequence: this.room.sequence,
+      players: Object.values(this.room.players)
+    };
+  }
+
+  private broadcast(message: unknown): void {
+    const encoded = JSON.stringify(message);
+    for (const peer of this.state.getWebSockets()) {
+      if (peer.readyState === WebSocket.OPEN) peer.send(encoded);
+    }
+  }
+
+  private async persist(): Promise<void> {
+    await this.state.storage.put(ROOM_STATE_KEY, this.room);
+  }
 
   async fetch(request: Request): Promise<Response> {
     if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
@@ -87,11 +133,14 @@ export class GameRoom implements DurableObject {
     const client = pair[0];
     const server = pair[1];
     this.state.acceptWebSocket(server);
-    server.serializeAttachment({ connectedAt: Date.now() });
+    server.serializeAttachment({ connectedAt: Date.now() } satisfies SocketAttachment);
+    await this.ready;
+    server.send(JSON.stringify(this.snapshot()));
     return new Response(null, { status: 101, webSocket: client });
   }
 
   async webSocketMessage(socket: WebSocket, raw: string | ArrayBuffer): Promise<void> {
+    await this.ready;
     if (typeof raw !== "string") {
       socket.close(1003, "Text messages only");
       return;
@@ -102,13 +151,46 @@ export class GameRoom implements DurableObject {
       return;
     }
     if (message.type === "ping") {
-      socket.send(JSON.stringify({ type: "pong", at: message.at }));
+      socket.send(JSON.stringify({ type: "pong", at: message.at, sequence: this.room.sequence }));
       return;
     }
-    const event = JSON.stringify({ type: "room_event", event: message });
-    for (const peer of this.state.getWebSockets()) {
-      if (peer.readyState === WebSocket.OPEN) peer.send(event);
+
+    if (message.type === "join") {
+      const now = Date.now();
+      const existing = this.room.players[message.playerId];
+      this.room.players[message.playerId] = {
+        id: message.playerId,
+        joinedAt: existing?.joinedAt ?? now,
+        lastSeenAt: now
+      };
+      const attachment = (socket.deserializeAttachment() as SocketAttachment | null) ?? { connectedAt: now };
+      socket.serializeAttachment({ ...attachment, playerId: message.playerId } satisfies SocketAttachment);
+      this.room.sequence += 1;
+      await this.persist();
+      this.broadcast({ type: "room_event", sequence: this.room.sequence, event: { type: "player_joined", player: this.room.players[message.playerId] } });
+      return;
     }
+
+    const attachment = socket.deserializeAttachment() as SocketAttachment | null;
+    const player = attachment?.playerId ? this.room.players[attachment.playerId] : undefined;
+    if (!attachment?.playerId || !player) {
+      socket.send(JSON.stringify({ type: "error", code: "join_required" }));
+      return;
+    }
+    if (this.room.recentCommandIds.includes(message.commandId)) {
+      socket.send(JSON.stringify({ type: "command_ack", commandId: message.commandId, duplicate: true, sequence: this.room.sequence }));
+      return;
+    }
+    this.room.recentCommandIds.push(message.commandId);
+    this.room.recentCommandIds = this.room.recentCommandIds.slice(-MAX_RECENT_COMMANDS);
+    this.room.sequence += 1;
+    player.lastSeenAt = Date.now();
+    await this.persist();
+    this.broadcast({
+      type: "room_event",
+      sequence: this.room.sequence,
+      event: { type: "action", playerId: attachment.playerId, action: message.action, payload: message.payload, commandId: message.commandId }
+    });
   }
 
   async webSocketClose(socket: WebSocket, code: number, reason: string, wasClean: boolean): Promise<void> {
