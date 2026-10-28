@@ -1,10 +1,15 @@
-export type AreaId = "zero_station" | "old_platform" | "signal_corridor" | "shinjuku_ruins" | "memory_market" | "terminal_roof";
+import { LEGACY_AREAS, LEGACY_MAP_RULES, PROTOTYPE_AREA_ALIASES, isLegacyAreaId, normalizeSavedArea, type LegacyAreaId } from "./legacy-map";
+
+export type AreaId = LegacyAreaId;
 export type ItemKind = "weapon" | "armor" | "heal" | "stamina" | "antidote";
 
 export interface AreaDefinition {
   id: AreaId;
   name: string;
-  neighbors: AreaId[];
+  grid: string;
+  itemFind: number;
+  encounter: number;
+  initiative: number;
   shop?: boolean;
 }
 
@@ -67,6 +72,7 @@ export interface GameWorldState {
   seed: number;
   forbidden: AreaId[];
   warningArea: AreaId | null;
+  warningAreas: AreaId[];
   players: Record<string, GamePlayerState>;
   corpses: CorpseState[];
   winnerId: string | null;
@@ -79,14 +85,9 @@ export interface GameTransition {
   event: { kind: string; playerId: string; text: string; targetId?: string };
 }
 
-export const GAME_AREAS: AreaDefinition[] = [
-  { id: "zero_station", name: "第零候车室", neighbors: ["old_platform", "signal_corridor"] },
-  { id: "old_platform", name: "旧站台", neighbors: ["zero_station", "shinjuku_ruins"] },
-  { id: "signal_corridor", name: "信号廊", neighbors: ["zero_station", "memory_market"] },
-  { id: "shinjuku_ruins", name: "新宿废层", neighbors: ["old_platform", "terminal_roof"] },
-  { id: "memory_market", name: "记忆市集", neighbors: ["signal_corridor", "terminal_roof"], shop: true },
-  { id: "terminal_roof", name: "终点天台", neighbors: ["shinjuku_ruins", "memory_market"], shop: true }
-];
+export const GAME_AREAS: AreaDefinition[] = LEGACY_AREAS.map(({ id, name, grid, itemFind, encounter, initiative, shop }) => ({
+  id, name, grid, itemFind, encounter, initiative, shop: Boolean(shop)
+}));
 
 const catalog: Array<Omit<GameItem, "instanceId">> = [
   { catalogId: "folding_baton", name: "折叠短棍", kind: "weapon", power: 9, durability: 18, price: 0 },
@@ -99,7 +100,7 @@ const catalog: Array<Omit<GameItem, "instanceId">> = [
   { catalogId: "purifier", name: "净化针剂", kind: "antidote", power: 0, durability: 1, price: 120 }
 ];
 
-const areaById = (id: AreaId): AreaDefinition => GAME_AREAS.find((area) => area.id === id)!;
+const areaById = (id: AreaId): AreaDefinition => GAME_AREAS.find((area) => area.id === id) ?? GAME_AREAS[1]!;
 const clone = <T>(value: T): T => structuredClone(value);
 
 function nextRandom(world: GameWorldState): number {
@@ -113,7 +114,7 @@ function makeItem(world: GameWorldState, definition: Omit<GameItem, "instanceId"
 }
 
 export function createGameWorld(seed = 20261028, mode: GameWorldState["mode"] = "infinite"): GameWorldState {
-  return { mode, phase: "waiting", cycle: 1, turn: 0, seed: seed >>> 0, forbidden: [], warningArea: null, players: {}, corpses: [], winnerId: null };
+  return { mode, phase: "waiting", cycle: 1, turn: 0, seed: seed >>> 0, forbidden: [...LEGACY_MAP_RULES.startForbidden], warningArea: null, warningAreas: [], players: {}, corpses: [], winnerId: null };
 }
 
 function createPlayer(world: GameWorldState, playerId: string): GamePlayerState {
@@ -126,7 +127,7 @@ function createPlayer(world: GameWorldState, playerId: string): GamePlayerState 
     level: 1,
     exp: 0,
     money: 300,
-    area: "zero_station",
+    area: "zone_1",
     status: "normal",
     tactic: "balanced",
     alive: true,
@@ -173,26 +174,48 @@ function levelUp(player: GamePlayerState): string {
   return text;
 }
 
+function normalizeSavedWorldAreas(world: GameWorldState): GameWorldState {
+  // Durable Objects created before this migration can still hold 6-region IDs.
+  // Translate them without deleting a saved player, their inventory, or history.
+  for (const player of Object.values(world.players)) player.area = normalizeSavedArea(player.area);
+  for (const corpse of world.corpses) corpse.area = normalizeSavedArea(corpse.area);
+  world.forbidden = [...new Set((world.forbidden ?? []).map(normalizeSavedArea))];
+  world.warningAreas = (world.warningAreas ?? (world.warningArea ? [world.warningArea] : [])).map(normalizeSavedArea);
+  world.warningArea = world.warningAreas[0] ?? null;
+  return world;
+}
+
 function advanceWorld(world: GameWorldState): string {
   world.turn += 1;
   let notice = "";
-  if (world.turn % 8 === 5 && !world.warningArea) {
-    const available = GAME_AREAS.filter(({ id }) => !world.forbidden.includes(id));
-    world.warningArea = available[Math.floor(nextRandom(world) * available.length)]?.id ?? null;
-    if (world.warningArea) notice = ` 警告：${areaById(world.warningArea).name}即将成为禁区。`;
-  }
-  if (world.turn % 8 === 0 && world.warningArea) {
-    const closed = world.warningArea;
-    world.forbidden.push(closed);
-    world.warningArea = null;
-    for (const player of Object.values(world.players)) {
-      if (player.alive && player.area === closed) { player.hp = 0; player.alive = false; }
+  // The prototype has a turn clock rather than a realtime game clock.
+  // Preserve its pacing here, but restore the legacy four-area waves.
+  if (world.turn % 8 === 5 && world.warningAreas.length === 0) {
+    const available = GAME_AREAS.filter(({ id }) => !world.forbidden.includes(id)).map(({ id }) => id);
+    for (let i = 0; i < LEGACY_MAP_RULES.forbiddenPerWave && available.length; i += 1) {
+      const index = Math.floor(nextRandom(world) * available.length);
+      world.warningAreas.push(available.splice(index, 1)[0]!);
     }
-    notice = ` ${areaById(closed).name}已成为禁区。`;
-    if (world.forbidden.length >= GAME_AREAS.length - 2) {
-      world.cycle += 1;
-      world.forbidden = [];
-      notice += ` 轮回重置，进入第 ${world.cycle} 周目。`;
+    world.warningArea = world.warningAreas[0] ?? null;
+    if (world.warningAreas.length) notice = ` 禁区预告：${world.warningAreas.map((id) => areaById(id).name).join("、")}即将封锁。`;
+  }
+  if (world.turn % 8 === 0 && world.warningAreas.length) {
+    const closed = [...world.warningAreas];
+    world.forbidden.push(...closed);
+    world.warningAreas = []; world.warningArea = null;
+    for (const player of Object.values(world.players)) {
+      if (player.alive && closed.includes(player.area)) { player.hp = 0; player.alive = false; }
+    }
+    notice = ` 新增禁区：${closed.map((id) => areaById(id).name).join("、")}。`;
+    if (world.forbidden.length >= GAME_AREAS.length) {
+      if (world.mode === "infinite") {
+        world.cycle += 1;
+        world.forbidden = [...LEGACY_MAP_RULES.startForbidden];
+        notice += ` 轮回重置，进入第 ${world.cycle} 周目。`;
+      } else {
+        world.phase = "finished";
+        notice += " 所有地区已封锁，游戏结束。";
+      }
     }
   }
   const joined = Object.values(world.players);
@@ -254,7 +277,7 @@ function combatNpc(world: GameWorldState, player: GamePlayerState): string {
 
 export function applyGameAction(input: GameWorldState | undefined, playerId: string, action: string, payload: unknown): GameTransition {
   const requestedMode = parseString(payload, "mode") === "standard" ? "standard" : "infinite";
-  const world = clone(input ?? createGameWorld(20261028, requestedMode));
+  const world = normalizeSavedWorldAreas(clone(input ?? createGameWorld(20261028, requestedMode)));
   if (action === "game_enter") {
     if (!world.players[playerId] && Object.values(world.players).filter(({ alive }) => alive).length >= 8) {
       return failure(world, playerId, "room_full", "房间人数已满。 ");
@@ -281,7 +304,8 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
     if (wasFinished || Object.values(world.players).every((entry) => entry.id === playerId || !entry.alive)) {
       world.cycle += 1;
       world.turn = 0;
-      world.forbidden = [];
+      world.forbidden = [...LEGACY_MAP_RULES.startForbidden];
+      world.warningAreas = [];
       world.warningArea = null;
     }
     return success(world, playerId, "restarted", "轮回重启，角色状态已重置。 ");
@@ -297,8 +321,9 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
 
   let transition: GameTransition;
   if (action === "game_move") {
-    const to = parseString(payload, "to") as AreaId;
-    if (!areaById(player.area).neighbors.includes(to)) return failure(world, playerId, "invalid_destination", "无法直接移动到该区域。 ");
+    const rawTo = parseString(payload, "to");
+    const to = (PROTOTYPE_AREA_ALIASES[rawTo] ?? rawTo) as AreaId;
+    if (!isLegacyAreaId(to) || player.area === to) return failure(world, playerId, "invalid_destination", "请选择其他有效地区。 ");
     if (world.forbidden.includes(to)) return failure(world, playerId, "forbidden_destination", "目标区域已经封锁。 ");
     if (player.enemy) return failure(world, playerId, "enemy_present", "遭遇敌人时无法移动，请先战斗或撤离。 ");
     if (player.sp <= 15) return failure(world, playerId, "insufficient_sp", "体力不足，无法移动。 ");
@@ -309,12 +334,14 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
     if (player.sp <= 15) return failure(world, playerId, "insufficient_sp", "体力不足，无法探索。 ");
     player.sp -= 15;
     const roll = nextRandom(world);
-    const itemThreshold = player.tactic === "scavenge" ? 0.68 : 0.5;
+    const areaRules = areaById(player.area);
+    const itemThreshold = Math.max(0.1, Math.min(0.8, (player.tactic === "scavenge" ? 0.68 : 0.5) + areaRules.itemFind / 100));
+    const enemyThreshold = Math.min(0.98, Math.max(itemThreshold, 0.88 + areaRules.encounter / 100));
     if (roll < itemThreshold) {
       const lootPool = catalog.slice(1);
       player.pendingItem = makeItem(world, lootPool[Math.floor(nextRandom(world) * lootPool.length)]!);
       transition = success(world, playerId, "found_item", `探索发现了${player.pendingItem.name}。`);
-    } else if (roll < 0.88) {
+    } else if (roll < enemyThreshold) {
       player.enemy = spawnEnemy(world, player);
       transition = success(world, playerId, "found_enemy", `遭遇${player.enemy.name}。`);
     } else {
@@ -324,7 +351,7 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
     }
   } else if (action === "game_pickup") {
     if (!player.pendingItem) return failure(world, playerId, "nothing_to_pickup", "当前没有可拾取物品。 ");
-    if (player.inventory.length >= 7) return failure(world, playerId, "inventory_full", "背包已满，请先使用或丢弃物品。 ");
+    if (player.inventory.length >= LEGACY_MAP_RULES.inventorySlots) return failure(world, playerId, "inventory_full", "背包已满，请先使用或丢弃物品。 ");
     const found = player.pendingItem; player.inventory.push(found); player.pendingItem = null;
     transition = success(world, playerId, "picked_up", `已拾取${found.name}。`);
   } else if (action === "game_discard") {
@@ -344,7 +371,7 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
     transition = success(world, playerId, "equipped", `已装备${selected.name}。`);
   } else if (action === "game_unequip") {
     const slot = parseString(payload, "slot");
-    if (player.inventory.length >= 7) return failure(world, playerId, "inventory_full", "背包已满，无法卸下装备。 ");
+    if (player.inventory.length >= LEGACY_MAP_RULES.inventorySlots) return failure(world, playerId, "inventory_full", "背包已满，无法卸下装备。 ");
     if (slot === "weapon" && player.weapon) {
       const selected = player.weapon; player.weapon = null; player.inventory.push(selected);
       transition = success(world, playerId, "unequipped", `已卸下${selected.name}。`);
@@ -392,7 +419,7 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
     transition = success(world, playerId, "rested", "短暂休整，恢复 30 体力和 10 生命。 ");
   } else if (action === "game_shop_buy") {
     if (!areaById(player.area).shop) return failure(world, playerId, "shop_unavailable", "当前区域没有商店。 ");
-    if (player.inventory.length >= 7) return failure(world, playerId, "inventory_full", "背包已满。 ");
+    if (player.inventory.length >= LEGACY_MAP_RULES.inventorySlots) return failure(world, playerId, "inventory_full", "背包已满。 ");
     const catalogId = parseString(payload, "catalogId");
     const selected = catalog.find((entry) => entry.catalogId === catalogId && entry.price > 0);
     if (!selected) return failure(world, playerId, "unknown_product", "商店没有这个物品。 ");
@@ -417,7 +444,7 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
       const amount = corpse.money; corpse.money = 0; player.money += amount;
       transition = success(world, playerId, "looted_money", `从遗留物中取得 ${amount} LOOP。`);
     } else {
-      if (player.inventory.length >= 7) return failure(world, playerId, "inventory_full", "背包已满。 ");
+      if (player.inventory.length >= LEGACY_MAP_RULES.inventorySlots) return failure(world, playerId, "inventory_full", "背包已满。 ");
       const index = corpse.items.findIndex((entry) => entry.instanceId === instanceId);
       const selected = corpse.items[index];
       if (!selected) return failure(world, playerId, "loot_not_found", "遗留物中没有该物品。 ");
@@ -451,13 +478,14 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
 }
 
 export function getGameView(world: GameWorldState, playerId: string) {
+  world = normalizeSavedWorldAreas(clone(world));
   const player = world.players[playerId];
   const ranking = Object.values(world.players)
     .sort((a, b) => Number(b.alive) - Number(a.alive) || b.kills - a.kills || b.level - a.level || b.wave - a.wave || a.id.localeCompare(b.id))
     .map(({ id, alive, kills, level, wave }, index) => ({ rank: index + 1, id, alive, kills, level, wave }));
   return {
     player,
-    world: { mode: world.mode, phase: world.phase, cycle: world.cycle, turn: world.turn, forbidden: world.forbidden, warningArea: world.warningArea, winnerId: world.winnerId },
+    world: { mode: world.mode, phase: world.phase, cycle: world.cycle, turn: world.turn, forbidden: world.forbidden, warningArea: world.warningArea, warningAreas: world.warningAreas, winnerId: world.winnerId },
     areas: GAME_AREAS,
     shop: catalog.filter(({ price }) => price > 0),
     corpses: world.corpses.filter((corpse) => player && corpse.area === player.area),
