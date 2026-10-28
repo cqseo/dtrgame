@@ -1,5 +1,6 @@
 import { isValidRoomId, parseClientMessage } from "./protocol";
 import { applyTutorialAction, type TutorialState } from "./tutorial";
+import { applyArenaAction, roomLeaderboard, type ArenaState, type ArenaBestScore } from "./arena";
 
 const ROOM_STATE_KEY = "room-state-v1";
 const MAX_RECENT_COMMANDS = 256;
@@ -16,6 +17,8 @@ interface StoredRoomState {
   players: Record<string, RoomPlayer>;
   recentCommandIds: string[];
   tutorialPlayers?: Record<string, TutorialState>;
+  arenaPlayers?: Record<string, ArenaState>;
+  arenaBest?: Record<string, ArenaBestScore>;
 }
 
 interface SocketAttachment {
@@ -179,11 +182,12 @@ export class GameRoom implements DurableObject {
     });
   }
 
-  private snapshot(): { type: "room_snapshot"; sequence: number; players: RoomPlayer[] } {
+  private snapshot(): { type: "room_snapshot"; sequence: number; knownPlayerCount: number } {
+    // A new unauthenticated socket must not receive Supabase user UUIDs.
     return {
       type: "room_snapshot",
       sequence: this.room.sequence,
-      players: Object.values(this.room.players)
+      knownPlayerCount: Object.keys(this.room.players).length
     };
   }
 
@@ -251,10 +255,20 @@ export class GameRoom implements DurableObject {
       socket.serializeAttachment({ ...attachment, playerId, authenticatedAt: now } satisfies SocketAttachment);
       this.room.sequence += 1;
       await this.persist();
-      this.broadcast({ type: "room_event", sequence: this.room.sequence, event: { type: "player_joined", player: this.room.players[playerId] } });
+      // Confirm identity only to the authenticated socket; send no personal UUID
+      // in room-wide presence notifications.
+      socket.send(JSON.stringify({ type: "auth_ok", playerId, sequence: this.room.sequence }));
+      this.broadcast({ type: "room_event", sequence: this.room.sequence, event: { type: "player_joined" } });
       const tutorialState = this.room.tutorialPlayers?.[playerId];
       if (this.room.roomId === "tutorial" && tutorialState) {
         socket.send(JSON.stringify({ type: "tutorial_state", state: tutorialState, log: "训练状态已恢复。" }));
+      }
+      const arenaState = this.room.arenaPlayers?.[playerId];
+      if (this.room.roomId === "infinite" && arenaState) {
+        socket.send(JSON.stringify({
+          type: "arena_state", state: arenaState, log: "试炼状态已恢复。",
+          leaderboard: roomLeaderboard(this.room.arenaBest ?? {})
+        }));
       }
       return;
     }
@@ -270,6 +284,7 @@ export class GameRoom implements DurableObject {
       return;
     }
     let tutorialResult: ReturnType<typeof applyTutorialAction> | undefined;
+    let arenaResult: ReturnType<typeof applyArenaAction> | undefined;
     if (message.action.startsWith("tutorial_")) {
       if (this.room.roomId !== "tutorial") {
         socket.send(JSON.stringify({ type: "error", code: "tutorial_room_required" }));
@@ -282,24 +297,58 @@ export class GameRoom implements DurableObject {
       }
       this.room.tutorialPlayers ??= {};
       this.room.tutorialPlayers[attachment.playerId] = tutorialResult.state;
+    } else if (message.action.startsWith("arena_")) {
+      if (this.room.roomId !== "infinite") {
+        socket.send(JSON.stringify({ type: "error", code: "arena_room_required" }));
+        return;
+      }
+      arenaResult = applyArenaAction(this.room.arenaPlayers?.[attachment.playerId], message.action, message.payload);
+      if (!arenaResult.ok) {
+        socket.send(JSON.stringify({
+          type: "arena_state", state: arenaResult.state, error: arenaResult.code,
+          log: arenaResult.log, leaderboard: roomLeaderboard(this.room.arenaBest ?? {})
+        }));
+        return;
+      }
+      this.room.arenaPlayers ??= {};
+      this.room.arenaPlayers[attachment.playerId] = arenaResult.state;
+      if (arenaResult.state.outcome === "victory") {
+        this.room.arenaBest ??= {};
+        const previous = this.room.arenaBest[attachment.playerId];
+        if (!previous || arenaResult.state.score > previous.score) {
+          this.room.arenaBest[attachment.playerId] = { score: arenaResult.state.score, clearedAt: Date.now() };
+        }
+      }
+    } else {
+      // The server no longer acknowledges arbitrary client-provided action names.
+      socket.send(JSON.stringify({ type: "error", code: "unsupported_action" }));
+      return;
     }
+
     this.room.recentCommandIds.push(message.commandId);
     this.room.recentCommandIds = this.room.recentCommandIds.slice(-MAX_RECENT_COMMANDS);
     this.room.sequence += 1;
     player.lastSeenAt = Date.now();
     await this.persist();
+
+    // Never broadcast a player's private tutorial/arena inventory, state, or payload
+    // to every connected room member.
+    if (tutorialResult) {
+      socket.send(JSON.stringify({ type: "tutorial_state", state: tutorialResult.state, log: tutorialResult.log }));
+    }
+    if (arenaResult) {
+      socket.send(JSON.stringify({
+        type: "arena_state", state: arenaResult.state, log: arenaResult.log,
+        leaderboard: roomLeaderboard(this.room.arenaBest ?? {})
+      }));
+    }
     this.broadcast({
-      type: "room_event",
-      sequence: this.room.sequence,
-      event: {
-        type: "action",
-        playerId: attachment.playerId,
-        action: message.action,
-        payload: message.payload,
-        commandId: message.commandId,
-        ...(tutorialResult ? { tutorial: tutorialResult.state, log: tutorialResult.log } : {})
-      }
+      type: "room_event", sequence: this.room.sequence,
+      event: { type: "action", action: message.action, commandId: message.commandId }
     });
+    if (arenaResult?.state.outcome === "victory") {
+      this.broadcast({ type: "arena_leaderboard", leaderboard: roomLeaderboard(this.room.arenaBest ?? {}) });
+    }
   }
 
   async webSocketClose(socket: WebSocket, code: number, reason: string, wasClean: boolean): Promise<void> {

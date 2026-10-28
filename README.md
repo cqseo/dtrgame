@@ -31,7 +31,15 @@ separately, consumables can apply a harmful status, and the matching purifier
 removes it. Tutorial progress is stored per authenticated player in the room's
 Durable Object.
 
-See [Architecture](docs/ARCHITECTURE.md) and [Migration plan](docs/MIGRATION_PLAN.md).
+The authenticated **infinite** room now includes a deterministic solo PvE preview:
+search for a weapon, equip, reveal the 3×3 fog map, fight a guardian, heal/rest,
+and view the room-local best-score board. The preview combat values are original
+test values pending legacy parity verification. Personal state is kept per
+authenticated player and is not broadcast to other room members. Access is free;
+no checkout, referral payouts or premium unlocks are active.
+
+See [PvE preview rules and outstanding release gates](docs/PVE_PREVIEW.md),
+[Architecture](docs/ARCHITECTURE.md), and [Migration plan](docs/MIGRATION_PLAN.md).
 
 ## Secrets
 

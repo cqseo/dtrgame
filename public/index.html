@@ -48,17 +48,17 @@
 
           <section class="pixel-panel rooms-panel" id="rooms" aria-labelledby="rooms-title">
             <header class="section-head"><div><p class="section-code">ROOM // MATCHMAKING</p><h2 id="rooms-title">房间列表</h2></div><button class="text-button" id="refresh-rooms" type="button">重新检测</button></header>
-            <p class="section-note">房间编号会重复使用，不代表同一轮回。测试阶段仅开放观测与连接检测。</p>
+            <p class="section-note">房间编号会重复使用，不代表同一轮回。当前开放基础训练与单人 PvE 测试；进度与本房间战绩在服务器保存，测试规则尚未完成旧版等值验收。</p>
             <table class="room-table">
               <thead><tr><th>编号</th><th>模式</th><th>状态</th><th>人数</th><th>区域</th><th>运行时间</th><th>操作</th></tr></thead>
               <tbody>
                 <tr>
                   <td data-label="编号">01</td><td data-label="模式"><strong class="coral">教程轮回</strong></td><td data-label="状态"><span class="status-badge ready">开放激活</span></td>
-                  <td data-label="人数">0 / 1</td><td data-label="区域">新宿废层</td><td data-label="运行时间">常驻</td><td data-label="操作"><button class="room-action" data-room="tutorial" type="button">观测</button></td>
+                  <td data-label="人数">0 / 1</td><td data-label="区域">新宿废层</td><td data-label="运行时间">常驻</td><td data-label="操作"><button class="room-action" data-room="tutorial" type="button">进入训练</button></td>
                 </tr>
                 <tr>
-                  <td data-label="编号">02</td><td data-label="模式"><strong class="cyan">无限试炼</strong></td><td data-label="状态"><span class="status-badge waiting">等待中</span></td>
-                  <td data-label="人数">0 / 8</td><td data-label="区域">第零候车室</td><td data-label="运行时间">05:41</td><td data-label="操作"><button class="room-action" data-room="infinite" type="button">观测</button></td>
+                  <td data-label="编号">02</td><td data-label="模式"><strong class="cyan">无限试炼</strong></td><td data-label="状态"><span class="status-badge ready">开放测试</span></td>
+                  <td data-label="人数">0 / 8</td><td data-label="区域">第零候车室</td><td data-label="运行时间">05:41</td><td data-label="操作"><button class="room-action" data-room="infinite" type="button">进入试炼</button></td>
                 </tr>
               </tbody>
             </table>
@@ -78,6 +78,48 @@
               <button type="button" data-tutorial-action="tutorial_pickup">拾取发现物</button>
               <button type="button" data-tutorial-action="tutorial_use_ration">使用异常补给</button>
               <button type="button" data-tutorial-action="tutorial_use_purifier">使用净化针剂</button>
+            </div>
+          </section>
+
+
+          <section class="pixel-panel arena-console" id="arena-console" aria-labelledby="arena-title" hidden>
+            <header class="section-head"><div><p class="section-code">ARENA // PVE PREVIEW</p><h2 id="arena-title">无限试炼 · 初战</h2></div><span class="tag" id="arena-status">等待同步</span></header>
+            <p class="section-note">当前为服务器判定的单人 PvE 测试规则（非完整旧版战斗等值迁移）。移动与探索各消耗 15 SP，攻击消耗 10 SP；地图 3×3，迷雾按实际到达格解锁。</p>
+            <div class="arena-stats" aria-label="试炼角色数据">
+              <div><span>生命 HP</span><strong id="arena-hp">--</strong></div>
+              <div><span>体力 SP</span><strong id="arena-sp">--</strong></div>
+              <div><span>武器</span><strong id="arena-weapon">--</strong></div>
+              <div><span>守卫 HP</span><strong id="arena-enemy">--</strong></div>
+            </div>
+            <div class="arena-objective"><span>当前任务</span><strong id="arena-objective">请先登录并进入试炼。</strong></div>
+            <div class="arena-layout">
+              <div>
+                <p class="arena-subtitle">迷雾地图（北 ↑）</p>
+                <div class="arena-map" id="arena-map" role="grid" aria-label="三乘三试炼地图"></div>
+                <p class="section-note" id="arena-position">当前位置：--</p>
+                <p class="section-note" id="arena-inventory">背包：--</p>
+              </div>
+              <div>
+                <p class="arena-subtitle">本轮操作</p>
+                <div class="arena-actions" aria-label="试炼指令">
+                  <button type="button" data-arena-action="arena_search" disabled>探索区域</button>
+                  <button type="button" data-arena-action="arena_equip" disabled>装备线圈刃</button>
+                  <button type="button" data-arena-action="arena_move" data-dx="0" data-dy="-1" disabled>↑ 北</button>
+                  <button type="button" data-arena-action="arena_move" data-dx="-1" data-dy="0" disabled>← 西</button>
+                  <button type="button" data-arena-action="arena_move" data-dx="1" data-dy="0" disabled>→ 东</button>
+                  <button type="button" data-arena-action="arena_move" data-dx="0" data-dy="1" disabled>↓ 南</button>
+                  <button type="button" data-arena-action="arena_attack" disabled>攻击守卫</button>
+                  <button type="button" data-arena-action="arena_heal" disabled>使用急救包</button>
+                  <button type="button" data-arena-action="arena_rest" disabled>休整一次</button>
+                  <button type="button" data-arena-action="arena_restart" disabled>开启新轮回</button>
+                </div>
+              </div>
+            </div>
+            <p class="arena-log" id="arena-log" role="status" aria-live="polite">等待试炼状态……</p>
+            <div class="arena-ranking">
+              <p class="arena-subtitle">本房间最好成绩 · Top 10</p>
+              <ol id="arena-board" aria-label="当前试炼房间排行榜"><li>尚无通关记录</li></ol>
+              <p class="section-note">暂未写入 Supabase 全服排行榜；此榜仅来自当前 Durable Object 房间。</p>
             </div>
           </section>
 
@@ -107,7 +149,7 @@
 
           <section class="pixel-panel notice-panel" id="help" aria-labelledby="notice-title">
             <p class="section-code">NOTICE // TEST</p><h2 id="notice-title">测试须知</h2>
-            <ul><li>当前仅验证架构、房间连接和视觉骨架。</li><li>旧版玩法将按教程、标准、试炼顺序迁移。</li><li>商业素材全部采用原创或明确授权版本。</li></ul>
+            <ul><li>已开放可玩教程及单人 PvE 预览；战斗、装备与地图规则仍需旧版规则对照。</li><li>旧版玩法将按教程、标准、试炼顺序迁移。</li><li>商业素材全部采用原创或明确授权版本。</li></ul>
           </section>
         </aside>
       </div>
