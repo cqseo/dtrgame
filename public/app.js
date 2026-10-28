@@ -7,11 +7,20 @@ const authStorageKey = "mugen-loop-auth-v1";
 let authSession = null;
 let tutorialSocket = null;
 let tutorialState = null;
+let arenaSocket = null;
+let arenaState = null;
 
 function setAuthSession(session) {
   authSession = session?.access_token ? session : null;
   if (authSession) sessionStorage.setItem(authStorageKey, JSON.stringify(authSession));
-  else sessionStorage.removeItem(authStorageKey);
+  else {
+    sessionStorage.removeItem(authStorageKey);
+    if (tutorialSocket) { tutorialSocket.close(); tutorialSocket = null; }
+    if (arenaSocket) { arenaSocket.close(); arenaSocket = null; }
+    arenaState = null; tutorialState = null;
+    byId("tutorial-console").hidden = true;
+    byId("arena-console").hidden = true;
+  }
   renderAuth();
 }
 
@@ -98,8 +107,10 @@ function observeRoom(roomId, label) {
   }
   const protocol = location.protocol === "https:" ? "wss:" : "ws:";
   if (roomId === "tutorial" && tutorialSocket) tutorialSocket.close();
+  if (roomId === "infinite" && arenaSocket) arenaSocket.close();
   const socket = new WebSocket(`${protocol}//${location.host}/api/rooms/${roomId}/socket`);
   if (roomId === "tutorial") tutorialSocket = socket;
+  if (roomId === "infinite") arenaSocket = socket;
   const timeout = window.setTimeout(() => { socket.close(); systemMessage.textContent = `${label}身份验证超时，请重试。`; }, 8000);
   systemMessage.textContent = `正在验证 ${label} 的玩家身份……`;
   socket.addEventListener("open", () => socket.send(JSON.stringify({ type: "auth", accessToken: authSession.access_token })));
@@ -112,11 +123,19 @@ function observeRoom(roomId, label) {
           byId("tutorial-console").hidden = false;
           sendTutorialAction("tutorial_start");
           byId("tutorial-console").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+        } else if (roomId === "infinite") {
+          byId("arena-console").hidden = false;
+          sendArenaAction("arena_start");
+          byId("arena-console").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
         } else socket.close();
       } else if (message.type === "tutorial_state") {
         renderTutorial(message.state, message.log, message.error);
       } else if (message.type === "room_event" && message.event?.type === "action" && message.event.tutorial) {
         renderTutorial(message.event.tutorial, message.event.log);
+      } else if (message.type === "arena_state") {
+        renderArena(message.state, message.log, message.error, message.leaderboard);
+      } else if (message.type === "arena_leaderboard") {
+        renderArenaRanking(message.leaderboard);
       } else if (message.type === "error" && message.code === "auth_invalid") {
         clearTimeout(timeout); setAuthSession(null); systemMessage.textContent = "登录状态已失效，请重新登录。"; socket.close();
       }
@@ -155,6 +174,100 @@ function renderTutorial(state, log = "状态已同步。", error = "") {
   document.querySelectorAll("[data-tutorial-action]").forEach((button) => {
     button.disabled = state.completed || !enabledAt[button.dataset.tutorialAction].includes(state.step);
   });
+}
+
+
+function sendArenaAction(action, payload) {
+  if (!arenaSocket || arenaSocket.readyState !== WebSocket.OPEN) {
+    byId("arena-log").textContent = "试炼通道未连接，请重新进入试炼。";
+    return;
+  }
+  arenaSocket.send(JSON.stringify({
+    type: "action", commandId: crypto.randomUUID(), action,
+    ...(payload ? { payload } : {})
+  }));
+}
+
+function renderArenaRanking(leaderboard) {
+  const board = byId("arena-board");
+  board.replaceChildren();
+  const entries = Array.isArray(leaderboard) ? leaderboard.slice(0, 10) : [];
+  if (!entries.length) {
+    const li = document.createElement("li");
+    li.textContent = "尚无通关记录";
+    board.append(li);
+    return;
+  }
+  for (const entry of entries) {
+    const li = document.createElement("li");
+    li.textContent = `${entry.name} · ${entry.score} 分`;
+    board.append(li);
+  }
+}
+
+function renderArena(state, log = "试炼状态已同步。", error = "", leaderboard = []) {
+  if (!state?.position || !state.enemy) return;
+  arenaState = state;
+  const { x, y } = state.position;
+  const engaged = x === 1 && y === 1 && !state.enemy.defeated;
+  const playing = state.outcome === "playing";
+  byId("arena-hp").textContent = `${state.hp} / ${state.maxHp}`;
+  byId("arena-sp").textContent = `${state.sp} / ${state.maxSp}`;
+  byId("arena-weapon").textContent = state.equippedWeapon === "coil_blade" ? "线圈刃" : "未装备";
+  byId("arena-enemy").textContent = state.enemy.defeated ? "已击败" : engaged ? `${state.enemy.hp} / ${state.enemy.maxHp}` : "未遭遇";
+  byId("arena-position").textContent = `当前位置：${x},${y} · 已揭示 ${state.revealed.length}/9 格`;
+  byId("arena-inventory").textContent = `背包：${state.inventory.map((item) => item === "coil_blade" ? "线圈刃" : "急救包").join("、") || "空"}`;
+  byId("arena-objective").textContent = state.objective;
+  byId("arena-status").textContent = state.outcome === "victory" ? `胜利 · ${state.score} 分` : state.outcome === "defeat" ? "轮回失败" : `回合 ${state.turns}`;
+  byId("arena-log").textContent = error ? `${log}（${error}）` : log;
+
+  const map = byId("arena-map");
+  map.replaceChildren();
+  for (let row = 0; row < 3; row++) {
+    for (let column = 0; column < 3; column++) {
+      const tile = document.createElement("div");
+      const known = state.revealed.includes(`${column},${row}`);
+      const here = column === x && row === y;
+      const foe = column === 1 && row === 1 && known && !state.enemy.defeated;
+      tile.className = `arena-tile${known ? " is-known" : ""}${here ? " is-player" : ""}${foe ? " is-enemy" : ""}`;
+      tile.textContent = here ? "你" : !known ? "?" : foe ? "敌" : "·";
+      tile.setAttribute("role", "gridcell");
+      tile.setAttribute("aria-label", `${column},${row}：${here ? "当前位置" : !known ? "未探索" : foe ? "守卫" : "已探索"}`);
+      map.append(tile);
+    }
+  }
+  document.querySelectorAll("[data-arena-action]").forEach((button) => {
+    const action = button.dataset.arenaAction;
+    switch (action) {
+      case "arena_search":
+        button.disabled = !playing || engaged || state.sp < 15 || state.searched.includes(`${x},${y}`);
+        break;
+      case "arena_equip":
+        button.disabled = !playing || state.equippedWeapon === "coil_blade" || !state.inventory.includes("coil_blade");
+        break;
+      case "arena_move": {
+        const nx = x + Number(button.dataset.dx);
+        const ny = y + Number(button.dataset.dy);
+        button.disabled = !playing || engaged || state.sp < 15 || nx < 0 || nx > 2 || ny < 0 || ny > 2 || (nx === 2 && ny === 2);
+        break;
+      }
+      case "arena_attack":
+        button.disabled = !playing || !engaged || state.sp < 10;
+        break;
+      case "arena_heal":
+        button.disabled = !playing || state.hp >= state.maxHp || !state.inventory.includes("field_kit");
+        break;
+      case "arena_rest":
+        button.disabled = !playing || state.rested || state.sp >= state.maxSp;
+        break;
+      case "arena_restart":
+        button.disabled = playing;
+        break;
+      default:
+        button.disabled = true;
+    }
+  });
+  renderArenaRanking(leaderboard);
 }
 
 async function checkWorker() {
@@ -225,6 +338,14 @@ byId("logout-button").addEventListener("click", async () => {
 
 document.querySelectorAll("[data-tutorial-action]").forEach((button) => button.addEventListener("click", () => {
   sendTutorialAction(button.dataset.tutorialAction);
+}));
+document.querySelectorAll("[data-arena-action]").forEach((button) => button.addEventListener("click", () => {
+  const action = button.dataset.arenaAction;
+  const payload = action === "arena_equip" ? { itemId: "coil_blade" }
+    : action === "arena_move" && arenaState
+      ? { x: arenaState.position.x + Number(button.dataset.dx), y: arenaState.position.y + Number(button.dataset.dy) }
+      : undefined;
+  sendArenaAction(action, payload);
 }));
 
 updateClock(); setInterval(updateClock, 1000); restoreAuth(); checkWorker();
