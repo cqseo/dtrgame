@@ -534,8 +534,9 @@ export function applyGameAction(input: GameWorldState | undefined, playerId: str
   } else if (action === "game_team_leave") {
     if (!player.teamId) return failure(world, playerId, "team_missing", "你没有加入队伍。 ");
     const oldId = player.teamId;
-    world.teams[oldId] = (world.teams[oldId] ?? []).filter((id) => id !== playerId);
-    if (world.teams[oldId].length === 0) delete world.teams[oldId];
+    const remaining = (world.teams[oldId] ?? []).filter((id) => id !== playerId);
+    if (remaining.length) world.teams[oldId] = remaining;
+    else delete world.teams[oldId];
     player.teamId = null;
     transition = success(world, playerId, "team_left", "已经退出队伍。 ");
   } else if (action === "game_craft") {
