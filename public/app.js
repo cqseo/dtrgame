@@ -117,7 +117,7 @@ function observeRoom(roomId, label) {
   socket.addEventListener("message", (event) => {
     try {
       const message = JSON.parse(event.data);
-      if (message.type === "room_event" && message.event?.type === "player_joined" && message.event.player?.id === authSession.user?.id) {
+      if (message.type === "auth_ok" && message.playerId === authSession.user?.id) {
         clearTimeout(timeout); systemMessage.textContent = `${label}身份验证成功，房间状态已同步。`;
         if (roomId === "tutorial") {
           byId("tutorial-console").hidden = false;
