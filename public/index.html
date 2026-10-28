@@ -64,6 +64,23 @@
             </table>
           </section>
 
+          <section class="pixel-panel tutorial-console" id="tutorial-console" aria-labelledby="tutorial-title" hidden>
+            <header class="section-head"><div><p class="section-code">TRAINING // LIVE</p><h2 id="tutorial-title">基础行动训练</h2></div><span class="tag" id="tutorial-status">进行中</span></header>
+            <div class="tutorial-stats" aria-label="玩家状态">
+              <div><span>生命</span><strong id="tutorial-hp">-- / --</strong></div><div><span>体力</span><strong id="tutorial-sp">-- / --</strong></div>
+              <div><span>区域</span><strong id="tutorial-area">--</strong></div><div><span>状态</span><strong id="tutorial-condition">--</strong></div>
+            </div>
+            <div class="tutorial-objective"><span>当前目标</span><strong id="tutorial-objective">等待房间状态……</strong></div>
+            <p class="tutorial-log" id="tutorial-log" role="status">身份验证后开始训练。</p>
+            <div class="tutorial-actions" aria-label="教程行动">
+              <button type="button" data-tutorial-action="tutorial_move">移动到旧站台</button>
+              <button type="button" data-tutorial-action="tutorial_search">探索</button>
+              <button type="button" data-tutorial-action="tutorial_pickup">拾取发现物</button>
+              <button type="button" data-tutorial-action="tutorial_use_ration">使用异常补给</button>
+              <button type="button" data-tutorial-action="tutorial_use_purifier">使用净化针剂</button>
+            </div>
+          </section>
+
           <section class="pixel-panel archive-panel" id="archive" aria-labelledby="archive-title">
             <header class="section-head"><div><p class="section-code">LOG // LAST CYCLE</p><h2 id="archive-title">最近记录</h2></div></header>
             <ol class="event-log"><li><time>05:41</time><span>边缘节点建立，等待第一批测试玩家。</span></li><li><time>05:35</time><span>Supabase 数据隔离验收通过。</span></li><li><time>03:09</time><span>房间实时通道部署完成。</span></li></ol>
