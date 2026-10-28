@@ -1,6 +1,6 @@
 import { isValidRoomId, parseClientMessage } from "./protocol";
 import { applyTutorialAction, type TutorialState } from "./tutorial";
-import { applyGameAction, getGameView, type GameWorldState } from "./game";
+import { applyGameAction, getGameView, tickAreaClock, nextAreaAlarmAt, type GameWorldState } from "./game";
 
 const ROOM_STATE_KEY = "room-state-v1";
 const MAX_RECENT_COMMANDS = 256;
@@ -212,6 +212,29 @@ export class GameRoom implements DurableObject {
     await this.state.storage.put(ROOM_STATE_KEY, this.room);
   }
 
+  private async scheduleAreaClock(): Promise<void> {
+    if (!this.room.game) return;
+    const when = nextAreaAlarmAt(this.room.game);
+    if (when != null) await this.state.storage.setAlarm(when);
+    else await this.state.storage.deleteAlarm();
+  }
+
+  async alarm(): Promise<void> {
+    await this.ready;
+    if (!this.room.game) return;
+    const log = tickAreaClock(this.room.game);
+    if (log) {
+      this.room.sequence += 1;
+      this.room.gameHistory ??= [];
+      this.room.gameHistory.push({ sequence: this.room.sequence, kind: "area_clock", playerId: "system", text: log, at: Date.now() });
+      this.room.gameHistory = this.room.gameHistory.slice(-100);
+      await this.persist();
+      this.broadcast({ type: "game_event", sequence: this.room.sequence, event: { kind: "area_clock", playerId: "system", text: log } });
+      this.sendGameViews(log);
+    }
+    await this.scheduleAreaClock();
+  }
+
   private sendGameViews(log?: string, error?: string): void {
     if (!this.room.game) return;
     for (const peer of this.state.getWebSockets()) {
@@ -224,6 +247,11 @@ export class GameRoom implements DurableObject {
 
   async fetch(request: Request): Promise<Response> {
     await this.ready;
+    if (this.room.game?.phase === "active") {
+      const log = tickAreaClock(this.room.game);
+      if (log) { await this.persist(); this.sendGameViews(log); }
+      await this.scheduleAreaClock();
+    }
     const roomId = request.headers.get("x-dtr-room-id");
     if (!this.room.roomId && roomId) {
       this.room.roomId = roomId;
@@ -341,6 +369,9 @@ export class GameRoom implements DurableObject {
         return;
       }
       this.room.game = gameResult.world;
+      const timedLog = tickAreaClock(this.room.game);
+      if (timedLog) gameResult.event.text += ` ${timedLog}`;
+      await this.scheduleAreaClock();
     }
     this.room.recentCommandIds.push(message.commandId);
     this.room.recentCommandIds = this.room.recentCommandIds.slice(-MAX_RECENT_COMMANDS);
