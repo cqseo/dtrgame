@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyGameAction, createGameWorld, getGameView, GAME_AREAS } from "../src/game";
+import { applyGameAction, createGameWorld, getGameView, GAME_AREAS, tickAreaClock, nextAreaAlarmAt } from "../src/game";
 import { LEGACY_AREAS, LEGACY_MAP_RULES } from "../src/legacy-map";
 
 describe("authoritative game engine", () => {
@@ -63,12 +63,11 @@ describe("authoritative game engine", () => {
     expect(result.world.players.p1?.tactic).toBe("scavenge");
   });
 
-  it("warns and closes areas as the turn clock advances", () => {
+  it("does not prematurely shrink regions after a burst of player actions", () => {
     let result = applyGameAction(createGameWorld(6), "p1", "game_enter", undefined);
     for (let i = 0; i < 8; i += 1) result = applyGameAction(result.world, "p1", "game_rest", undefined);
     expect(result.world.turn).toBe(8);
-    expect(result.world.forbidden.length).toBe(5);
-    expect(new Set(result.world.forbidden).size).toBe(5);
+    expect(result.world.forbidden).toEqual(["zone_0"]);
     expect(result.world.warningAreas).toHaveLength(0);
   });
 
@@ -93,13 +92,21 @@ describe("authoritative game engine", () => {
     expect(forbidden.code).toBe("forbidden_destination");
   });
 
-  it("warns about all four upcoming closed regions before closing them", () => {
-    let result = applyGameAction(createGameWorld(108), "p1", "game_enter", undefined);
-    for (let i = 0; i < 5; i += 1) result = applyGameAction(result.world, "p1", "game_rest", undefined);
-    expect(result.world.warningAreas).toHaveLength(4);
-    expect(result.world.forbidden).toEqual(["zone_0"]);
-    expect(new Set(result.world.warningAreas).size).toBe(4);
-    expect(result.event.text).toContain("禁区预告");
+  it("warns 60 seconds before each 30-minute four-region closure", () => {
+    const world = applyGameAction(createGameWorld(108), "p1", "game_enter", undefined).world;
+    const due = world.areaDueAt;
+    expect(nextAreaAlarmAt(world, due - 90_000)).toBe(due - 60_000);
+    expect(tickAreaClock(world, due - 60_001)).toBe("");
+    const warning = tickAreaClock(world, due - 60_000);
+    expect(warning).toContain("60 秒禁区预警");
+    expect(world.warningAreas).toHaveLength(4);
+    expect(world.forbidden).toEqual(["zone_0"]);
+    expect(nextAreaAlarmAt(world, due - 30_000)).toBe(due);
+    const closing = tickAreaClock(world, due);
+    expect(closing).toContain("新增禁区");
+    expect(world.forbidden).toHaveLength(5);
+    expect(world.warningAreas).toHaveLength(0);
+    expect(world.areaDueAt).toBe(due + 30 * 60_000);
   });
 
   it("restores prototype region IDs from persisted room snapshots without losing inventory", () => {
