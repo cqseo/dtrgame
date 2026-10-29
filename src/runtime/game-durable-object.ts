@@ -34,6 +34,7 @@ interface GameBattleBody {
   weatherId?: number;
   now: number;
 }
+interface GameRestoreBody { matchId: number; }
 
 const json = (value: unknown, status = 200): Response => Response.json(value, { status, headers: { "cache-control": "no-store" } });
 
@@ -61,7 +62,25 @@ export class LegacyGameDurableObject {
           if (this.#match) return json(this.#match);
           const body = await request.json<StoredLegacyMatch>();
           if (!this.#valid(body)) return json({ error: "Invalid match snapshot." }, 400);
-          this.#match = structuredClone(body);
+          await this.#commit(structuredClone(body));
+          return json(this.#match, 201);
+        });
+      }
+      if (request.method === "POST" && url.pathname === "/restore") {
+        return this.#exclusive(async () => {
+          if (this.#match) return json(this.#match);
+          if (!this.#env.SUPABASE_URL || !this.#env.SUPABASE_SECRET_KEY) {
+            return json({ error: "Supabase match persistence is not configured." }, 503);
+          }
+          const body = await request.json<GameRestoreBody>();
+          const matchId = Number(body.matchId);
+          if (!Number.isSafeInteger(matchId) || matchId < 1) return json({ error: "Invalid match identity." }, 400);
+          const rest = new SupabaseLegacyRest({ url: this.#env.SUPABASE_URL, secretKey: this.#env.SUPABASE_SECRET_KEY });
+          const snapshot = await new SupabaseMatchSnapshots<LegacyMatchState>(rest).load(matchId);
+          if (!snapshot) return json({ error: "游戏数据记录不存在。" }, 404);
+          const restored: StoredLegacyMatch = { version: Number(snapshot.version), state: snapshot.state };
+          if (!this.#valid(restored) || restored.state.matchId !== matchId) return json({ error: "Invalid match snapshot." }, 409);
+          this.#match = structuredClone(restored);
           await this.ctx.storage.put("match", this.#match);
           return json(this.#match, 201);
         });

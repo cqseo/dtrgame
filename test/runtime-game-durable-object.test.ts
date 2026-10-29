@@ -26,7 +26,7 @@ function state(): LegacyMatchState {
   };
 }
 
-function harness() {
+function harness(env: Partial<Cloudflare.Env> = {}) {
   const values = new Map<string, unknown>();
   let ready = Promise.resolve();
   const ctx = {
@@ -36,7 +36,7 @@ function harness() {
     },
     blockConcurrencyWhile: (callback: () => Promise<void>) => { ready = callback(); }
   } as unknown as DurableObjectState;
-  const object = new LegacyGameDurableObject(ctx, {} as Cloudflare.Env);
+  const object = new LegacyGameDurableObject(ctx, env as Cloudflare.Env);
   return { object, values, ready: () => ready };
 }
 
@@ -47,7 +47,7 @@ const post = (path: string, body: unknown) => new Request(`https://game.invalid$
 });
 
 describe("legacy match Durable Object", () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
   it("hydrates one match and commits a complete command transaction with a new version", async () => {
     const test = harness();
     await test.ready();
@@ -164,5 +164,24 @@ describe("legacy match Durable Object", () => {
     expect(stored.version).toBe(1);
     expect(Number(stored.state.players["测试者"]?.hp)).toBeLessThan(300);
     expect(Number(stored.state.players["敌人"]?.wk)).toBe(101);
+  });
+
+  it("restores a missing Durable Object snapshot from the private Supabase RPC", async () => {
+    const fetchMock = vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => {
+      expect(new URL(String(request)).pathname).toBe("/rest/v1/rpc/dtr_match_load");
+      expect(JSON.parse(String(init?.body))).toEqual({ p_match_id: 9 });
+      return Response.json([{ version: 7, state: state() }]);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const test = harness({
+      SUPABASE_URL: "https://qtjcjmpapjsgrrgtfica.supabase.co",
+      SUPABASE_SECRET_KEY: "sb_secret_test_only"
+    } as Partial<Cloudflare.Env>);
+    await test.ready();
+    const response = await test.object.fetch(post("/restore", { matchId: 9 }));
+    expect(response.status).toBe(201);
+    const stored = test.values.get("match") as { version: number; state: LegacyMatchState };
+    expect(stored.version).toBe(7);
+    expect(stored.state.matchId).toBe(9);
   });
 });
