@@ -3,6 +3,24 @@ export interface LegacyRandom {
   int(min: number, max: number): number;
 }
 
+/** Deterministic and rollback-capable source for parity tests and replays. */
+export class SequenceLegacyRandom implements LegacyRandom {
+  #index = 0;
+  constructor(readonly values: readonly number[]) {}
+  int(min: number, max: number): number {
+    const value = this.values[this.#index++];
+    if (value === undefined) throw new Error("Legacy RNG sequence exhausted.");
+    return assertLegacyRandomResult(value, min, max);
+  }
+  snapshot(): unknown { return this.#index; }
+  restore(snapshot: unknown): void {
+    const index = Number(snapshot);
+    if (!Number.isInteger(index) || index < 0 || index > this.values.length) throw new RangeError(`Invalid legacy RNG checkpoint: ${snapshot}`);
+    this.#index = index;
+  }
+  get consumed(): number { return this.#index; }
+}
+
 export function assertLegacyRandomResult(value: number, min: number, max: number): number {
   if (!Number.isInteger(value) || value < min || value > max) {
     throw new RangeError(`Legacy RNG returned ${value}; expected an integer from ${min} to ${max}.`);

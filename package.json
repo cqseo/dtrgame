@@ -12,6 +12,9 @@
     "generate:legacy": "node scripts/generate-legacy-registry.mjs ../legacy-dts src/generated/legacy-registry.ts",
     "generate:items": "node scripts/generate-legacy-starting-items.mjs ../legacy-dts src/generated/legacy-starting-items.ts",
     "generate:recipes": "node scripts/generate-legacy-recipes.mjs ../legacy-dts src/generated/legacy-recipes.ts",
+    "generate:special-recipes": "node scripts/generate-legacy-special-recipes.mjs ../legacy-dts src/generated/legacy-special-recipes.ts",
+    "generate:hooks": "node scripts/generate-legacy-hook-manifest.mjs ../legacy-dts src/generated/legacy-hook-manifest.ts",
+    "test:php-parity": "node scripts/run-php-parity.mjs",
     "generate:migration": "node scripts/generate-legacy-module-migration.mjs ../legacy-dts docs/legacy-module-migration.json",
     "verify": "npm run check && npm test && npm run build",
     "deploy": "wrangler deploy"

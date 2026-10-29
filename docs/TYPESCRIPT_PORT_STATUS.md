@@ -5,12 +5,14 @@ This ledger is generated against the captured Baota baseline. It prevents a part
 - Modules listed by the legacy loader: **744**
 - Enabled modules: **735**
 - Fully parity-accepted modules: **0**
-- Partially ported modules: **29**
-- Pending modules: **715**
+- Partially ported modules: **33**
+- Pending modules: **711**
 - Player database fields captured: **124**
-- Automated TypeScript parity tests in this milestone: **62**
+- Automated TypeScript parity tests in this milestone: **108**
 
-Partially ported modules: `player`, `map`, `lvlctl`, `itemmain`, `pose`, `tactic`, `edible`, `explore`, `weather`, `rest`, `wound`, `metman`, `weapon`, `wep_n`, `wep_p`, `wep_k`, `wep_g`, `wep_c`, `wep_d`, `wep_f`, `wep_b`, `wep_j`, `armor`, `attack`, `battle`, `team`, `enemy`, `corpse`, `itemmix`.
+Partially ported modules: `player`, `map`, `lvlctl`, `itemmain`, `pose`, `tactic`, `edible`, `explore`, `weather`, `rest`, `wound`, `metman`, `weapon`, `wep_n`, `wep_p`, `wep_k`, `wep_g`, `wep_c`, `wep_d`, `wep_f`, `wep_b`, `wep_j`, `armor`, `attack`, `battle`, `team`, `enemy`, `corpse`, `itemmix`, `itemmix_sync`, `itemmix_overlay`, `attrbase`, `ex_residue`.
+
+Compatibility-kernel milestone: the original loader order, mandatory dependency graph, newest-first hook dispatch, `$chprocess` parent calls (including repeated calls and changed arguments), PHP reference parameters, request globals, deterministic RNG checkpoints, state rollback and execution tracing are implemented. The captured graph contains **3,211 hook names / 5,235 implementations / 505 overloaded chains**. This infrastructure does not count any unported hook body as complete.
 
 “Partial” means only the named, tested mechanics have been translated. A module can become “complete” only after every code/config/template hook has a parity fixture against `/www/wwwroot/dts-game-test`.
 

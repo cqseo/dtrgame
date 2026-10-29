@@ -56,7 +56,7 @@ export function parseLegacyAttributes(value: string, includeSeparators = false):
   while (index < value.length) {
     let attribute = value.slice(index, index + 1);
     index += 1;
-    if (!attribute || (!includeSeparators && attribute === "|")) continue;
+    if (!attribute || attribute === "0" || (!includeSeparators && attribute === "|")) continue;
     if (attribute === "^") {
       let beforeFirstDigit = true;
       while (index < value.length) {

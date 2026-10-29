@@ -8,10 +8,24 @@ const moduleLines = (await readFile(resolve(root, "gamedata/modules.list.php"), 
   .map((line) => line.trim())
   .filter(Boolean);
 
-const modules = moduleLines.map((line, order) => {
+const basicModules = moduleLines.map((line, order) => {
   const [name, path, enabled] = line.split(",").map((value) => value.trim());
   return { name, path, enabled: enabled === "1", order };
 });
+
+const readHeaderValue = (source, name) => source.match(new RegExp(`\\$___MODULE_${name}\\s*=\\s*(['"])(.*?)\\1\\s*;`, "s"))?.[2] ?? "";
+const splitWords = (value) => value.trim() ? value.trim().split(/\s+/) : [];
+const modules = await Promise.all(basicModules.map(async (module) => {
+  const header = await readFile(resolve(root, "include/modules", module.path, "module.inc.php"), "utf8");
+  return {
+    ...module,
+    dependencies: splitWords(readHeaderValue(header, "dependency")),
+    optionalDependencies: splitWords(readHeaderValue(header, "dependency_optional")),
+    conflicts: splitWords(readHeaderValue(header, "conflict")),
+    codeFiles: splitWords(readHeaderValue(header, "codelist")),
+    templates: splitWords(readHeaderValue(header, "templatelist"))
+  };
+}));
 
 const playerSql = await readFile(resolve(root, "gamedata/sql/players.sql"), "utf8");
 const fields = [...playerSql.matchAll(/^\s*`([^`]+)`\s+([^,]+),?\s*$/gm)].map((match, order) => {
@@ -37,6 +51,10 @@ export type LegacyModuleName = typeof LEGACY_MODULES[number]["name"];
 export type LegacyPlayerFieldName = typeof LEGACY_PLAYER_FIELDS[number]["name"];
 
 export const ENABLED_LEGACY_MODULES = LEGACY_MODULES.filter((entry) => entry.enabled);
+
+export function getLegacyModule(name: LegacyModuleName) {
+  return LEGACY_MODULES.find((entry) => entry.name === name)!;
+}
 
 export function createLegacyPlayerRecord(): Record<LegacyPlayerFieldName, string | number> {
   return Object.fromEntries(LEGACY_PLAYER_FIELDS.map((field) => [field.name, field.defaultValue])) as Record<LegacyPlayerFieldName, string | number>;
