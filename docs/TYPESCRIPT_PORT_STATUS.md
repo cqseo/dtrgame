@@ -10,7 +10,7 @@ This ledger is generated against the captured Baota baseline. It prevents a part
 - Player/game-state fields captured in the prior migration inventory: **124** (NOT the accounts table).
 - Live installed MySQL account users table (metadata-only inspection, 2026-10-29): **39 columns**, see docs/LEGACY_USERS_METADATA_20261029.json.
 - Account usernames use MySQL utf8_general_ci. Actual original BMP weights are ported and checked against all 53 original usernames in private Supabase staging, but production login/session and concurrent-registration E2E parity remain pending.
-- Automated TypeScript parity tests in the latest isolated workbench: **1,578/1,578**, including 265 PHP-reference tactic/cooldown golden vectors
+- Automated TypeScript parity tests in the latest isolated workbench: **3,926/3,926**, including 265 PHP-reference tactic/cooldown golden vectors
 
 Partially ported modules: `player`, `map`, `lvlctl`, `cooldown`, `itemmain`, `pose`, `tactic`, `edible`, `explore`, `weather`, `rest`, `wound`, `metman`, `weapon`, `wep_n`, `wep_p`, `wep_k`, `wep_g`, `wep_c`, `wep_d`, `wep_f`, `wep_b`, `wep_j`, `armor`, `attack`, `battle`, `team`, `enemy`, `corpse`, `itemmix`.
 
@@ -25,3 +25,5 @@ Run `npm run generate:migration` beside the captured legacy source to regenerate
 2026-10-29 exploration: [original PHP map/explore/discover base chain milestone](ORIGINAL_EXPLORE_DISCOVERY_PARITY_20261029.md), 611 source formula vectors, 6 composed-action scenarios and 12 Cloudflare Workers synthetic QA checks. Map/explore/metman/itemmain remain **partial** (skills, events, battle, item side effects not accepted); 30 partially ported modules, 714 pending, 0 fully accepted. The original Worker/PHP route is unchanged.
 
 2026-10-29 original trap / mapitem / event base effects: [source and QA report](ORIGINAL_TRAP_ITEM_EVENT_EFFECTS_20261029.md). Two-stage original trap draw integrated without re-rolling outer check; mapitem selection, claiming and hand-slot state; event special gate, indexed s1-s6/s8 staging SQL adapter. 210 PHP source-formula fixtures and 15-file 1,578-test workbench. Cloudflare QA /__effects_selftest HTTP 200 with 6 synthetic checks, /game.php still 404, no DB bindings. **These are partial source mechanics, not fully accepted modules**. The original 1:1 playable release remains unapproved.
+
+2026-10-29 battle/trap base milestone: [original trap damage + source kill/revive-phase + room-transaction report](ORIGINAL_TRAP_DAMAGE_PLAYER_KILL_TX_20261029.md). 2,336 original PHP synthetic damage vectors, 3,926/3,926 workbench tests, QA /__combat_phases_selftest 8/8 HTTP 200, no DB bindings. Base hit/miss, attacker/victim kill bookkeeping and SQL lock are **partially implemented** and full skill, events, revive and battle overrides remain pending. Still 0 fully accepted modules and 0 playable Cloudflare game routes.
