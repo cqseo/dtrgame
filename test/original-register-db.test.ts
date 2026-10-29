@@ -5,7 +5,7 @@ import type { OriginalD1 } from "../src/original-db";
 
 function fixture(): LegacyRegistrationAccount {
   return { username:"QA_Person",password:"f".repeat(32),alt_pswd:1,groupid:1,
-    ip:"127.0.0.1",credits:0,gold:100,gender:"male",icon:"0",
+    ip:"127.0.0.1",credits:0,gold:100,gender:"m",icon:"0",
     motto:"Sample",killmsg:"Fight",lastword:"Bye",card_data:"fixture"};
 }
 function fakeD1() {
