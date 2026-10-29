@@ -38,7 +38,7 @@ function form(user = "ParityPlayer"): URLSearchParams {
     cmd:"post_register",
     username:user, npass:"a!password2026", rnpass:"a!password2026",
     register_token:token, vq_answer:String(challenge.correct_i),
-    gender:"male", icon:"0", motto:"Hello", killmsg:"Fight", lastword:"Bye"
+    gender:"m", icon:"0", motto:"Hello", killmsg:"Fight", lastword:"Bye"
   });
 }
 function unwrap(outcome: Awaited<ReturnType<typeof legacyRegisterPost>>) {
@@ -74,7 +74,7 @@ describe("original register.php POST response with isolated in-memory accounts",
     expect(result.cookies.join("|")).not.toContain("a!password2026");
     const record=store.records.get("ParityPlayer");
     expect(record).toMatchObject({username:"ParityPlayer", alt_pswd:1, groupid:1,
-      ip:"127.0.0.1",credits:0,gold:100,gender:"male",icon:"0",
+      ip:"127.0.0.1",credits:0,gold:100,gender:"m",icon:"0",
       motto:"Hello",killmsg:"Fight",lastword:"Bye" });
     expect(record?.password).toBe(legacyStoredPassword("ParityPlayer",legacyCookiePassword("a!password2026")));
     expect(await legacyDecode(record!.card_data)).toEqual([{cardid:0,cardenergy:0}]);
