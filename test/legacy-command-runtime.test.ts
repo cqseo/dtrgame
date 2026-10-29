@@ -24,6 +24,7 @@ describe("original command.php base action transaction", () => {
     expect(LEGACY_BASE_COMMAND_KERNEL.implementations("chginf")).toEqual(["wound"]);
     expect(LEGACY_BASE_COMMAND_KERNEL.implementations("discover")).toEqual(["explore", "itemmain", "metman"]);
     expect(LEGACY_BASE_COMMAND_KERNEL.implementations("calculate_itemfind_obbs")).toEqual(["itemmain", "pose", "weather"]);
+    expect(LEGACY_BASE_COMMAND_KERNEL.implementations("itemuse")).toEqual(["itemmain", "edible", "weapon", "armor"]);
   });
 
   it("wraps move/search with the original 650ms cooldown hook", () => {
@@ -147,6 +148,65 @@ describe("original command.php base action transaction", () => {
     });
     expect(data.itm3).toBe("");
     expect(data.itm4).toBe("石头");
+  });
+
+  it("equips and swaps original weapon and armor items from the same backpack slot", () => {
+    const data = player();
+    Object.assign(data, {
+      wep: "拳头", wepk: "WN", wepe: 0, weps: "∞", wepsk: "",
+      itm1: "调色刀", itmk1: "WK", itme1: 45, itms1: 9, itmsk1: ""
+    });
+    let result = runLegacyPlayerCommand({ player: data, command: "itm1", now: 100, requestStartMs: 100_000 });
+    expect(result.log).toContain("装备了<span class=\"yellow b\">调色刀</span>");
+    expect(data).toMatchObject({ wep: "调色刀", wepk: "WK", wepe: 45, weps: 9, itm1: "", itms1: 0 });
+
+    Object.assign(data, { itm1: "木棒", itmk1: "WP", itme1: 12, itms1: 5, itmsk1: "" });
+    result = runLegacyPlayerCommand({ player: data, command: "itm1", now: 101, requestStartMs: 101_000 });
+    expect(result.log).toContain("卸下了<span class=\"red b\">调色刀</span>");
+    expect(data).toMatchObject({ wep: "木棒", wepk: "WP", itm1: "调色刀", itmk1: "WK", itms1: 9 });
+
+    Object.assign(data, {
+      arb: "内衣", arbk: "DN", arbe: 0, arbs: "∞", arbsk: "",
+      itm2: "男生校服", itmk2: "DB", itme2: 5, itms2: 15, itmsk2: ""
+    });
+    result = runLegacyPlayerCommand({ player: data, command: "itm2", now: 102, requestStartMs: 102_000 });
+    expect(result.log).toContain("装备了<span class=\"yellow b\">男生校服</span>");
+    expect(data).toMatchObject({ arb: "男生校服", arbk: "DB", arbe: 5, arbs: 15, itm2: "", itms2: 0 });
+  });
+
+  it("drops backpack, pending and equipped items into the persisted mapitem pool", () => {
+    const data = player();
+    Object.assign(data, {
+      pls: 2,
+      itm1: "石头", itmk1: "X", itme1: 1, itms1: 1, itmsk1: "",
+      itm0: "面包", itmk0: "HH", itme0: 100, itms0: 2, itmsk0: "",
+      wep: "调色刀", wepk: "WK", wepe: 45, weps: 9, wepsk: ""
+    });
+    const mapItems: LegacyMapItem[] = [];
+    runLegacyPlayerCommand({ player: data, mode: "itemmain", command: "dropitm0", now: 100, mapItems });
+    expect(data.itm0).toBe("");
+    expect(mapItems[0]).toMatchObject({ iid: 1, pls: 2, itm: "面包" });
+
+    runLegacyPlayerCommand({ player: data, mode: "itemmain", command: "dropitm1", now: 101, mapItems });
+    expect(data.itm1).toBe("");
+    expect(mapItems[1]).toMatchObject({ iid: 2, pls: 2, itm: "石头" });
+
+    const result = runLegacyPlayerCommand({ player: data, mode: "itemmain", command: "dropwep", now: 102, mapItems });
+    expect(result.log).toContain("你丢弃了<span class=\"red b\">调色刀</span>");
+    expect(data).toMatchObject({ wep: "拳头", wepk: "WN", weps: "∞" });
+    expect(mapItems[2]).toMatchObject({ iid: 3, pls: 2, itm: "调色刀" });
+  });
+
+  it("unequips equipment through pending slot and the original itemget path", () => {
+    const data = player();
+    Object.assign(data, {
+      wep: "调色刀", wepk: "WK", wepe: 45, weps: 9, wepsk: "",
+      itm1: "", itmk1: "", itme1: 0, itms1: 0, itmsk1: ""
+    });
+    const result = runLegacyPlayerCommand({ player: data, mode: "itemmain", command: "offwep", now: 100 });
+    expect(result.log).toContain("你卸下了装备<span class=\"yellow b\">调色刀</span>");
+    expect(result.log).toContain("放入包裹");
+    expect(data).toMatchObject({ wep: "拳头", wepk: "WN", weps: "∞", itm1: "调色刀", itmk1: "WK", itms1: 9 });
   });
 
   it("blocks unrelated commands while the original pending-item slot is occupied", () => {

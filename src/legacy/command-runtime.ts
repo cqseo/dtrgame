@@ -8,7 +8,7 @@ import type { LegacyPlayerRecord } from "./player";
 import { readLegacyPlayerInventory, writeLegacyPendingItem, writeLegacyPlayerInventory } from "./player-inventory";
 import {
   LEGACY_BASE_ITEM_FIND_ODDS, LEGACY_INFINITE_DURABILITY,
-  emptyLegacyItem, getLegacyMergeType, getLegacyPackBlank, isLegacyItemEmpty,
+  clearLegacyItem, emptyLegacyItem, getLegacyMergeType, getLegacyPackBlank, isLegacyItemEmpty,
   mergeLegacyItems, moveLegacyInventoryItem, useLegacyEdible,
   type LegacyItem, type LegacyMapItem
 } from "./item";
@@ -171,6 +171,84 @@ function equipmentItem(player: LegacyPlayerRecord, slot: "wep" | "arb" | "arh" |
     itme: numberField(player, `${slot}e` as keyof LegacyPlayerRecord), itms: player[`${slot}s` as keyof LegacyPlayerRecord],
     itmsk: textField(player, `${slot}sk` as keyof LegacyPlayerRecord)
   };
+}
+
+function writeEquipmentItem(player: LegacyPlayerRecord, slot: "wep" | "arb" | "arh" | "ara" | "arf", item: LegacyItem): void {
+  player[slot] = item.itm;
+  player[`${slot}k` as keyof LegacyPlayerRecord] = item.itmk;
+  player[`${slot}e` as keyof LegacyPlayerRecord] = item.itme;
+  player[`${slot}s` as keyof LegacyPlayerRecord] = item.itms;
+  player[`${slot}sk` as keyof LegacyPlayerRecord] = item.itmsk;
+}
+
+function equipFromItem(state: LegacyPlayerCommandState, item: LegacyItem, slot: "wep" | "arb" | "arh" | "ara" | "arf", emptyKind = ""): void {
+  const current = equipmentItem(state.player, slot);
+  const slotEmpty = (emptyKind !== "" && current.itmk.startsWith(emptyKind)) || isLegacyItemEmpty(current);
+  if (slotEmpty) {
+    const name = item.itm;
+    writeEquipmentItem(state.player, slot, item);
+    clearLegacyItem(item);
+    state.log += `装备了<span class="yellow b">${name}</span>。<br>`;
+    return;
+  }
+  const old = { ...current };
+  writeEquipmentItem(state.player, slot, item);
+  Object.assign(item, old);
+  state.log += `卸下了<span class="red b">${old.itm}</span>，装备了<span class="yellow b">${textField(state.player, slot)}</span>。<br>`;
+}
+
+function dropPlayerItem(state: LegacyPlayerCommandState, position: string): boolean {
+  let item: LegacyItem;
+  if (/^itm[0-6]$/.test(position)) item = readPlayerItem(state.player, phpInt(position.slice(3)));
+  else if (["wep", "arb", "arh", "ara", "arf"].includes(position)) {
+    item = equipmentItem(state.player, position as "wep" | "arb" | "arh" | "ara" | "arf");
+  } else {
+    state.log += "该物品不存在！<br>";
+    return false;
+  }
+  if (isLegacyItemEmpty(item) || item.itmk === "WN" || item.itmk === "DN") {
+    state.log += "该物品不存在！<br>";
+    state.mode = "command";
+    return false;
+  }
+  const iid = state.mapItems.reduce((maximum, row) => Math.max(maximum, row.iid), 0) + 1;
+  state.mapItems.push({ iid, pls: numberField(state.player, "pls"), ...item });
+  state.log += `你丢弃了<span class="red b">${item.itm}</span>。<br>`;
+  if (position.startsWith("itm")) writePlayerItem(state.player, phpInt(position.slice(3)), emptyLegacyItem());
+  else if (position === "wep") writeEquipmentItem(state.player, "wep", {
+    itm: "拳头", itmk: "WN", itme: 0, itms: LEGACY_INFINITE_DURABILITY, itmsk: ""
+  });
+  else if (position === "arb") writeEquipmentItem(state.player, "arb", {
+    itm: "内衣", itmk: "DN", itme: 0, itms: LEGACY_INFINITE_DURABILITY, itmsk: ""
+  });
+  else writeEquipmentItem(state.player, position as "arh" | "ara" | "arf", emptyLegacyItem());
+  state.mode = "command";
+  return true;
+}
+
+function unequipPlayerItem(state: LegacyPlayerCommandState, position: string): boolean {
+  if (!["wep", "arb", "arh", "ara", "arf"].includes(position)) {
+    state.log += "该物品不存在！<br>";
+    return false;
+  }
+  const slot = position as "wep" | "arb" | "arh" | "ara" | "arf";
+  const item = equipmentItem(state.player, slot);
+  if (isLegacyItemEmpty(item) || item.itmk === "WN" || item.itmk === "DN") {
+    state.log += "该物品不存在！<br>";
+    state.mode = "command";
+    return false;
+  }
+  state.log += `你卸下了装备<span class="yellow b">${item.itm}</span>。<br>`;
+  writeLegacyPendingItem(state.player, item);
+  if (slot === "wep") writeEquipmentItem(state.player, slot, {
+    itm: "拳头", itmk: "WN", itme: 0, itms: LEGACY_INFINITE_DURABILITY, itmsk: ""
+  });
+  else if (slot === "arb") writeEquipmentItem(state.player, slot, {
+    itm: "内衣", itmk: "DN", itme: 0, itms: LEGACY_INFINITE_DURABILITY, itmsk: ""
+  });
+  else writeEquipmentItem(state.player, slot, emptyLegacyItem());
+  getPendingItem(state);
+  return true;
 }
 
 function corpseHasLoot(player: LegacyPlayerRecord): boolean {
@@ -393,6 +471,20 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
     const item = rawItem as LegacyItem;
     session.state.log += `你使用了道具 <span class="yellow b">${item.itm}</span> 。<br>但是什么也没有发生。<br>`;
   });
+  kernel.register("itemuse", "weapon", ({ next, session }, rawItem) => {
+    const item = rawItem as LegacyItem;
+    if (!item.itmk.startsWith("W")) return next(item);
+    equipFromItem(session.state, item, "wep", "WN");
+  });
+  kernel.register("itemuse", "armor", ({ next, session }, rawItem) => {
+    const item = rawItem as LegacyItem;
+    if (!item.itmk.startsWith("D")) return next(item);
+    if (item.itmk.startsWith("DB")) equipFromItem(session.state, item, "arb", "DN");
+    else if (item.itmk.startsWith("DH")) equipFromItem(session.state, item, "arh");
+    else if (item.itmk.startsWith("DA")) equipFromItem(session.state, item, "ara");
+    else if (item.itmk.startsWith("DF")) equipFromItem(session.state, item, "arf");
+    else return next(item);
+  });
   kernel.register("calculate_itemfind_obbs", "itemmain", () => LEGACY_BASE_ITEM_FIND_ODDS);
   kernel.register("calculate_itemfind_obbs", "weather", ({ next, session }) =>
     Number(next()) + getLegacyWeather(session.state.weatherId).itemFindOdds);
@@ -535,10 +627,12 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
       addPendingItemToPack(state, phpInt(state.input.to ?? "0"));
       return;
     }
-    if (state.mode === "itemmain" && state.command === "dropitm0") {
-      writeLegacyPendingItem(state.player, emptyLegacyItem());
-      state.log += "你没有捡取物品。<br>";
-      state.mode = "command";
+    if (state.mode === "itemmain" && state.command.startsWith("drop")) {
+      dropPlayerItem(state, state.command.slice(4));
+      return;
+    }
+    if (state.mode === "itemmain" && state.command.startsWith("off")) {
+      unequipPlayerItem(state, state.command.slice(3));
       return;
     }
     if (state.mode === "itemmain" && state.command === "itemmerge") {
