@@ -36,10 +36,12 @@ Move only the installed original ACFUN 大逃杀's PHP backend to TypeScript/Clo
 
 1. Exact original GET /register.php, template engine, header/footer, dynamic templates and 1,565-presentation-file asset parity in a real Worker.
 2. Complete original banlist and IP filtering, trusted IP determination and authenticated-cookie validation in routed HTTP handlers.
-3. Full 124-field legacy user schema, non-destructive old-account import, sessions, player continuity and rollback.
+3. Full installed 39-column users schema, separate 124-field game/player-state preservation, non-destructive old-account import, sessions, player continuity and rollback.
 4. Original logged-in error.php template and all register.php GUI states.
 5. Original room lifecycle, command.php, roomcmd.php, roomupdate.php, game daemon, all skills, items, combat, modes, and persistence.
 6. Parity fixtures and acceptance for all 735 actual enabled modules. The separate registration entrypoint does not change the currently reported 0 fully accepted modules.
 7. Full multiplayer end-to-end acceptance and cutover/revert plan.
+
+The installed MySQL username index uses utf8_general_ci, which is not equivalent to SQLite's default binary or ASCII-only NOCASE comparison. Username collision/collation parity is a **release blocker**. A 39-column users metadata snapshot (including indexes/collation, no account data) is saved in docs/LEGACY_USERS_METADATA_20261029.json. The actual browser gender radio values are m/f, not male/female.
 
 **No official release or data migration has been performed.** PHP production dts.zhangyingyin.top and the existing dtrgame Worker remain unchanged. This branch and isolated QA resources are development-only.
