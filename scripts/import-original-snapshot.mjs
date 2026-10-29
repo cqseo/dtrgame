@@ -75,14 +75,19 @@ console.log("VERIFIED",JSON.stringify({
 if(mode!=="--import")process.exit(0);
 if(process.env.DTS_IMPORT_CONFIRM!=="acfun_legacy_STAGING_ONLY")
  throw new Error("Explicit private staging guard not supplied");
-const url=assertDtsSupabaseUrl(process.env.DTS_SUPABASE_PG_URL);
+// Read secret directly from root-only config; never echo, export, or log URI.
+const config=readFileSync("/root/.config/dts-migration/supabase.env","utf8").trim();
+const parsed=/^DTS_SUPABASE_PG_URL=(['"])([^\r\n]+)\1$/.exec(config);
+if(!parsed)throw new Error("Invalid root-only DB configuration");
+const url=assertDtsSupabaseUrl(parsed[2]);
 const {Client}=await import("pg");
 const client=new Client({
-  connectionString:url.toString(),ssl:{rejectUnauthorized:true},
+  connectionString:url.toString(),ssl:{ca:readFileSync("/root/.config/dts-migration/prod-ca-2021.crt","utf8"),rejectUnauthorized:true},
   statement_timeout:120000,query_timeout:120000
 });
 try {
  await client.connect();
+ if(!client.connection.stream?.encrypted || !client.connection.stream?.authorized) throw new Error("Verified TLS is required");
  const n=await client.query("SELECT to_regclass('acfun_legacy.users') AS has_users");
  if(!n.rows[0]?.has_users)throw new Error("Expected staging schema not installed");
  for (const {entry,verified} of staged) {
