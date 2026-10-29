@@ -13,7 +13,6 @@ export interface OriginalEnv {
   ROOMS: DurableObjectNamespace;
   SUPABASE_URL?: string;
   SUPABASE_SECRET_KEY?: string;
-  SUPABASE_SCHEMA?: string;
 }
 export { LegacyRoomDurableObject } from "./runtime/room-durable-object";
 export const ORIGINAL_GUEST_SNAPSHOTS = new Set([

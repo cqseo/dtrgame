@@ -14,8 +14,7 @@
   ],
   "vars": {
     "APP_ENV": "development",
-    "SUPABASE_URL": "https://qtjcjmpapjsgrrgtfica.supabase.co",
-    "SUPABASE_SCHEMA": "acfun_runtime_qa_20261029"
+    "SUPABASE_URL": "https://qtjcjmpapjsgrrgtfica.supabase.co"
   },
   "observability": { "enabled": true, "head_sampling_rate": 1 }
 }

@@ -11,7 +11,6 @@ function client(fetchMock: typeof fetch): SupabaseLegacyRest {
   return new SupabaseLegacyRest({
     url: "https://qtjcjmpapjsgrrgtfica.supabase.co",
     secretKey: "sb_secret_test_only",
-    schema: "acfun_runtime_qa_20261029",
     fetch: fetchMock
   });
 }
@@ -21,17 +20,16 @@ describe("Supabase legacy runtime adapter", () => {
     expect(() => new SupabaseLegacyRest({
       url: "https://qtjcjmpapjsgrrgtfica.supabase.co",
       secretKey: "sb_publishable_wrong",
-      schema: "acfun_runtime_qa_20261029"
     })).toThrow("server-side Supabase secret key");
   });
 
   it("reads an original account only from the selected QA schema", async () => {
     const fetchMock = vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(String(request));
-      expect(url.pathname).toBe("/rest/v1/users");
-      expect(url.searchParams.get("username")).toBe("eq.测试者");
+      expect(url.pathname).toBe("/rest/v1/rpc/dtr_legacy_user");
+      expect(JSON.parse(String(init?.body))).toEqual({ p_username: "测试者" });
       const headers = new Headers(init?.headers);
-      expect(headers.get("accept-profile")).toBe("acfun_runtime_qa_20261029");
+      expect(headers.get("accept-profile")).toBe("public");
       expect(headers.get("apikey")).toBe("sb_secret_test_only");
       expect(headers.has("authorization")).toBe(false);
       return Response.json([{ username: "测试者", password: "digest", groupid: 1, roomid: 0 }]);
@@ -46,7 +44,7 @@ describe("Supabase legacy runtime adapter", () => {
     const requests: { url: string; init?: RequestInit }[] = [];
     const fetchMock = vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => {
       requests.push({ url: String(request), ...(init ? { init } : {}) });
-      if (!init?.method) return Response.json([{
+      if (String(request).endsWith("/rpc/dtr_legacy_room")) return Response.json([{
         groomid: 3, groomtype: 0, groomstatus: 10, gametype: 10, gamestate: 0, roomvars: encoded
       }]);
       return new Response(null, { status: 204 });
@@ -56,8 +54,9 @@ describe("Supabase legacy runtime adapter", () => {
     expect(loaded?.room.player[0]?.name).toBe("甲");
     expect(loaded?.ownerHeartbeat).toBe(20);
     await rooms.saveRecord(loaded!);
-    expect(requests[1]?.init?.method).toBe("PATCH");
-    expect(new Headers(requests[1]?.init?.headers).get("content-profile")).toBe("acfun_runtime_qa_20261029");
-    expect(JSON.parse(String(requests[1]?.init?.body))).toMatchObject({ groomtype: 0, groomstatus: 10 });
+    expect(requests[1]?.init?.method).toBe("POST");
+    expect(new URL(requests[1]!.url).pathname).toBe("/rest/v1/rpc/dtr_legacy_save_room");
+    expect(new Headers(requests[1]?.init?.headers).get("content-profile")).toBe("public");
+    expect(JSON.parse(String(requests[1]?.init?.body))).toMatchObject({ p_groomtype: 0, p_groomstatus: 10 });
   });
 });

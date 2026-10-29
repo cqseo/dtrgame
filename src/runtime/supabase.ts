@@ -5,7 +5,6 @@ import type { LegacyRoomRecord, LegacyWaitingRoom } from "../legacy/room";
 export interface SupabaseRuntimeConfig {
   url: string;
   secretKey: string;
-  schema: string;
   fetch?: typeof fetch;
 }
 
@@ -33,7 +32,6 @@ function normalizeUrl(value: string): string {
 export class SupabaseLegacyRest {
   readonly #url: string;
   readonly #key: string;
-  readonly #schema: string;
   readonly #fetch: typeof fetch;
 
   constructor(config: SupabaseRuntimeConfig) {
@@ -42,43 +40,29 @@ export class SupabaseLegacyRest {
     }
     this.#url = normalizeUrl(config.url);
     this.#key = config.secretKey;
-    this.#schema = validateIdentifier(config.schema);
     this.#fetch = config.fetch ?? fetch;
   }
 
-  async selectOne<T>(table: string, columns: string, filters: Readonly<Record<string, string | number>>): Promise<T | null> {
-    const url = new URL(`/rest/v1/${validateIdentifier(table)}`, this.#url);
-    url.searchParams.set("select", columns);
-    url.searchParams.set("limit", "1");
-    for (const [key, value] of Object.entries(filters)) url.searchParams.set(validateIdentifier(key), `eq.${String(value)}`);
-    const response = await this.#fetch(url, { headers: this.#headers("GET") });
-    if (!response.ok) throw new Error(`Supabase legacy read failed (${response.status}).`);
-    const rows = await response.json<T[]>();
-    return rows[0] ?? null;
-  }
-
-  async update(table: string, filters: Readonly<Record<string, string | number>>, values: Readonly<Record<string, unknown>>): Promise<void> {
-    const url = new URL(`/rest/v1/${validateIdentifier(table)}`, this.#url);
-    for (const [key, value] of Object.entries(filters)) url.searchParams.set(validateIdentifier(key), `eq.${String(value)}`);
+  async rpc<T>(name: string, args: Readonly<Record<string, unknown>>): Promise<T> {
+    const url = new URL(`/rest/v1/rpc/${validateIdentifier(name)}`, this.#url);
     const response = await this.#fetch(url, {
-      method: "PATCH",
-      headers: this.#headers("PATCH"),
-      body: JSON.stringify(values)
+      method: "POST",
+      headers: this.#headers(),
+      body: JSON.stringify(args)
     });
-    if (!response.ok) throw new Error(`Supabase legacy update failed (${response.status}).`);
+    if (!response.ok) throw new Error(`Supabase legacy RPC failed (${response.status}).`);
+    if (response.status === 204) return undefined as T;
+    return response.json<T>();
   }
 
-  #headers(method: "GET" | "PATCH"): Headers {
+  #headers(): Headers {
     const headers = new Headers({
       apikey: this.#key,
-      "accept-profile": this.#schema,
-      accept: "application/json"
+      "accept-profile": "public",
+      "content-profile": "public",
+      accept: "application/json",
+      "content-type": "application/json"
     });
-    if (method === "PATCH") {
-      headers.set("content-profile", this.#schema);
-      headers.set("content-type", "application/json");
-      headers.set("prefer", "return=minimal");
-    }
     return headers;
   }
 }
@@ -88,15 +72,15 @@ export class SupabaseLegacyAccounts implements LegacyUserStore {
 
   findByUsername(username: string): Promise<LegacyAccountRow | null> {
     if (!username || [...username].length > 15) return Promise.resolve(null);
-    return this.rest.selectOne<LegacyAccountRow>("users", "username,password,groupid,roomid", { username });
+    return this.rest.rpc<LegacyAccountRow[]>("dtr_legacy_user", { p_username: username }).then((rows) => rows[0] ?? null);
   }
 
   recordLastLogin(username: string, timestamp: number): Promise<void> {
-    return this.rest.update("users", { username }, { lastvisit: timestamp });
+    return this.rest.rpc<void>("dtr_legacy_record_login", { p_username: username, p_timestamp: timestamp });
   }
 
   setCurrentRoom(username: string, roomId: number): Promise<void> {
-    return this.rest.update("users", { username }, { roomid: roomId });
+    return this.rest.rpc<void>("dtr_legacy_set_room", { p_username: username, p_room_id: roomId });
   }
 }
 
@@ -105,9 +89,7 @@ export class SupabaseLegacyRooms {
 
   find(roomId: number): Promise<SupabaseGameRow | null> {
     if (!Number.isSafeInteger(roomId) || roomId < 1) return Promise.resolve(null);
-    return this.rest.selectOne<SupabaseGameRow>(
-      "game", "groomid,groomtype,groomstatus,gametype,gamestate,roomvars", { groomid: roomId }
-    );
+    return this.rest.rpc<SupabaseGameRow[]>("dtr_legacy_room", { p_room_id: roomId }).then((rows) => rows[0] ?? null);
   }
 
   async loadRecord(roomId: number, now: number): Promise<LegacyRoomRecord | null> {
@@ -126,12 +108,13 @@ export class SupabaseLegacyRooms {
   }
 
   async saveRecord(record: LegacyRoomRecord): Promise<void> {
-    await this.rest.update("game", { groomid: record.roomId }, {
-      groomtype: record.groomtype,
-      groomstatus: record.groomstatus,
-      gametype: record.gametype,
-      gamestate: record.gamestate,
-      roomvars: await legacyEncode(record.room)
+    await this.rest.rpc<void>("dtr_legacy_save_room", {
+      p_room_id: record.roomId,
+      p_groomtype: record.groomtype,
+      p_groomstatus: record.groomstatus,
+      p_gametype: record.gametype,
+      p_gamestate: record.gamestate,
+      p_roomvars: await legacyEncode(record.room)
     });
   }
 }
