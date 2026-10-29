@@ -69,6 +69,22 @@ describe("Supabase original username weighted index adapter — QA only",()=>{
   expect(records.size).toBe(1);
   expect(keys.has(originalMysqlUsernameKey("qámirroruser")!)).toBe(true);
  });
+ it("treats only original weighted-name uniqueness collisions as taken, never hides other DB failures", async()=>{
+  const duplicate:PgLegacyClient={
+    async query(){throw Object.assign(new Error("unique"),{
+      code:"23505",constraint:"username_weight_index_legacy_weight_key_key"
+    });}
+  };
+  expect(await new SupabaseOriginalUsers(duplicate,"qa-only").insert(record("QáMirrorUser")))
+    .toBe(false);
+  const otherUniqueViolation:PgLegacyClient={
+    async query(){throw Object.assign(new Error("another constraint"),{
+      code:"23505",constraint:"username_weight_index_pkey"
+    });}
+  };
+  await expect(new SupabaseOriginalUsers(otherUniqueViolation,"qa-only").insert(record()))
+    .rejects.toThrow("another constraint");
+ });
  it("does not disguise unfinished migration as production-ready",()=>{
   expect(()=>new SupabaseOriginalUsers(fakeDatabase().client,"production" as "qa-only"))
    .toThrow(/collation parity/);
