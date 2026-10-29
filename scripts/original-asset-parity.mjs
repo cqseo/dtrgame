@@ -58,8 +58,8 @@ function within(root, name) {
 function sha256(buffer) { return createHash('sha256').update(buffer).digest('hex'); }
 function normalizeEntry(entry, key) {
   if (typeof entry === 'string') {
-    if (key === undefined) return { path: safeName(entry) };
-    return { path: safeName(key), sha256: entry };
+    if (key === undefined) return { path: safeName(entry), sha256: null, size: null };
+    return { path: safeName(key), sha256: entry, size: null };
   }
   if (!entry || typeof entry !== 'object') throw new Error('Unsupported manifest entry');
   const path = safeName(entry.path ?? entry.file ?? entry.name ?? key);
