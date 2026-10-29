@@ -7,6 +7,12 @@ import { legacyFatenumCreate, legacyRegisterFatenumCreate, legacyRegisterRandomC
 import { legacyRegisterPost, legacyRegisterAjaxResponse, type LegacyRegistrationAccount } from "./original-register";
 import { legacyDecode } from "./original-protocol";
 import {
+ originalMapCanEnter,originalMapForbidden,originalMove,originalSearch
+} from "./original-explore-map";
+import {originalMeetmanRate,originalTrapRealOdds,originalDiscover} from "./original-discovery-chain";
+import {originalExploreWithCooldown} from "./original-explore-cooldown";
+
+import {
  originalPlayerPreAct,originalPlayerAct,originalPlayerPostAct,
  originalPlanPlayerSave,originalPlayerSaveSql,originalCommandActDecision,
  type OriginalPlayerActionState
@@ -170,8 +176,63 @@ async function runPlayerPipelineSelftest() {
   backend:"TypeScript",runtime:"Cloudflare Workers",errors};
 }
 
+async function runExploreSourceSelftest(){
+ const errors:string[]=[];
+ const ok=(test:boolean,label:string)=>{if(!test)errors.push(label);};
+ const map={arealist:[2,0,1,3,4],areanum:1,areaadd:2,hack:false,
+   plsinfo:{"0":"校门","1":"公园","2":"学园","3":"废墟","4":"码头"},
+   areainfo:{"0":"起点区域","1":"庭园区域","2":"学园区域","3":"废墟区域","4":"港口区域"}};
+ ok(originalMapForbidden(map,"2"),"forbidden_src_order");
+ ok(!originalMapCanEnter(map,"2"),"forbid_check");
+ ok(originalMapCanEnter({...map,hack:true},"2"),"hack_override");
+ const person={pls:0,sp:40,hp:100,pose:0,command:"move",mode:"command",log:""};
+ const move=await originalExploreWithCooldown({
+  player:person,cooldown:originalCooldownBegin(0,0),map,
+  action:"move",destination:"3",pageStartMs:1500.9,nowMs:1777.4,
+  discovery:{random99:()=>99}
+ });
+ ok(move.accepted && move.player.sp===25 && String(move.player.pls)==="3","move_sp_and_destination");
+ ok(move.discovery?.stage==="empty" && move.player.log.includes("但是什么都没有发现。"),"discover_empty_original_log");
+ ok(move.cooldown.cdsec===2&&move.cooldown.cdmsec===150&&move.cooldown.rmcdtime===373,"move_650ms_cooldown");
+ const noSp=await originalExploreWithCooldown({
+  player:{...person,sp:15,command:"search"},cooldown:originalCooldownBegin(0,0),
+  map,action:"search",pageStartMs:1500.9,nowMs:1777.4,
+  discovery:{random99:()=>{throw new Error("No discovery when SP insufficient")}}
+ });
+ ok(!noSp.accepted && noSp.player.sp===15 && noSp.cooldown.cmdcdtime===650,"search_sp_boundary_and_cooldown");
+ ok(originalMeetmanRate("search",0)===50&&originalMeetmanRate("move",2)===46,"meetman_source_rates");
+ ok(originalTrapRealOdds(10)===4,"trap_source_025_per_count");
+ const event=await originalDiscover(
+  {...person,mode:"search"},"search",{
+   random99:()=>0,
+   eventMain:s=>({state:{...s,log:"EVENT"},occurred:true})
+  });
+ ok(event.stoppedAt==="event"&&event.state.mode==="command","event_interrupts");
+ const trap=await originalDiscover(
+  {...person,mode:"search"},"search",{
+   random99:(()=>{const vals=[99,0];return ()=>vals.shift()??99})(),
+   trapCheck:s=>({state:{...s,log:"TRAP"},triggered:true})
+  });
+ ok(trap.stoppedAt==="trap"&&trap.invokedStages.length===2,"trap_interrupts");
+ const item=await originalDiscover(
+  {...person,mode:"search"},"search",{
+   random99:(()=>{const vals=[99,99,99,0];return ()=>vals.shift()??99})(),
+   discoverItem:s=>({state:{...s,log:"ITEM"},found:true})
+  });
+ ok(item.stoppedAt==="itemmain"&&item.discovered,"item_stage");
+ return {pass:errors.length===0,backend:"TypeScript",runtime:"Cloudflare Workers",
+  source:"original PHP explore/map/event/trap/metman/itemmain base order",
+  checks:12,syntheticOnly:true,productionDataAccess:false,gamePlayable:false,errors};
+}
+
 addEventListener("fetch",(event: FetchEvent)=>{
  const u=new URL(event.request.url);
+ if(event.request.method==="GET" && u.pathname==="/__explore_selftest") {
+  event.respondWith(runExploreSourceSelftest().then(r=>new Response(JSON.stringify(r),{
+   status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}
+  })));
+  return;
+ }
  if(event.request.method==="GET" && u.pathname==="/__player_pipeline_selftest") {
    event.respondWith(runPlayerPipelineSelftest().then(r=>
     new Response(JSON.stringify(r),{status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}})));
