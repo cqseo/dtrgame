@@ -10,20 +10,20 @@ function fakeDatabase() {
       executed.push({sql,params});
       const username=String(sql.startsWith("UPDATE")?params[1]:params[0]);
       if(sql.startsWith("INSERT")) {
-        if (records.has(username))return {rows:[] as T[],rowCount:0};
+        if (records.has(username))return {rows:[] as unknown as T[],rowCount:0};
         const names=sql.slice(sql.indexOf("(")+1,sql.indexOf(") VALUES")).split(",");
         const row=Object.fromEntries(names.map((name,i)=>[name.trim(),params[i]])) as Record<string,string|number>;
         row.uid=53;row.roomid=0;row.lastvisit=0;
         records.set(username,row);
-        return {rows:[{uid:53} as T],rowCount:1};
+        return {rows:[{uid:53} as unknown as T],rowCount:1};
       }
       if(sql.startsWith("UPDATE")) {
         const row=records.get(username);
         if (row) row.lastvisit=Number(params[0]);
-        return {rows:row?[{uid:row.uid} as T]:[],rowCount:row?1:0};
+        return {rows:row?[{uid:row.uid} as unknown as T]:[],rowCount:row?1:0};
       }
       const row=records.get(username);
-      return {rows:row?[row as T]:[],rowCount:row?1:0};
+      return {rows:row?[row as unknown as T]:[],rowCount:row?1:0};
     }
   };
   return {client,records,executed};
