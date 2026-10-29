@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "dtrgame-original-runtime-qa-20261029",
+  "main": "src/original-runtime-worker.ts",
+  "compatibility_date": "2026-10-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": false,
+  "vars": { "APP_ENV": "isolated-qa" },
+  "hyperdrive": [{ "binding": "QA_DATABASE", "id": "a8a84019305b4cbabef66bb2b47fb272" }],
+  "services": [{ "binding": "ORIGINAL_ASSETS", "service": "dtrgame-original-1to1-staging" }]
+}

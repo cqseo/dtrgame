@@ -3,8 +3,8 @@ import { D1LegacyAccounts, D1LegacyRooms, type OriginalD1 } from "../src/origina
 
 function storeWithRow(row: Record<string, unknown> | null) {
   const first = vi.fn(async () => row), run = vi.fn(async () => ({ success: true, meta: { changes: 1 } }));
-  const bind = vi.fn(() => ({ first, run }));
-  const prepare = vi.fn(() => ({ bind }));
+  const bind = vi.fn((..._args: (string | number | null)[]) => ({ first, run }));
+  const prepare = vi.fn((_sql: string) => ({ bind }));
   return { db: { prepare } as unknown as OriginalD1, prepare, bind, first, run };
 }
 describe("actual Cloudflare D1 adapter to original account/room schema", () => {
@@ -31,7 +31,7 @@ describe("actual Cloudflare D1 adapter to original account/room schema", () => {
     const { db, bind, prepare } = storeWithRow({ groomid: 14, groomtype: 7, groomstatus: 10, roomvars: "", gamevars: "", raw_record: "{}" });
     const repo = new D1LegacyRooms(db);
     expect((await repo.find(14))?.groomtype).toBe(7);
-    expect(bind.mock.calls[0][0]).toBe(14);
+    expect(bind.mock.calls[0]?.[0]).toBe(14);
     expect(await repo.find(-1)).toBeNull();
     expect(await repo.find(256)).toBeNull();
     expect(prepare).toHaveBeenCalledTimes(1);
