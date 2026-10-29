@@ -1,0 +1,1 @@
+{"source":"installed original include\/pages\/command_act.php","orderedSteps":["initPlayerData","preAct","act","postAct","prepareResponse","parseProfile","parseGameInfo","encodeResponse","emitResponse","updateSdata","beforeLastSave","savePlayer"],"actionGuard":"$gamestate >= 20 && $hp > 0 && $state <= 3","responseBeforeSave":true}
