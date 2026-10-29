@@ -48,7 +48,7 @@ async function runRegistrationSelftest() {
    cmd:"post_register",username:"QA_parity_1029",
    npass:"TestOnlyPass123",rnpass:"TestOnlyPass123",
    register_token:token,vq_answer:String(challenge.correct_i),
-   gender:"male",icon:"0",motto:"Testing",
+   gender:"m",icon:"0",motto:"Testing",
    killmsg:"Fight",lastword:"Bye",
  });
  const env={
