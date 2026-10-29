@@ -6,6 +6,9 @@ import { LEGACY_VQ_POOL } from "./generated/legacy-vq-pool";
 import { legacyFatenumCreate, legacyRegisterFatenumCreate, legacyRegisterRandomCreate, legacyRegisterVerificationQuestionGet } from "./original-verification";
 import { legacyRegisterPost, legacyRegisterAjaxResponse, type LegacyRegistrationAccount } from "./original-register";
 import { legacyDecode } from "./original-protocol";
+import {originalResolveGameEntry} from "./original-game-entry";
+import {legacyCookiePassword,legacyStoredPassword} from "./original-auth";
+
 import {originalReviveProcess} from "./original-revive-process";
 import {originalGameinfoSaveSql} from "./original-gameinfo-save";
 import {runOriginalEncounterBattleSelftest} from "./original-encounter-selftest";
@@ -371,8 +374,51 @@ async function runOriginalRoomReviveSelftest(){
   syntheticOnly:true,productionDataAccess:false,runtime:"Cloudflare Workers",errors};
 }
 
+/** Original PHP game.php -> command_game.php source gate; no real player data. */
+async function runOriginalGameEntrySelftest(){
+ const errors:string[]=[];
+ const check=(ok:boolean,key:string)=>{if(!ok)errors.push(key)};
+ const name="QA_PLAYER",pass=legacyCookiePassword("synthetic-test-only");
+ const hash=legacyStoredPassword(name,pass);
+ const cookies="acbra2_user="+name+"; acbra2_pass="+pass+"; acbra2_roomid=8";
+ const userStore={findByUsername:async(n:string)=>
+  n===name?{username:name,password:hash,groupid:1,roomid:8}:null};
+ const sql:string[]=[];
+ const db={query:async<T extends Record<string,unknown>>(statement:string,params:readonly (string|number|null)[])=>{
+  sql.push(statement);
+  if(statement.includes("mysql_username_weight_key(name)"))
+   return {rows:[{pid:13,name,pass:hash,type:0,hp:80,state:2,
+    player_dead_flag:0,itms0:0} as unknown as T],rowCount:1};
+  if(statement.includes("FROM acfun_legacy.game"))
+   return {rows:[{groomid:8,groomstatus:40,groomtype:2,gamenum:12,gamestate:20,
+    roomvars:"",gamevars:""} as unknown as T],rowCount:1};
+  throw new Error("Unexpected source SQL operation");
+ }};
+ const deps={db,users:userStore,purpose:"qa-only" as const};
+ const ok=await originalResolveGameEntry(cookies,deps);
+ check(ok.kind==="needs_original_template_renderer","correct_source_gate");
+ if(ok.kind==="needs_original_template_renderer"){
+  check(ok.playerMode==="rest"&&ok.roomId===8&&ok.gameNumber===12,"source_room_and_mode");
+ }
+ check(sql.length===2&&Boolean(sql[0]?.includes('"s8_players"')),"source_player_table");
+ check(Boolean(sql[0]?.includes("mysql_username_weight_key(name)=$1")),"source_mysql_name_collation");
+ const bad=await originalResolveGameEntry("acbra2_user=QA_PLAYER; acbra2_pass=bad",deps);
+ check(bad.kind==="no_login","cookie_session_guard");
+ const noCookie=await originalResolveGameEntry("",deps);
+ check(noCookie.kind==="no_login","missing_cookie_guard");
+ return {pass:errors.length===0,checks:6,syntheticOnly:true,
+  backend:"TypeScript",runtime:"Cloudflare Workers",
+  gamePlayable:false,productionDataAccess:false,errors};
+}
+
 addEventListener("fetch",(event: FetchEvent)=>{
  const u=new URL(event.request.url);
+ if(event.request.method==="GET" && u.pathname==="/__game_entry_selftest") {
+  event.respondWith(runOriginalGameEntrySelftest().then(r=>
+   new Response(JSON.stringify(r),{status:r.pass?200:500,
+    headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}})));
+  return;
+ }
  if(event.request.method==="GET" && u.pathname==="/__encounter_battle_selftest") {
   event.respondWith(runOriginalEncounterBattleSelftest().then(r=>new Response(JSON.stringify(r),{
    status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}
