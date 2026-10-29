@@ -17,6 +17,12 @@ export interface LegacyItem {
   itmsk: string;
 }
 
+/** Original mapitem row after the room prefix has selected the active table. */
+export interface LegacyMapItem extends LegacyItem {
+  iid: number;
+  pls: number;
+}
+
 export interface LegacyEdiblePlayer {
   hp: number;
   mhp: number;

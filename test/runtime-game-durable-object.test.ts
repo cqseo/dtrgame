@@ -21,7 +21,8 @@ function state(): LegacyMatchState {
     players: { "测试者": player() },
     availableAreas: [0, 1],
     forbiddenAreas: [],
-    areaNames: ["无月之影", "端点"]
+    areaNames: ["无月之影", "端点"],
+    mapItems: []
   };
 }
 

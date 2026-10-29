@@ -5,7 +5,13 @@ import { LegacyCompatibilityKernel, LegacyExecutionSession } from "./hooks";
 import { phpInt } from "./php-semantics";
 import type { LegacyPlayerRecord } from "./player";
 import { readLegacyPlayerInventory, writeLegacyPendingItem, writeLegacyPlayerInventory } from "./player-inventory";
-import { emptyLegacyItem, isLegacyItemEmpty, mergeLegacyItems, moveLegacyInventoryItem, useLegacyEdible, type LegacyItem } from "./item";
+import {
+  LEGACY_BASE_ITEM_FIND_ODDS, LEGACY_INFINITE_DURABILITY,
+  emptyLegacyItem, getLegacyMergeType, getLegacyPackBlank, isLegacyItemEmpty,
+  mergeLegacyItems, moveLegacyInventoryItem, useLegacyEdible,
+  type LegacyItem, type LegacyMapItem
+} from "./item";
+import { cryptoLegacyRandom, type LegacyRandom } from "./random";
 import { applyLegacyRest, LEGACY_HOSPITAL_AREAS, LEGACY_REST_NAMES } from "./rest";
 import { canChangeLegacyPose, canChangeLegacyTactic, getLegacyPose, getLegacyTactic } from "./stance";
 import { bandageLegacyWound } from "./wound";
@@ -32,6 +38,8 @@ export interface LegacyPlayerCommandState {
   availableAreas: number[];
   forbiddenAreas: number[];
   areaNames: string[];
+  mapItems: LegacyMapItem[];
+  roll: (min: number, max: number) => number;
   profile?: { motto?: string; killmsg?: string; lastword?: string };
   discover?: (mode: LegacySearchMode, state: LegacyPlayerCommandState) => LegacyCommandDiscoveryResult;
   craftResult?: LegacyCraftActionResult;
@@ -49,6 +57,8 @@ export interface LegacyPlayerCommandInput {
   availableAreas?: number[];
   forbiddenAreas?: number[];
   areaNames?: string[];
+  mapItems?: LegacyMapItem[];
+  random?: LegacyRandom;
   profile?: LegacyPlayerCommandState["profile"];
   discover?: LegacyPlayerCommandState["discover"];
 }
@@ -69,6 +79,75 @@ function writePlayerItem(player: LegacyPlayerRecord, slot: number, item: LegacyI
   const inventory = readLegacyPlayerInventory(player);
   inventory[slot - 1] = item;
   writeLegacyPlayerInventory(player, inventory);
+}
+
+function addPendingItemToPack(state: LegacyPlayerCommandState, preferred = 0): boolean {
+  const pending = readPlayerItem(state.player, 0);
+  if (isLegacyItemEmpty(pending)) {
+    state.log += "你没有捡取物品。<br>";
+    state.mode = "command";
+    return false;
+  }
+  const inventory = readLegacyPlayerInventory(state.player);
+  const blank = preferred > 0 && preferred <= 6 && isLegacyItemEmpty(inventory[preferred - 1]!)
+    ? preferred
+    : getLegacyPackBlank(inventory);
+  if (blank <= 0) {
+    state.cmd = "itemdrop0";
+    return false;
+  }
+  state.log += `将<span class="yellow b">${pending.itm}</span>放入包裹。<br>`;
+  inventory[blank - 1] = pending;
+  writeLegacyPlayerInventory(state.player, inventory);
+  writeLegacyPendingItem(state.player, emptyLegacyItem());
+  state.mode = "command";
+  return true;
+}
+
+function getPendingItem(state: LegacyPlayerCommandState): void {
+  const pending = readPlayerItem(state.player, 0);
+  if (isLegacyItemEmpty(pending)) {
+    state.log += "你没有捡取物品。<br>";
+    state.mode = "command";
+    return;
+  }
+  if (pending.itms !== LEGACY_INFINITE_DURABILITY && getLegacyMergeType(pending.itmk) === 1) {
+    const weapon = {
+      itm: textField(state.player, "wep"), itmk: textField(state.player, "wepk"),
+      itme: numberField(state.player, "wepe"), itms: state.player.weps, itmsk: textField(state.player, "wepsk")
+    };
+    if (weapon.itm === pending.itm && weapon.itmk === pending.itmk && weapon.itme === pending.itme && weapon.itmsk === pending.itmsk) {
+      state.player.weps = Number(weapon.itms) + Number(pending.itms);
+      state.log += `与装备着的武器<span class="yellow b">${weapon.itm}</span>合并了。`;
+      writeLegacyPendingItem(state.player, emptyLegacyItem());
+      state.mode = "command";
+      return;
+    }
+    const inventory = readLegacyPlayerInventory(state.player);
+    const same = inventory.find((item) => !isLegacyItemEmpty(item)
+      && item.itm === pending.itm && item.itmk === pending.itmk
+      && item.itme === pending.itme && item.itmsk === pending.itmsk);
+    if (same) {
+      same.itms = Number(same.itms) + Number(pending.itms);
+      state.log += `与包裹里的<span class="yellow b">${pending.itm}</span>合并了。`;
+      writeLegacyPlayerInventory(state.player, inventory);
+      writeLegacyPendingItem(state.player, emptyLegacyItem());
+      state.mode = "command";
+      return;
+    }
+  }
+  if (pending.itms !== LEGACY_INFINITE_DURABILITY && getLegacyMergeType(pending.itmk) === 2) {
+    const inventory = readLegacyPlayerInventory(state.player);
+    const sameSlots = inventory.flatMap((item, index) => !isLegacyItemEmpty(item)
+      && item.itm === pending.itm && item.itme === pending.itme
+      && item.itmk.slice(1, 2) === pending.itmk.slice(1, 2)
+      && getLegacyMergeType(item.itmk) === 2 ? [index + 1] : []);
+    if (sameSlots.length) {
+      state.cmd = `itemmerge0:${sameSlots.join(",")}`;
+      return;
+    }
+  }
+  addPendingItemToPack(state);
 }
 
 function discover(state: LegacyPlayerCommandState, mode: LegacySearchMode): boolean {
@@ -223,6 +302,42 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
     const item = rawItem as LegacyItem;
     session.state.log += `你使用了道具 <span class="yellow b">${item.itm}</span> 。<br>但是什么也没有发生。<br>`;
   });
+  kernel.register("calculate_itemfind_obbs", "itemmain", () => LEGACY_BASE_ITEM_FIND_ODDS);
+  kernel.register("calculate_itemfind_obbs_multiplier", "itemmain", () => 1);
+  kernel.register("check_discover_item_found", "itemmain", ({ call, session }, buff = 0) => {
+    const odds = Number(buff) + Number(call("calculate_itemfind_obbs")) * Number(call("calculate_itemfind_obbs_multiplier"));
+    return session.state.roll(0, 99) < odds;
+  });
+  kernel.register("discover_item_filter", "itemmain", () => true);
+  kernel.register("discover_item", "itemmain", ({ call, session }) => {
+    const state = session.state;
+    const area = numberField(state.player, "pls");
+    const pool = state.mapItems.filter((item) => item.pls === area && call<boolean>("discover_item_filter", item));
+    if (!pool.length) {
+      state.log += '<span class="yellow b">周围找不到任何物品。</span><br>';
+      state.mode = "command";
+      return false;
+    }
+    const found = pool[state.roll(0, pool.length - 1)]!;
+    const index = state.mapItems.findIndex((item) => item.iid === found.iid);
+    if (index >= 0) state.mapItems.splice(index, 1);
+    writeLegacyPendingItem(state.player, found);
+    if (!isLegacyItemEmpty(found)) {
+      state.cmd = "itemfind";
+      state.log += `<br>发现了物品 <span class='yellow b'>${found.itm}</span>，<br>`;
+      return true;
+    }
+    state.log += "但是什么都没有发现。<br>";
+    state.mode = "command";
+    return false;
+  });
+  kernel.register("discover", "itemmain", ({ call, next, session }, mode) => {
+    // A caller-supplied discovery adapter represents the remaining complete
+    // legacy discovery chain (events/traps/players/items) in parity fixtures.
+    if (session.state.discover) return next(mode);
+    if (call<boolean>("check_discover_item_found")) return call("discover_item");
+    return next(mode);
+  });
   kernel.register("itemuse", "edible", ({ next, session }, rawItem) => {
     const item = rawItem as LegacyItem;
     const state = session.state;
@@ -291,6 +406,20 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
     const itemCommand = state.input.itemcmd;
     if (state.mode === "command" && state.command.startsWith("itm")) {
       call("itemuse_wrapper", state.command.slice(3));
+      return;
+    }
+    if (state.mode === "itemmain" && state.command === "itemget") {
+      getPendingItem(state);
+      return;
+    }
+    if (state.mode === "itemmain" && state.command === "itemadd") {
+      addPendingItemToPack(state, phpInt(state.input.to ?? "0"));
+      return;
+    }
+    if (state.mode === "itemmain" && state.command === "dropitm0") {
+      writeLegacyPendingItem(state.player, emptyLegacyItem());
+      state.log += "你没有捡取物品。<br>";
+      state.mode = "command";
       return;
     }
     if (state.mode === "itemmain" && state.command === "itemmerge") {
@@ -434,6 +563,7 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
 export const LEGACY_BASE_COMMAND_KERNEL = createKernel();
 
 export function runLegacyPlayerCommand(input: LegacyPlayerCommandInput): LegacyPlayerCommandState {
+  const random = input.random ?? cryptoLegacyRandom;
   const state: LegacyPlayerCommandState = {
     player: structuredClone(input.player),
     mode: input.mode ?? "command",
@@ -452,10 +582,12 @@ export function runLegacyPlayerCommand(input: LegacyPlayerCommandInput): LegacyP
     availableAreas: input.availableAreas ?? LEGACY_MAP_CONFIG.names.map((_name, index) => index),
     forbiddenAreas: input.forbiddenAreas ?? [],
     areaNames: input.areaNames ?? [...LEGACY_MAP_CONFIG.names],
+    mapItems: structuredClone(input.mapItems ?? []),
+    roll: (min, max) => random.int(min, max),
     ...(input.profile ? { profile: input.profile } : {}),
     ...(input.discover ? { discover: input.discover } : {})
   };
-  const session = new LegacyExecutionSession(state);
+  const session = new LegacyExecutionSession(state, { random });
   session.transaction(() => {
     LEGACY_BASE_COMMAND_KERNEL.call(session, "pre_act");
     if (state.gamestate >= 20 && numberField(state.player, "hp") > 0 && numberField(state.player, "state") <= 3) {
@@ -465,5 +597,6 @@ export function runLegacyPlayerCommand(input: LegacyPlayerCommandInput): LegacyP
   });
   Object.assign(input.player, state.player);
   state.player = input.player;
+  if (input.mapItems) input.mapItems.splice(0, input.mapItems.length, ...state.mapItems);
   return state;
 }

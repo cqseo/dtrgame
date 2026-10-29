@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { createLegacyPlayerRecord } from "../src/generated/legacy-registry";
 import { LEGACY_BASE_COMMAND_KERNEL, runLegacyPlayerCommand } from "../src/legacy/command-runtime";
 import type { LegacyPlayerRecord } from "../src/legacy/player";
+import { SequenceLegacyRandom } from "../src/legacy/random";
+import type { LegacyMapItem } from "../src/legacy/item";
 
 function player(): LegacyPlayerRecord {
   const value = createLegacyPlayerRecord();
@@ -20,6 +22,7 @@ describe("original command.php base action transaction", () => {
     ]);
     expect(LEGACY_BASE_COMMAND_KERNEL.implementations("move")).toEqual(["explore", "cooldown"]);
     expect(LEGACY_BASE_COMMAND_KERNEL.implementations("chginf")).toEqual(["wound"]);
+    expect(LEGACY_BASE_COMMAND_KERNEL.implementations("discover")).toEqual(["explore", "itemmain"]);
   });
 
   it("wraps move/search with the original 650ms cooldown hook", () => {
@@ -163,5 +166,58 @@ describe("original command.php base action transaction", () => {
       discover: () => { throw new Error("discover failed"); }
     })).toThrow("discover failed");
     expect(data).toEqual(before);
+  });
+
+  it("discovers one original mapitem row and removes it into pending slot zero", () => {
+    const data = player();
+    const mapItems: LegacyMapItem[] = [
+      { iid: 10, pls: 0, itm: "针", itmk: "WC", itme: 10, itms: 2, itmsk: "" },
+      { iid: 11, pls: 0, itm: "面包", itmk: "HH", itme: 100, itms: 1, itmsk: "" }
+    ];
+    const result = runLegacyPlayerCommand({
+      player: data, command: "search", now: 100, mapItems,
+      random: new SequenceLegacyRandom([0, 1])
+    });
+    expect(result.cmd).toBe("itemfind");
+    expect(result.log).toContain("发现了物品 <span class='yellow b'>面包</span>");
+    expect(data.itm0).toBe("面包");
+    expect(mapItems.map(({ iid }) => iid)).toEqual([10]);
+  });
+
+  it("picks a pending item into a blank slot and auto-merges stackable finds", () => {
+    const data = player();
+    Object.assign(data, { itm0: "针", itmk0: "WC", itme0: 10, itms0: 2, itmsk0: "" });
+    let result = runLegacyPlayerCommand({ player: data, mode: "itemmain", command: "itemget", now: 100 });
+    expect(result.log).toContain("放入包裹");
+    expect(data.itm1).toBe("针");
+    expect(data.itm0).toBe("");
+
+    Object.assign(data, { itm0: "针", itmk0: "WC", itme0: 10, itms0: 3, itmsk0: "" });
+    result = runLegacyPlayerCommand({ player: data, mode: "itemmain", command: "itemget", now: 101 });
+    expect(result.log).toContain("与包裹里的");
+    expect(data.itms1).toBe(5);
+    expect(data.itm0).toBe("");
+  });
+
+  it("keeps a pending find when the backpack is full", () => {
+    const data = player();
+    for (let slot = 1; slot <= 6; slot += 1) Object.assign(data, {
+      [`itm${slot}`]: `物品${slot}`, [`itmk${slot}`]: "X", [`itme${slot}`]: 1, [`itms${slot}`]: 1, [`itmsk${slot}`]: ""
+    });
+    Object.assign(data, { itm0: "新物品", itmk0: "X", itme0: 1, itms0: 1, itmsk0: "" });
+    const result = runLegacyPlayerCommand({ player: data, mode: "itemmain", command: "itemget", now: 100 });
+    expect(result.cmd).toBe("itemdrop0");
+    expect(data.itm0).toBe("新物品");
+  });
+
+  it("rolls back map items and deterministic RNG when discovery fails mid-transaction", () => {
+    const data = player();
+    const before = structuredClone(data);
+    const mapItems: LegacyMapItem[] = [{ iid: 10, pls: 0, itm: "针", itmk: "WC", itme: 10, itms: 2, itmsk: "" }];
+    const random = new SequenceLegacyRandom([0]);
+    expect(() => runLegacyPlayerCommand({ player: data, command: "search", now: 100, mapItems, random })).toThrow("sequence exhausted");
+    expect(data).toEqual(before);
+    expect(mapItems).toHaveLength(1);
+    expect(random.consumed).toBe(0);
   });
 });

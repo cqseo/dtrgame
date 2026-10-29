@@ -1,4 +1,5 @@
 import type { LegacyPlayerRecord } from "../legacy/player";
+import type { LegacyMapItem } from "../legacy/item";
 import { runLegacyPlayerCommand } from "../legacy/command-runtime";
 import { SupabaseLegacyRest, SupabaseMatchSnapshots } from "./supabase";
 
@@ -10,6 +11,7 @@ export interface LegacyMatchState {
   availableAreas: number[];
   forbiddenAreas: number[];
   areaNames: string[];
+  mapItems?: LegacyMapItem[];
 }
 
 interface StoredLegacyMatch { version: number; state: LegacyMatchState; }
@@ -63,6 +65,7 @@ export class LegacyGameDurableObject {
           if (!current) return json({ error: "玩家数据记录不存在。" }, 404);
           const working = structuredClone(this.#match.state);
           const player = working.players[username]!;
+          working.mapItems ??= [];
           const output = runLegacyPlayerCommand({
             player,
             command: String(body.command ?? ""),
@@ -72,6 +75,7 @@ export class LegacyGameDurableObject {
             availableAreas: working.availableAreas,
             forbiddenAreas: working.forbiddenAreas,
             areaNames: working.areaNames,
+            mapItems: working.mapItems,
             ...(body.mode !== undefined ? { mode: body.mode } : {}),
             ...(body.input !== undefined ? { input: body.input } : {}),
             ...(body.requestStartMs !== undefined ? { requestStartMs: body.requestStartMs } : {})
