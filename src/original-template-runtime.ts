@@ -4,6 +4,7 @@ export type TemplateConstants = Readonly<Record<string, string | number | boolea
 export type TemplateReadAsset = (path: string) => string;
 export function phpTruthy(value: unknown): boolean {
   if (Array.isArray(value)) return value.length !== 0;
+  if (value !== null && typeof value === 'object') return Object.keys(value).length !== 0;
   return value !== undefined && value !== null && value !== false && value !== 0 && value !== '' && value !== '0';
 }
 export function phpString(value: unknown): string {
@@ -17,12 +18,15 @@ export function phpOffset(value: unknown, offset: unknown): unknown {
   const key = phpString(offset);
   return Object.hasOwn(value, key) ? (value as TemplateContext)[key] : undefined;
 }
-function phpNumber(value: unknown): number {
+export function phpNumber(value: unknown): number {
   const match = phpString(value).match(/^\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)/i);
   return match ? Number(match[1]) : 0;
 }
 export function phpBinary(op: string, left: unknown, right: unknown): unknown {
   if (op === '.') return phpString(left) + phpString(right);
+  if (op === '!==') return left !== right && !(left == null && right == null);
+  if (op === '===') return left === right || (left == null && right == null);
+  if (op === '!=') return !phpBinary('==', left, right);
   if (op === '==') {
     if (typeof left === 'boolean' || typeof right === 'boolean') return phpTruthy(left) === phpTruthy(right);
     if (left == null || right == null) return phpString(left) === phpString(right);
@@ -32,5 +36,13 @@ export function phpBinary(op: string, left: unknown, right: unknown): unknown {
     return left === right;
   }
   if (op === '>=') return phpNumber(left) >= phpNumber(right);
+  if (op === '<=') return phpNumber(left) <= phpNumber(right);
+  if (op === '>') return phpNumber(left) > phpNumber(right);
+  if (op === '<') return phpNumber(left) < phpNumber(right);
+  if (op === '+') return phpNumber(left) + phpNumber(right);
+  if (op === '-') return phpNumber(left) - phpNumber(right);
+  if (op === '*') return phpNumber(left) * phpNumber(right);
+  if (op === '/') return phpNumber(left) / phpNumber(right);
+  if (op === '%') return Math.trunc(phpNumber(left)) % Math.trunc(phpNumber(right));
   throw new Error('Unported template operator: ' + op);
 }
