@@ -8,6 +8,7 @@ import { legacyRegisterPost, legacyRegisterAjaxResponse, type LegacyRegistration
 import { legacyDecode } from "./original-protocol";
 import {originalReviveProcess} from "./original-revive-process";
 import {originalGameinfoSaveSql} from "./original-gameinfo-save";
+import {runOriginalEncounterBattleSelftest} from "./original-encounter-selftest";
 
 import {originalBaseTrapResolve} from "./original-trap-damage";
 import {originalPlayerKillBase} from "./original-player-kill";
@@ -326,7 +327,7 @@ async function runOriginalCombatPhasesSelftest() {
  const saved=await originalWithRoomTransaction(mock,{purpose:"qa-only",roomId:8},
   async db=>{await db.query("SYNTHETIC_ITEM_CLAIM",[17]);await db.query("SYNTHETIC_PLAYER_SAVE",[15]);return true;});
  assert(saved && sql[0]==="BEGIN" && sql.at(-1)==="COMMIT","room_single_transaction");
- assert(sql[1]==="SELECT pg_advisory_xact_lock($1,$2)","room_lock");
+ assert(sql[3]==="SELECT pg_advisory_xact_lock($1,$2)","room_lock");
  const deaths=[...events];
  assert(deaths.includes("deathnews")&&!deaths.includes("revive_news"),"unrevived_source_deathnews");
  return {pass:errors.length===0,checks:8,gamePlayable:false,
@@ -372,6 +373,12 @@ async function runOriginalRoomReviveSelftest(){
 
 addEventListener("fetch",(event: FetchEvent)=>{
  const u=new URL(event.request.url);
+ if(event.request.method==="GET" && u.pathname==="/__encounter_battle_selftest") {
+  event.respondWith(runOriginalEncounterBattleSelftest().then(r=>new Response(JSON.stringify(r),{
+   status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}
+  })));
+  return;
+ }
  if(event.request.method==="GET" && u.pathname==="/__revive_gameinfo_selftest") {
   event.respondWith(runOriginalRoomReviveSelftest().then(r=>new Response(JSON.stringify(r),{
    status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}
@@ -413,3 +420,11 @@ addEventListener("fetch",(event: FetchEvent)=>{
  if(event.request.method!=="GET" || u.pathname!=="/__selftest") {
    event.respondWith(new Response("ACFUN DTS isolated parity QA only; not a playable game.",{status:404,headers:{"content-type":"text/plain;charset=utf-8"}}));
    return;
+
+ }
+ const result=runSelftest();
+ event.respondWith(new Response(JSON.stringify(result),{
+   status:result.pass?200:500,
+   headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}
+ }));
+});
