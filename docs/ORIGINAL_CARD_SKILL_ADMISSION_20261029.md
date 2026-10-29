@@ -15,6 +15,7 @@ Continues the existing native runtime. No production resources changed, and no n
 - 2,140 direct callback comparisons execute original source bodies with original skillbase parameter functions and synthetic player/module contexts. These do not cover all helper-dependent callbacks or all possible contexts.
 - 24 actual skillbase bookkeeping comparisons validate current/other player state, existing/missing skills, no-cover and callback order.
 - 14 actual __MAGIC__ post-admission chain comparisons span seven modes with optional effects enabled/disabled. Effect endpoints are explicitly synthetic capture ports on both sides; this proves ordering/state orchestration, not DB/NPC/achievement/task implementations.
+- All installed skill-enable and skill-acquire overrides now preserve disable flags, achievement/hidden/feature exceptions, skill513's one-time log and evolved-NPC restriction, and skill461/803 debuff immunity. 520 additional PHP comparisons exercise flag combinations and effect priorities through the actual source dispatcher. The skill-query result is normalized to PHP's boolean semantics rather than returning JavaScript numeric zero.
 - Existing regression suite is retained. Test evidence does not establish complete gameplay, session concurrency in a running match, or full effect parity.
 
 ## Still needed for the real objective

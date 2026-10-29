@@ -33,7 +33,7 @@ export function registerOriginalSkillRuntime(d:OriginalModuleDispatcher,r:Origin
    if(phpTruthy(acquired.get(id))){acquired.set(id,0);if(r.enabledModules.has('skill'+id))await ctx.call('skill'+id,'lost'+id,p);}
  });
  d.register('skillbase','get_acquired_skill_array',(_ctx,p)=>{initializePid();const acquired=current(p,true)?r.acquired:map(player(p),'acquired_list');return [...acquired].filter(([,value])=>phpNumber(value)===1).map(([key])=>key);});
- d.register('skillbase','skill_query',async(ctx,idValue,p)=>{initializePid();const id=Math.trunc(phpNumber(idValue)),acquired=current(p,true)?r.acquired:map(player(p),'acquired_list');return phpTruthy(acquired.get(id))&&await ctx.call('skillbase','skill_enabled',id,current(p,true)?r.currentPlayer:p);});
+ d.register('skillbase','skill_query',async(ctx,idValue,p)=>{initializePid();const id=Math.trunc(phpNumber(idValue)),acquired=current(p,true)?r.acquired:map(player(p),'acquired_list');return phpTruthy(acquired.get(id))&&phpTruthy(await ctx.call('skillbase','skill_enabled',id,current(p,true)?r.currentPlayer:p));});
  d.register('skillbase','skill_enabled', (ctx,id,p)=>ctx.call('skillbase','skill_enabled_core',id,p));
  d.register('skillbase','skill_enabled_core',()=>true);
 }
