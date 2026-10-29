@@ -6,7 +6,7 @@
  * Pure functions: all date-dependent inputs are explicit, no random/DB writes.
  * These preserve the original registration challenge values, not new game rules.
  */
-import { legacyMd5 } from "./original-auth.ts";
+import { legacyMd5 } from "./original-auth";
 
 export interface LegacyRegistrationContext {
   nowSeconds: number;
