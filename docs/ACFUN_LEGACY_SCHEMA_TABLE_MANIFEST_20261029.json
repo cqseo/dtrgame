@@ -1,0 +1,591 @@
+{
+  "tables": 65,
+  "source_columns": 1609,
+  "entries": [
+    {
+      "original": "acbra2_activity_ranking_aprillfool2018",
+      "destination": "acfun_legacy.activity_ranking_aprillfool2018",
+      "columns": 5,
+      "indexes": 2,
+      "identity": true,
+      "bytes": 968,
+      "sha256": "09f77709b2f05b3783221d773ef069d368569dfab67b015d7e66f4d8ac42ab0d"
+    },
+    {
+      "original": "acbra2_chat",
+      "destination": "acfun_legacy.chat",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 659,
+      "sha256": "50ad90d4678bc4dd117598fa62cf11564940b9329a525fddcaf32cccee2ae0a1"
+    },
+    {
+      "original": "acbra2_del_messages",
+      "destination": "acfun_legacy.del_messages",
+      "columns": 10,
+      "indexes": 2,
+      "identity": true,
+      "bytes": 1050,
+      "sha256": "22cd1045579261e4057bf9fd850be0dab063a698d7ba68c899789e0d2bdc926c"
+    },
+    {
+      "original": "acbra2_game",
+      "destination": "acfun_legacy.game",
+      "columns": 25,
+      "indexes": 0,
+      "identity": false,
+      "bytes": 2017,
+      "sha256": "e525338233600af2733db1b38b3d01b4adba041423ecf605e31c996b67c7872c"
+    },
+    {
+      "original": "acbra2_history",
+      "destination": "acfun_legacy.history",
+      "columns": 22,
+      "indexes": 3,
+      "identity": false,
+      "bytes": 1850,
+      "sha256": "58853bf81aa07cbe970bea26f52165e68cb690467bf844cfd6f2936c3a15f11d"
+    },
+    {
+      "original": "acbra2_log",
+      "destination": "acfun_legacy.log",
+      "columns": 5,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 524,
+      "sha256": "60d192a8c55baff7a8a7e9510e554832adfd337857828d3657d49fc9ba287d22"
+    },
+    {
+      "original": "acbra2_mapitem",
+      "destination": "acfun_legacy.mapitem",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 620,
+      "sha256": "3481a95913c1457580a5ac1f1fe17966776fbe8a2e06f2af9d8cd287ffcfa2d9"
+    },
+    {
+      "original": "acbra2_maptrap",
+      "destination": "acfun_legacy.maptrap",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 620,
+      "sha256": "dff2ea8310216a95670cbeccb08b7c111e74f6b7c385f0533da577b1296be11c"
+    },
+    {
+      "original": "acbra2_messages",
+      "destination": "acfun_legacy.messages",
+      "columns": 9,
+      "indexes": 2,
+      "identity": true,
+      "bytes": 932,
+      "sha256": "2601f047b1fceafb84ea33ca503b692de23a3dc2cad91a90ea3b708ada85c3ea"
+    },
+    {
+      "original": "acbra2_newsinfo",
+      "destination": "acfun_legacy.newsinfo",
+      "columns": 8,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 615,
+      "sha256": "e53f56a8fb281dbe3a554c44084edc35c85d9a07f8abce43e0a0511f240726bb"
+    },
+    {
+      "original": "acbra2_players",
+      "destination": "acfun_legacy.players",
+      "columns": 124,
+      "indexes": 3,
+      "identity": true,
+      "bytes": 7512,
+      "sha256": "0e1ebb6db9ca739e70646d5691ffd476f5d1a27558acbda1f9a644460c466211"
+    },
+    {
+      "original": "acbra2_recovery_codes",
+      "destination": "acfun_legacy.recovery_codes",
+      "columns": 5,
+      "indexes": 0,
+      "identity": false,
+      "bytes": 606,
+      "sha256": "819a79f555c28fdcb8688c84f1ca4a3c3a0cf84dc6c9a3328097e4194adef478"
+    },
+    {
+      "original": "acbra2_roomlisteners",
+      "destination": "acfun_legacy.roomlisteners",
+      "columns": 4,
+      "indexes": 0,
+      "identity": false,
+      "bytes": 511,
+      "sha256": "0f32c2956886546bba121cd1f26cd0df133d995e33c89d765980a9b28a2d285d"
+    },
+    {
+      "original": "acbra2_s1_chat",
+      "destination": "acfun_legacy.s1_chat",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 668,
+      "sha256": "66cfa6eccfdd44fb26698f84e2c468c4d5d3106e2fcd143800f3340e6593ae89"
+    },
+    {
+      "original": "acbra2_s1_log",
+      "destination": "acfun_legacy.s1_log",
+      "columns": 5,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 533,
+      "sha256": "79d84789bc56ea6a681e3f53ff0d7e4aab31e421f697e83a579bd0484551290b"
+    },
+    {
+      "original": "acbra2_s1_mapitem",
+      "destination": "acfun_legacy.s1_mapitem",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "339e6be31efbc5b6c24034999be77ac44df327935932800c136c242bc0fa30c9"
+    },
+    {
+      "original": "acbra2_s1_maptrap",
+      "destination": "acfun_legacy.s1_maptrap",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "5894f52e0015a8126f71e6f7e60f6dcfd643990e026c5f2ea5070b4b118f462a"
+    },
+    {
+      "original": "acbra2_s1_newsinfo",
+      "destination": "acfun_legacy.s1_newsinfo",
+      "columns": 8,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 624,
+      "sha256": "17bae3cce35cb9fe8b4c2fca0a2b877c4d80c660168375bd50fea4deaa7ea020"
+    },
+    {
+      "original": "acbra2_s1_players",
+      "destination": "acfun_legacy.s1_players",
+      "columns": 124,
+      "indexes": 3,
+      "identity": true,
+      "bytes": 7539,
+      "sha256": "f3c0ed47b9602e94216bb966a37f073c0190b88d974218476cac2c5f971fa57f"
+    },
+    {
+      "original": "acbra2_s1_shopitem",
+      "destination": "acfun_legacy.s1_shopitem",
+      "columns": 10,
+      "indexes": 1,
+      "identity": true,
+      "bytes": 952,
+      "sha256": "34e752b505f9943c53fa63e7be54c5e4f44202b2bf007d7e8e50affd07bbe370"
+    },
+    {
+      "original": "acbra2_s2_chat",
+      "destination": "acfun_legacy.s2_chat",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 668,
+      "sha256": "c58be8bbf943767567ede80f12caf0a44ed54629309cbb0a413fb80a6678394e"
+    },
+    {
+      "original": "acbra2_s2_log",
+      "destination": "acfun_legacy.s2_log",
+      "columns": 5,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 533,
+      "sha256": "f3917a0451033e009fc4907aa691b2a0b788ab423d6361983172a7e754ac9944"
+    },
+    {
+      "original": "acbra2_s2_mapitem",
+      "destination": "acfun_legacy.s2_mapitem",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "e0f3f0c217bf01c97dd564fdb3f9f210059c090564ec52b1c4dabd22922dc57d"
+    },
+    {
+      "original": "acbra2_s2_maptrap",
+      "destination": "acfun_legacy.s2_maptrap",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "f12e2d3ce5fcac2b6c7f2e2e2ba36d11382e0eb636adbc71310404e4cb400e1b"
+    },
+    {
+      "original": "acbra2_s2_newsinfo",
+      "destination": "acfun_legacy.s2_newsinfo",
+      "columns": 8,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 624,
+      "sha256": "fd5a4b5bc2e6e3f5a037e814c8b1e4aa82e2c9837f0dd8dd7dd1b4c720c25536"
+    },
+    {
+      "original": "acbra2_s2_players",
+      "destination": "acfun_legacy.s2_players",
+      "columns": 124,
+      "indexes": 3,
+      "identity": true,
+      "bytes": 7539,
+      "sha256": "180fcc3049defb2b6e37c9513dd0033de65ca61d2e68ce70f71210d199c5c8c4"
+    },
+    {
+      "original": "acbra2_s2_shopitem",
+      "destination": "acfun_legacy.s2_shopitem",
+      "columns": 10,
+      "indexes": 1,
+      "identity": true,
+      "bytes": 952,
+      "sha256": "49828864946a80d867611e23169c91383992aec79109b4d5786f43ed768e71b5"
+    },
+    {
+      "original": "acbra2_s3_chat",
+      "destination": "acfun_legacy.s3_chat",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 668,
+      "sha256": "9e7dd743f198bd0b72938876b103f19ce1d712bc260da235e0c26d59b525a29c"
+    },
+    {
+      "original": "acbra2_s3_log",
+      "destination": "acfun_legacy.s3_log",
+      "columns": 5,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 533,
+      "sha256": "846be1c2aca9d985fb31230d06becad1063251c7286cd33a5e4f35337ca2b984"
+    },
+    {
+      "original": "acbra2_s3_mapitem",
+      "destination": "acfun_legacy.s3_mapitem",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "ee18517224c4dbd7d90c639c39152a912951b0837c99d00d84b49b494ecca07c"
+    },
+    {
+      "original": "acbra2_s3_maptrap",
+      "destination": "acfun_legacy.s3_maptrap",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "7dfa8fbc93c2ea52c23b1f7d4ccd8bbe89d372e9bec865b4bc3609e99dced452"
+    },
+    {
+      "original": "acbra2_s3_newsinfo",
+      "destination": "acfun_legacy.s3_newsinfo",
+      "columns": 8,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 624,
+      "sha256": "29bac890ef54b834ff1f5c693252d2539b96de25b184e337adbb0241362c7c3e"
+    },
+    {
+      "original": "acbra2_s3_players",
+      "destination": "acfun_legacy.s3_players",
+      "columns": 124,
+      "indexes": 3,
+      "identity": true,
+      "bytes": 7539,
+      "sha256": "81d98cb32779d9b1347fc4343e782dd676d1e46ce2cd85c0d53d71fb26a3ff24"
+    },
+    {
+      "original": "acbra2_s3_shopitem",
+      "destination": "acfun_legacy.s3_shopitem",
+      "columns": 10,
+      "indexes": 1,
+      "identity": true,
+      "bytes": 952,
+      "sha256": "d283eca7c996f7e889feb27ef22c34c5adb08bd7735e882139e667329a0d5328"
+    },
+    {
+      "original": "acbra2_s4_chat",
+      "destination": "acfun_legacy.s4_chat",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 668,
+      "sha256": "6a66be5ff47c07559c6703971521e0e6457a426670394e05606a784f578bdbd6"
+    },
+    {
+      "original": "acbra2_s4_log",
+      "destination": "acfun_legacy.s4_log",
+      "columns": 5,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 533,
+      "sha256": "2e7f8cb6668c3cf8609f40d79c7bac77bf8931f8cc0016df8aa326a601129ae3"
+    },
+    {
+      "original": "acbra2_s4_mapitem",
+      "destination": "acfun_legacy.s4_mapitem",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "1705c401c21519cd84cc3c8e7dc3cca61554d1598df0b08686164f3e132274f9"
+    },
+    {
+      "original": "acbra2_s4_maptrap",
+      "destination": "acfun_legacy.s4_maptrap",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "3e42a472d3a4084c92fc09bcd492a228c3a44126c81b1b2b879434f6ec04a1f8"
+    },
+    {
+      "original": "acbra2_s4_newsinfo",
+      "destination": "acfun_legacy.s4_newsinfo",
+      "columns": 8,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 624,
+      "sha256": "a49af191eb0200ef1041a8b286d3aed95bb8a3af7fc3e949a1bf5ab81ffbff57"
+    },
+    {
+      "original": "acbra2_s4_players",
+      "destination": "acfun_legacy.s4_players",
+      "columns": 124,
+      "indexes": 3,
+      "identity": true,
+      "bytes": 7539,
+      "sha256": "5b395b6432b409876d99b01669beeb27873170feba98dcfc89168acff457cf6e"
+    },
+    {
+      "original": "acbra2_s4_shopitem",
+      "destination": "acfun_legacy.s4_shopitem",
+      "columns": 10,
+      "indexes": 1,
+      "identity": true,
+      "bytes": 952,
+      "sha256": "8a7fd274b0378861e010afc9886f89128fdd948d6a2f85969564e2c644afe1dc"
+    },
+    {
+      "original": "acbra2_s5_chat",
+      "destination": "acfun_legacy.s5_chat",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 668,
+      "sha256": "485d6f7defb8bfd87f4b5b8edf8c19976ed928bfee0c733936f1aa920c5139f6"
+    },
+    {
+      "original": "acbra2_s5_log",
+      "destination": "acfun_legacy.s5_log",
+      "columns": 5,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 533,
+      "sha256": "86d2de3410cd9197ad0b35e89f4ef3304363cba1798ba6d74d87a15fc1eb6a2a"
+    },
+    {
+      "original": "acbra2_s5_mapitem",
+      "destination": "acfun_legacy.s5_mapitem",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "0ef30bf5a99b5528071b1ffd7caafc44b180c35be496e27769c232de18b903fe"
+    },
+    {
+      "original": "acbra2_s5_maptrap",
+      "destination": "acfun_legacy.s5_maptrap",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "9aa6dc876b93d2d4b50b751565a9f19578228ae04b36950a1ebcafb1dd693a43"
+    },
+    {
+      "original": "acbra2_s5_newsinfo",
+      "destination": "acfun_legacy.s5_newsinfo",
+      "columns": 8,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 624,
+      "sha256": "f4228871b5d0b5f5dfad2b440a527a75de3678852e9b802a4918380db5c0dcfc"
+    },
+    {
+      "original": "acbra2_s5_players",
+      "destination": "acfun_legacy.s5_players",
+      "columns": 124,
+      "indexes": 3,
+      "identity": true,
+      "bytes": 7539,
+      "sha256": "6fd049420c40399c83c4302c435284818461b4578dc56dcc6652cb71055ac849"
+    },
+    {
+      "original": "acbra2_s5_shopitem",
+      "destination": "acfun_legacy.s5_shopitem",
+      "columns": 10,
+      "indexes": 1,
+      "identity": true,
+      "bytes": 952,
+      "sha256": "3d82ebeecbb3ae143eb771ab03cae8ed75837cbd88498181da2b17a41bea3e15"
+    },
+    {
+      "original": "acbra2_s6_chat",
+      "destination": "acfun_legacy.s6_chat",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 668,
+      "sha256": "22385789ecb6757f5916e22fb06ceaac6a6ad50762c1f44868a3987f303d63ee"
+    },
+    {
+      "original": "acbra2_s6_log",
+      "destination": "acfun_legacy.s6_log",
+      "columns": 5,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 533,
+      "sha256": "82db6202984da140ce1559e40d9ed2562f212811c58d4962166a8498e196c856"
+    },
+    {
+      "original": "acbra2_s6_mapitem",
+      "destination": "acfun_legacy.s6_mapitem",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "06dbb8db40ab6c06e4d80255a6c28d8d5c4c21eae43144c851568f05e27139cd"
+    },
+    {
+      "original": "acbra2_s6_maptrap",
+      "destination": "acfun_legacy.s6_maptrap",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "5931882178d21826f13314f84515e1457321301e7a56388ed8836fa0a6cc992b"
+    },
+    {
+      "original": "acbra2_s6_newsinfo",
+      "destination": "acfun_legacy.s6_newsinfo",
+      "columns": 8,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 624,
+      "sha256": "a105f3ae95d7eec2fc152db0f6520a97fddd8b1bcb83a05c46a419094587a258"
+    },
+    {
+      "original": "acbra2_s6_players",
+      "destination": "acfun_legacy.s6_players",
+      "columns": 124,
+      "indexes": 3,
+      "identity": true,
+      "bytes": 7539,
+      "sha256": "4037d433eabd36042cebc9a6424617f41be45c512357ffe3a56cd4875bf81c6a"
+    },
+    {
+      "original": "acbra2_s6_shopitem",
+      "destination": "acfun_legacy.s6_shopitem",
+      "columns": 10,
+      "indexes": 1,
+      "identity": true,
+      "bytes": 952,
+      "sha256": "f5c417c6dd6df385a54fa16c965d27cef1e7ace8a2afb1d02473d0ce4ba6c326"
+    },
+    {
+      "original": "acbra2_s8_chat",
+      "destination": "acfun_legacy.s8_chat",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 668,
+      "sha256": "23ecf4e644a6fb95548631a9ee0514f165b244b62d22af16fecfd3c0886d3ece"
+    },
+    {
+      "original": "acbra2_s8_log",
+      "destination": "acfun_legacy.s8_log",
+      "columns": 5,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 533,
+      "sha256": "e768befc62aa3be10ea1b4013b28815b99accc2877f92570ff12ed90f22e0834"
+    },
+    {
+      "original": "acbra2_s8_mapitem",
+      "destination": "acfun_legacy.s8_mapitem",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "ccbdabba0bb4e4cf9b67b64dbfc83b5fe5bef09ef239900f1e378fee90753eda"
+    },
+    {
+      "original": "acbra2_s8_maptrap",
+      "destination": "acfun_legacy.s8_maptrap",
+      "columns": 7,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 629,
+      "sha256": "ae2325adf54fae531b000d88a1c9675df775d2a843bfeb6c024196627cb9f018"
+    },
+    {
+      "original": "acbra2_s8_newsinfo",
+      "destination": "acfun_legacy.s8_newsinfo",
+      "columns": 8,
+      "indexes": 0,
+      "identity": true,
+      "bytes": 624,
+      "sha256": "865093a56eedfd4725cc6c856749bb045cd29ee506225fc1cc29140f6067e833"
+    },
+    {
+      "original": "acbra2_s8_players",
+      "destination": "acfun_legacy.s8_players",
+      "columns": 124,
+      "indexes": 3,
+      "identity": true,
+      "bytes": 7539,
+      "sha256": "4b0b6fc90fa0e006e8cbe0ec0efd72a08fca4f8536383ce4e587accfb0183cbe"
+    },
+    {
+      "original": "acbra2_s8_shopitem",
+      "destination": "acfun_legacy.s8_shopitem",
+      "columns": 10,
+      "indexes": 1,
+      "identity": true,
+      "bytes": 952,
+      "sha256": "ad0cd7fbfd7ffb5a2fcd0a8052b9845f86eba3ea73b15a198c3a2d04d74eac50"
+    },
+    {
+      "original": "acbra2_shistory",
+      "destination": "acfun_legacy.shistory",
+      "columns": 22,
+      "indexes": 3,
+      "identity": false,
+      "bytes": 1859,
+      "sha256": "811957abd65da0647bd3946bbf82e233c1492ac42ec8954859f18fbf2aac3244"
+    },
+    {
+      "original": "acbra2_shopitem",
+      "destination": "acfun_legacy.shopitem",
+      "columns": 10,
+      "indexes": 1,
+      "identity": true,
+      "bytes": 937,
+      "sha256": "ac7a4e21b65d2a18528975194d38915d99ab7cb3cae59d477bef8bf3e80c542e"
+    },
+    {
+      "original": "acbra2_tmp_players",
+      "destination": "acfun_legacy.tmp_players",
+      "columns": 124,
+      "indexes": 3,
+      "identity": true,
+      "bytes": 7548,
+      "sha256": "6ee243ddc04816467d63a2ba6a8cefb6a2fc2384f997009b10b2ab5c643c0ee8"
+    }
+  ]
+}
