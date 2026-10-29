@@ -8,7 +8,7 @@
 declare(strict_types=1);
 umask(0077);
 require '/www/wwwroot/dts-game-test/include/modules/core/sys/config/server.config.php';
-$schema = json_decode(file_get_contents(__DIR__ . '/all-tables-schema-metadata.json'),true,512,JSON_THROW_ON_ERROR);
+$schema = json_decode(file_get_contents(getenv('DTS_SOURCE_SCHEMA_FILE') ?: '/opt/dts-port-workbench-20261029/all-tables-schema-metadata.json'),true,512,JSON_THROW_ON_ERROR);
 if (($schema['table_count'] ?? 0) !== 66) throw new RuntimeException('Unexpected schema, abort');
 $sourceTables = $schema['tables'];
 $root='/opt/dts-sandbox/backups/mysql-original-20261029';
