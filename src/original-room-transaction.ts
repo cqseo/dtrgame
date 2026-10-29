@@ -22,6 +22,8 @@ export interface OriginalRoomTxOptions {
  readonly purpose:"qa-only";
  readonly roomId:number;
  readonly transactionTimeoutMs?:number;
+ /** Maximum wait for the room lock (not the entire JS callback lifetime). */
+ readonly lockTimeoutMs?:number;
 }
 export async function originalWithRoomTransaction<T>(
  client:OriginalRoomTxClient,
@@ -35,14 +37,19 @@ export async function originalWithRoomTransaction<T>(
  const timeout=options.transactionTimeoutMs??30000;
  if(!Number.isSafeInteger(timeout)||timeout<1000||timeout>120000)
   throw new RangeError("Invalid isolated transaction timeout");
+ const lockTimeout=options.lockTimeoutMs??Math.min(timeout,5000);
+ if(!Number.isSafeInteger(lockTimeout)||lockTimeout<1||lockTimeout>timeout)
+  throw new RangeError("Invalid isolated lock timeout");
  await client.query("BEGIN",[]);
  let inTransaction=true;
  try{
+  // These MUST be set before the blocking lock statement, on this session.
+  await client.query("SELECT set_config('statement_timeout',$1,true)",[String(timeout)]);
+  await client.query("SELECT set_config('lock_timeout',$1,true)",[String(lockTimeout)]);
   // A room-scoped exclusive lock, transaction lifetime only.
   // No other game room shares the second advisory-lock key.
   await client.query("SELECT pg_advisory_xact_lock($1,$2)",
    [20261029,options.roomId]);
-  await client.query("SELECT set_config('statement_timeout',$1,true)",[String(timeout)]);
   const result=await run(client);
   await client.query("COMMIT",[]);
   inTransaction=false;
