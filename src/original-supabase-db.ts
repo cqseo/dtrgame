@@ -76,7 +76,8 @@ export class SupabaseOriginalUsers implements LegacyUserStore, LegacyRegistratio
       record.motto, record.killmsg, record.lastword, record.card_data,
       "", "", "", "", "", "",
     ];
-    const result = await this.db.query<{ uid: number }>(
+    try {
+      const result = await this.db.query<{ uid: number }>(
       "WITH created AS (INSERT INTO acfun_legacy.users (" +
       "username,password,alt_pswd,groupid,ip,credits,gold,gender,icon," +
       "motto,killmsg,lastword,card_data,cardenergy,cardlist,elo_history," +
@@ -86,8 +87,20 @@ export class SupabaseOriginalUsers implements LegacyUserStore, LegacyRegistratio
       ") ON CONFLICT (username) DO NOTHING RETURNING uid) " +
       "INSERT INTO acfun_legacy.username_weight_index(uid,legacy_weight_key) " +
       "SELECT uid,$20 FROM created RETURNING uid", [...values,key]
-    );
-    return result.rows.length === 1;
+      );
+      return result.rows.length === 1;
+    } catch (error) {
+      // PostgreSQL rolls back the ENTIRE CTE statement when the original
+      // MySQL-weighted username uniqueness constraint rejects a collision.
+      // Treat only this known unique-name collision as an existing user;
+      // all unrelated DB failures must still surface.
+      const pgError = error as { code?: string; constraint?: string };
+      if (pgError?.code === "23505" &&
+          pgError?.constraint === "username_weight_index_legacy_weight_key_key") {
+        return false;
+      }
+      throw error;
+    }
   }
 
   async recordLastLogin(username: string, timestamp: number): Promise<void> {
