@@ -184,4 +184,29 @@ describe("legacy match Durable Object", () => {
     expect(stored.version).toBe(7);
     expect(stored.state.matchId).toBe(9);
   });
+
+  it("atomically transfers one corpse item through the original pending-item pickup path", async () => {
+    const test = harness();
+    await test.ready();
+    const corpseState = state();
+    Object.assign(corpseState.players["测试者"]!, {
+      pid: 1, pls: 0, action: "corpse2",
+      itm1: "", itmk1: "", itme1: 0, itms1: 0, itmsk1: ""
+    });
+    const corpse = player();
+    Object.assign(corpse, {
+      pid: 2, name: "死者", pls: 0, hp: 0,
+      itm1: "针", itmk1: "WC", itme1: 10, itms1: 2, itmsk1: ""
+    });
+    corpseState.players["死者"] = corpse;
+    await test.object.fetch(post("/hydrate", { version: 0, state: corpseState }));
+    const response = await test.object.fetch(post("/corpse", {
+      username: "测试者", target: "死者", item: "itm1", now: 100
+    }));
+    expect(response.status).toBe(200);
+    const stored = test.values.get("match") as { version: number; state: LegacyMatchState };
+    expect(stored.version).toBe(1);
+    expect(stored.state.players["测试者"]).toMatchObject({ itm1: "针", itms1: 2, action: "" });
+    expect(stored.state.players["死者"]).toMatchObject({ itm1: "", itms1: 0 });
+  });
 });

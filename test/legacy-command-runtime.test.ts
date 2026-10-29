@@ -18,7 +18,7 @@ function player(): LegacyPlayerRecord {
 describe("original command.php base action transaction", () => {
   it("registers the original module implementations on the compatibility kernel", () => {
     expect(LEGACY_BASE_COMMAND_KERNEL.implementations("act")).toEqual([
-      "player", "explore", "itemmain", "itemmix", "wound", "rest", "pose", "tactic"
+      "player", "explore", "itemmain", "itemmix", "team", "wound", "rest", "pose", "tactic"
     ]);
     expect(LEGACY_BASE_COMMAND_KERNEL.implementations("move")).toEqual(["explore", "cooldown"]);
     expect(LEGACY_BASE_COMMAND_KERNEL.implementations("chginf")).toEqual(["wound"]);
@@ -330,5 +330,32 @@ describe("original command.php base action transaction", () => {
     expect(result.action).toBe("corpse2");
     expect(data.action).toBe("corpse2");
     expect(result.cmd).toBe("corpse");
+  });
+
+  it("creates, joins and quits teams with the original stamina and credential rules", () => {
+    const creator = player();
+    creator.sp = 300;
+    let result = runLegacyPlayerCommand({
+      player: creator, mode: "team", command: "teammake",
+      input: { nteamID: "轮回者", nteamPass: "secret" }, now: 100
+    });
+    expect(result.log).toContain("你创建了队伍<span class=\"yellow b\">轮回者</span>");
+    expect(creator).toMatchObject({ teamID: "轮回者", teamPass: "secret", sp: 100 });
+
+    const member = player();
+    member.name = "队员";
+    member.sp = 300;
+    result = runLegacyPlayerCommand({
+      player: member, mode: "team", command: "teamjoin",
+      input: { nteamID: "轮回者", nteamPass: "secret" }, opponents: { "测试者": creator }, now: 101
+    });
+    expect(result.log).toContain("你加入了队伍<span class=\"yellow b\">轮回者</span>");
+    expect(member).toMatchObject({ teamID: "轮回者", teamPass: "secret", sp: 200 });
+
+    result = runLegacyPlayerCommand({
+      player: member, command: "team", input: { teamcmd: "teamquit" }, now: 102
+    });
+    expect(result.log).toContain("你退出了队伍");
+    expect(member).toMatchObject({ teamID: "", teamPass: "" });
   });
 });

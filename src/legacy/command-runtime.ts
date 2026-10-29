@@ -16,6 +16,7 @@ import { cryptoLegacyRandom, type LegacyRandom } from "./random";
 import { applyLegacyRest, LEGACY_HOSPITAL_AREAS, LEGACY_REST_NAMES } from "./rest";
 import { canChangeLegacyPose, canChangeLegacyTactic, getLegacyPose, getLegacyTactic } from "./stance";
 import { calculateLegacyActiveOdds, canDiscoverLegacyCorpse, legacyCorpseHasLoot } from "./social";
+import { createLegacyTeam, joinLegacyTeam, quitLegacyTeam } from "./social";
 import { getLegacyWeather } from "./weather";
 import { bandageLegacyWound } from "./wound";
 
@@ -741,6 +742,35 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
     const state = session.state;
     if (state.mode === "special" && state.command.startsWith("tac")) {
       call("tactic_change", state.command.slice(3, 4));
+      state.mode = "command";
+      return;
+    }
+    return next();
+  });
+
+  kernel.register("act", "team", ({ next, session }) => {
+    const state = session.state;
+    if (state.mode === "command" && state.command === "team") {
+      if (state.input.teamcmd === "teamquit") {
+        const result = quitLegacyTeam(state.player as unknown as Parameters<typeof quitLegacyTeam>[0]);
+        state.log += result.logHtml;
+        state.mode = "command";
+      } else {
+        state.cmd = "team";
+      }
+      return;
+    }
+    if (state.mode === "team" && (state.command === "teammake" || state.command === "teamjoin")) {
+      const teamID = state.input.nteamID ?? "";
+      const password = state.input.nteamPass ?? "";
+      const members = Object.values(state.opponents) as unknown as Parameters<typeof joinLegacyTeam>[3];
+      const result = state.command === "teammake"
+        ? createLegacyTeam(
+          state.player as unknown as Parameters<typeof createLegacyTeam>[0], teamID, password,
+          members.map((member) => member.teamID).filter(Boolean), "--"
+        )
+        : joinLegacyTeam(state.player as unknown as Parameters<typeof joinLegacyTeam>[0], teamID, password, members, "--");
+      state.log += result.logHtml;
       state.mode = "command";
       return;
     }

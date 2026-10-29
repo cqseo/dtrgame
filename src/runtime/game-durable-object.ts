@@ -1,7 +1,9 @@
 import type { LegacyPlayerRecord } from "../legacy/player";
 import type { LegacyMapItem } from "../legacy/item";
+import { LEGACY_INFINITE_DURABILITY, emptyLegacyItem, isLegacyItemEmpty, type LegacyItem } from "../legacy/item";
 import { executeLegacyAssault } from "../legacy/battle-runtime";
 import { cryptoLegacyRandom } from "../legacy/random";
+import { readLegacyPlayerInventory, writeLegacyPendingItem } from "../legacy/player-inventory";
 import { runLegacyPlayerCommand } from "../legacy/command-runtime";
 import { SupabaseLegacyRest, SupabaseMatchSnapshots } from "./supabase";
 
@@ -35,8 +37,50 @@ interface GameBattleBody {
   now: number;
 }
 interface GameRestoreBody { matchId: number; }
+interface GameCorpseBody { username: string; target: string; item: string; now: number; }
 
 const json = (value: unknown, status = 200): Response => Response.json(value, { status, headers: { "cache-control": "no-store" } });
+const numberField = (player: LegacyPlayerRecord, key: keyof LegacyPlayerRecord): number => Number(player[key] ?? 0);
+const textField = (player: LegacyPlayerRecord, key: keyof LegacyPlayerRecord): string => String(player[key] ?? "");
+
+function takeCorpseItem(corpse: LegacyPlayerRecord, position: string): LegacyItem | null {
+  if (position === "wep") {
+    const item = { itm: textField(corpse, "wep"), itmk: textField(corpse, "wepk"), itme: numberField(corpse, "wepe"), itms: corpse.weps, itmsk: textField(corpse, "wepsk") };
+    if (isLegacyItemEmpty(item) || item.itmk === "WN") return null;
+    Object.assign(corpse, { wep: "拳头", wepk: "WN", wepe: 0, weps: LEGACY_INFINITE_DURABILITY, wepsk: "" });
+    return item;
+  }
+  if (/^ar[bhaft]$/.test(position)) {
+    const slot = position as "arb" | "arh" | "ara" | "arf" | "art";
+    const item = {
+      itm: textField(corpse, slot), itmk: textField(corpse, `${slot}k` as keyof LegacyPlayerRecord),
+      itme: numberField(corpse, `${slot}e` as keyof LegacyPlayerRecord), itms: corpse[`${slot}s` as keyof LegacyPlayerRecord],
+      itmsk: textField(corpse, `${slot}sk` as keyof LegacyPlayerRecord)
+    };
+    if (isLegacyItemEmpty(item) || item.itmk === "DN") return null;
+    corpse[slot] = "";
+    corpse[`${slot}k` as keyof LegacyPlayerRecord] = "";
+    corpse[`${slot}e` as keyof LegacyPlayerRecord] = 0;
+    corpse[`${slot}s` as keyof LegacyPlayerRecord] = 0;
+    corpse[`${slot}sk` as keyof LegacyPlayerRecord] = "";
+    return item;
+  }
+  if (/^itm[1-6]$/.test(position)) {
+    const slot = Number(position.slice(3));
+    const inventory = readLegacyPlayerInventory(corpse);
+    const item = inventory[slot - 1];
+    if (!item || isLegacyItemEmpty(item)) return null;
+    inventory[slot - 1] = emptyLegacyItem();
+    const prefix = `itm${slot}` as keyof LegacyPlayerRecord;
+    corpse[prefix] = "";
+    corpse[`itmk${slot}` as keyof LegacyPlayerRecord] = "";
+    corpse[`itme${slot}` as keyof LegacyPlayerRecord] = 0;
+    corpse[`itms${slot}` as keyof LegacyPlayerRecord] = 0;
+    corpse[`itmsk${slot}` as keyof LegacyPlayerRecord] = "";
+    return item;
+  }
+  return null;
+}
 
 /** Serialized command.php state for one active game/match. */
 export class LegacyGameDurableObject {
@@ -151,6 +195,54 @@ export class LegacyGameDurableObject {
           const next: StoredLegacyMatch = { version: this.#match.version + 1, state: working };
           await this.#commit(next);
           return json({ version: next.version, result, attacker, defender });
+        });
+      }
+      if (request.method === "POST" && url.pathname === "/corpse") {
+        const body = await request.json<GameCorpseBody>();
+        return this.#exclusive(async () => {
+          if (!this.#match) return json({ error: "游戏数据记录不存在。" }, 404);
+          const username = String(body.username ?? "");
+          const target = String(body.target ?? "");
+          const itemPosition = String(body.item ?? "");
+          const working = structuredClone(this.#match.state);
+          const player = working.players[username];
+          const corpse = working.players[target];
+          if (!player || !corpse) return json({ error: "玩家数据记录不存在。" }, 404);
+          if (String(player.action) !== `corpse${Number(corpse.pid)}` && String(player.action) !== `pacorpse${Number(corpse.pid)}`) {
+            return json({ error: "你没有遇到这具尸体，或已经离开现场。" }, 409);
+          }
+          if (Number(corpse.hp) > 0) return json({ error: "对方尚未死亡。" }, 409);
+          if (Number(player.pls) !== Number(corpse.pls)) return json({ error: "对方跟你不在同一个地图。" }, 409);
+          let log = "";
+          if (itemPosition === "money") {
+            const amount = numberField(corpse, "money");
+            player.money = numberField(player, "money") + amount;
+            corpse.money = 0;
+            log = `获得了金钱 <span class="yellow b">${amount}</span>。<br>`;
+          } else if (itemPosition === "destroy") {
+            for (const slot of ["wep", "arb", "arh", "ara", "arf", "art"] as const) corpse[`${slot}s` as keyof LegacyPlayerRecord] = 0;
+            for (let slot = 0; slot <= 6; slot += 1) corpse[`itms${slot}` as keyof LegacyPlayerRecord] = 0;
+            corpse.money = 0;
+            corpse.state = 16;
+            corpse.corpse_clear_flag = 1;
+            log = "尸体成功销毁！";
+          } else {
+            const item = takeCorpseItem(corpse, itemPosition);
+            if (!item) return json({ error: "该物品不存在！" }, 409);
+            writeLegacyPendingItem(player, item);
+            working.mapItems ??= [];
+            const pickup = runLegacyPlayerCommand({
+              player, mode: "itemmain", command: "itemget", now: Number(body.now),
+              mapItems: working.mapItems,
+              opponents: Object.fromEntries(Object.entries(working.players).filter(([candidate]) => candidate !== username)),
+              weatherId: working.weatherId ?? 0
+            });
+            log = pickup.log;
+          }
+          player.action = "";
+          const next: StoredLegacyMatch = { version: this.#match.version + 1, state: working };
+          await this.#commit(next);
+          return json({ version: next.version, log, player, corpse });
         });
       }
       return json({ error: "Not found." }, 404);
