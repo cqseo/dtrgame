@@ -19,11 +19,11 @@ describe("original game room isolated PG transaction",()=>{
   });
   expect(result).toBe("saved");
   expect(calls.map(x=>x.sql)).toEqual([
-   "BEGIN","SELECT pg_advisory_xact_lock($1,$2)",
-   "SELECT set_config('statement_timeout',$1,true)",
+   "BEGIN","SELECT set_config('statement_timeout',$1,true)",
+   "SELECT set_config('lock_timeout',$1,true)","SELECT pg_advisory_xact_lock($1,$2)",
    "DELETE FROM acfun_legacy.s8_maptrap WHERE tid=$1",
    "UPDATE acfun_legacy.s8_players SET hp=$1 WHERE pid=$2","COMMIT"]);
-  expect(calls[1]!.params).toEqual([20261029,8]);
+  expect(calls[3]!.params).toEqual([20261029,8]);
  });
  it("rolls back original selected item if a later player save fails",async()=>{
   const {calls,client}=fake();
