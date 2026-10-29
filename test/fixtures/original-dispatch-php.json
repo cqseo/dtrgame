@@ -1,0 +1,166 @@
+{
+    "sourceSha256": "44784d55f6984cf7bc400a2bf570c7cc9a13f8bfe08e2b01a9f45b623153eecd",
+    "cases": [
+        {
+            "module": "oracle_base",
+            "function": "calculate",
+            "input": -2,
+            "result": 1009,
+            "state": {
+                "value": 98
+            },
+            "trace": [
+                "top:before",
+                "mid:before",
+                "base",
+                "mid:after",
+                "top:after"
+            ]
+        },
+        {
+            "module": "oracle_base",
+            "function": "calculate",
+            "input": 0,
+            "result": 1011,
+            "state": {
+                "value": 102
+            },
+            "trace": [
+                "top:before",
+                "mid:before",
+                "base",
+                "mid:after",
+                "top:after"
+            ]
+        },
+        {
+            "module": "oracle_base",
+            "function": "calculate",
+            "input": 7,
+            "result": 1018,
+            "state": {
+                "value": 116
+            },
+            "trace": [
+                "top:before",
+                "mid:before",
+                "base",
+                "mid:after",
+                "top:after"
+            ]
+        },
+        {
+            "module": "oracle_mid",
+            "function": "calculate",
+            "input": -2,
+            "result": 1009,
+            "state": {
+                "value": 98
+            },
+            "trace": [
+                "top:before",
+                "mid:before",
+                "base",
+                "mid:after",
+                "top:after"
+            ]
+        },
+        {
+            "module": "oracle_mid",
+            "function": "calculate",
+            "input": 0,
+            "result": 1011,
+            "state": {
+                "value": 102
+            },
+            "trace": [
+                "top:before",
+                "mid:before",
+                "base",
+                "mid:after",
+                "top:after"
+            ]
+        },
+        {
+            "module": "oracle_mid",
+            "function": "calculate",
+            "input": 7,
+            "result": 1018,
+            "state": {
+                "value": 116
+            },
+            "trace": [
+                "top:before",
+                "mid:before",
+                "base",
+                "mid:after",
+                "top:after"
+            ]
+        },
+        {
+            "module": "oracle_top",
+            "function": "calculate",
+            "input": -2,
+            "result": 1009,
+            "state": {
+                "value": 98
+            },
+            "trace": [
+                "top:before",
+                "mid:before",
+                "base",
+                "mid:after",
+                "top:after"
+            ]
+        },
+        {
+            "module": "oracle_top",
+            "function": "calculate",
+            "input": 0,
+            "result": 1011,
+            "state": {
+                "value": 102
+            },
+            "trace": [
+                "top:before",
+                "mid:before",
+                "base",
+                "mid:after",
+                "top:after"
+            ]
+        },
+        {
+            "module": "oracle_top",
+            "function": "calculate",
+            "input": 7,
+            "result": 1018,
+            "state": {
+                "value": 116
+            },
+            "trace": [
+                "top:before",
+                "mid:before",
+                "base",
+                "mid:after",
+                "top:after"
+            ]
+        },
+        {
+            "module": "oracle_mid",
+            "function": "helper",
+            "input": 5,
+            "result": 1016,
+            "state": {
+                "value": 112
+            },
+            "trace": [
+                "helper",
+                "top:before",
+                "mid:before",
+                "base",
+                "mid:after",
+                "top:after"
+            ]
+        }
+    ]
+}
