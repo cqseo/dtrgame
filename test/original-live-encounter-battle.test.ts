@@ -1,5 +1,6 @@
 import {originalBattleOracle as battle,type Player,type Case,type BattleFixture} from '../src/original-battle-oracle';
 import {readFileSync} from 'node:fs';
+import {gunzipSync} from 'node:zlib';
 import {describe,it,expect} from 'vitest';
 import {OriginalBattleFlow,type OriginalBattlePlayer,type OriginalBattlePorts,type OriginalBattleContext} from '../src/original-battle-flow';
 import {originalDiscoverPlayer,originalPlayerDiscoverFilter,originalMeetmanRate,type OriginalEncounterPlayer} from '../src/original-player-discovery';
@@ -8,7 +9,7 @@ import type {OriginalKillPlayer} from '../src/original-player-kill';
 import {originalReviveProcess} from '../src/original-revive-process';
 import {originalEnemyAct,originalEnemyMeet,originalEnemyPostAct,originalEnemyInitiativeBase} from '../src/original-enemy-command';
 type DiscoveryCase={id:string;candidates:Player[];fetched:Record<string,Player[]>;dice:number[]};
-const fixtures=JSON.parse(readFileSync(new URL('./fixtures/original-live-encounter-battle.json',import.meta.url),'utf8')) as {
+const fixtures=JSON.parse(gunzipSync(Buffer.from(readFileSync(new URL('./fixtures/original-live-encounter-battle.json.gz.base64',import.meta.url),'utf8').trim(),'base64')).toString('utf8')) as {
   battles:BattleFixture[];discoveries:{case:DiscoveryCase;expected:unknown}[];
   filters:{input:Player;expected:boolean}[];rates:{mode:string;count:number;expected:number}[];
   commands:{case:{id:string;command:string;mode:string;action:string;exists:boolean;enemy:Player;corpse:boolean};expected:unknown}[];
