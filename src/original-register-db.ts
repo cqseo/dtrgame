@@ -1,6 +1,6 @@
 /**
  * Isolated D1 adapter for original register.php semantics.
- * The full original 124-column users schema has NOT been migrated; this adapter
+ * The full original 39-column users schema has NOT been migrated; this adapter
  * only persists the registration subset losslessly in raw_record alongside
  * fields consumed by the existing legacy login compatibility reader.
  *
