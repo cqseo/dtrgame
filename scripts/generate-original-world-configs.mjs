@@ -1,0 +1,4 @@
+import fs from'node:fs';import zlib from'node:zlib';
+const f=JSON.parse(zlib.gunzipSync(Buffer.from(fs.readFileSync(new URL('../test/fixtures/original-world-configs-php.json.gz.base64',import.meta.url),'utf8'),'base64')));
+fs.writeFileSync(new URL('../src/generated/original-world-config-data.ts',import.meta.url),'// Original public gameplay configuration; no user records or server credentials.\nimport type {PackedPhpValue}from "../original-php-array";\nexport const originalNpcConfigData:PackedPhpValue='+JSON.stringify(f.npcConfigs)+';\nexport const originalWorldFileRows:Readonly<Record<string,readonly string[]>>='+JSON.stringify(f.files)+';\nexport const originalWorldModulePaths:Readonly<Record<string,string>>='+JSON.stringify(f.modulePaths)+';\n');
+console.log('Generated exact NPC configuration and '+Object.keys(f.files).length+' raw world files');

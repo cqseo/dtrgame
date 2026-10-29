@@ -10,7 +10,7 @@ export class OriginalPhpArray extends Map<PhpKey,unknown>{
   override set(key:PhpKey,value:unknown):this{key=this.key(key);if(!this.has(key))this.buckets.push(key);return super.set(key,value);}
   override get(key:PhpKey):unknown{return super.get(this.key(key));}
   override has(key:PhpKey):boolean{return super.has(this.key(key));}
-  override delete(key:PhpKey):boolean{key=this.key(key);if(!super.delete(key))return false;const i=this.buckets.indexOf(key);if(i>=0)this.buckets[i]=null;return true;}
+  override delete(key:PhpKey):boolean{key=this.key(key);if(!super.delete(key))return false;const i=this.buckets.indexOf(key);if(i>=0)this.buckets[i]=null;while(this.buckets.length&&this.buckets.at(-1)===null)this.buckets.pop();return true;}
   override clear():void{super.clear();this.buckets=[];}
   private key(key:PhpKey):PhpKey{return typeof key==='string'&&/^-?(?:0|[1-9]\d*)$/.test(key)&&key!=='-0'&&Number.isSafeInteger(Number(key))?Number(key):key;}
   bucketKeys():readonly(PhpKey|null)[]{return this.buckets;}
