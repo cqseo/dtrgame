@@ -1,5 +1,8 @@
 import {describe,it,expect} from "vitest";
-import gold from "./fixtures/original-trap-damage-php.json";
+import {readFileSync} from "node:fs";
+import {gunzipSync} from "node:zlib";
+type TrapGolden={level:number;self:boolean;hp:number;strength:number;first:number;second:number;factors:number[];hit:boolean;escape:number;reuse:number;outcome:string;baseDamage:number;damage:number;afterHp:number;lethal:boolean};
+const gold=JSON.parse(gunzipSync(Buffer.from(readFileSync(new URL("./fixtures/original-trap-damage-php.json.gz.base64",import.meta.url),"utf8").trim(),"base64")).toString("utf8")) as TrapGolden[];
 import {
  originalBaseTrapResolve,type OriginalTrapVictim,type OriginalBaseTrapContext
 } from "../src/original-trap-damage";
