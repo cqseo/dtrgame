@@ -4,6 +4,18 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-10-28",
   "workers_dev": true,
-  "vars": { "APP_ENV": "development" },
+  "durable_objects": {
+    "bindings": [
+      { "name": "ROOMS", "class_name": "LegacyRoomDurableObject" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["LegacyRoomDurableObject"] }
+  ],
+  "vars": {
+    "APP_ENV": "development",
+    "SUPABASE_URL": "https://qtjcjmpapjsgrrgtfica.supabase.co",
+    "SUPABASE_SCHEMA": "acfun_runtime_qa_20261029"
+  },
   "observability": { "enabled": true, "head_sampling_rate": 1 }
 }
