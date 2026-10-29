@@ -6,6 +6,9 @@ import { LEGACY_VQ_POOL } from "./generated/legacy-vq-pool";
 import { legacyFatenumCreate, legacyRegisterFatenumCreate, legacyRegisterRandomCreate, legacyRegisterVerificationQuestionGet } from "./original-verification";
 import { legacyRegisterPost, legacyRegisterAjaxResponse, type LegacyRegistrationAccount } from "./original-register";
 import { legacyDecode } from "./original-protocol";
+import {originalReviveProcess} from "./original-revive-process";
+import {originalGameinfoSaveSql} from "./original-gameinfo-save";
+
 import {originalBaseTrapResolve} from "./original-trap-damage";
 import {originalPlayerKillBase} from "./original-player-kill";
 import {originalWithRoomTransaction} from "./original-room-transaction";
@@ -331,8 +334,50 @@ async function runOriginalCombatPhasesSelftest() {
   backend:"TypeScript",runtime:"Cloudflare Workers",errors};
 }
 
+async function runOriginalRoomReviveSelftest(){
+ const errors:string[]=[];
+ const check=(condition:boolean,label:string)=>{if(!condition)errors.push(label)};
+ const target:{pid:number;type:number;hp:number;state:number;o_state?:number}={pid:15,type:0,hp:0,state:27};
+ const totals={deathnum:1,alivenum:0};
+ const phases:string[]=[];
+ const result=await originalReviveProcess({pid:8},target,totals,{
+  setSequence:()=>new Map([[100,200],[40,70],[70,160]]),
+  veto:()=>false,
+  check:(_a,_p,k)=>{phases.push("check:"+k);return k===160;},
+  pre:()=>{phases.push("pre");},
+  post:()=>{phases.push("post");},
+  saveGameInfo:()=>{phases.push("save");}
+ });
+ check(result.revived&&result.triggeredKey===160,"revive_priority");
+ check(target.hp===1&&target.state===0&&target.o_state===27,"source_revive_hp");
+ check(totals.deathnum===0&&totals.alivenum===1,"source_revival_counters");
+ check(phases.join("|")==="check:70|check:160|pre|save|post","source_revive_order");
+ const state=await originalGameinfoSaveSql({
+  gamenum:100,gamestate:40,groomid:8,groomtype:2,groomstatus:1,
+  deathnum:totals.deathnum,alivenum:totals.alivenum,
+  afktime:0,hdamage:0,hplayer:"",
+  arealist:[0,1,3],
+  roomvars:{hi:1},noisevars:{alert:1},gamevars:{round:3}
+ },8,12345);
+ check(state.serialized.arealist==="0,1,3"&&state.serialized.afktime===12345,"gameinfo_encoded_area");
+ check(!state.sql.includes('"groomid"=')&&!state.sql.includes('"roomvars"='),"roomvars_stale_write_guard");
+ check((await legacyDecode(state.serialized.gamevars as string) as {round:number}).round===3,"original_gamevars_wire");
+ let rejected=false;
+ try{await originalGameinfoSaveSql({gamenum:1,gamestate:20},7,100);}
+ catch {rejected=true;}
+ check(rejected,"original_room_validation");
+ return {pass:errors.length===0,checks:8,gamePlayable:false,
+  syntheticOnly:true,productionDataAccess:false,runtime:"Cloudflare Workers",errors};
+}
+
 addEventListener("fetch",(event: FetchEvent)=>{
  const u=new URL(event.request.url);
+ if(event.request.method==="GET" && u.pathname==="/__revive_gameinfo_selftest") {
+  event.respondWith(runOriginalRoomReviveSelftest().then(r=>new Response(JSON.stringify(r),{
+   status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}
+  })));
+  return;
+ }
  if(event.request.method==="GET" && u.pathname==="/__combat_phases_selftest") {
   event.respondWith(runOriginalCombatPhasesSelftest().then(r=>new Response(JSON.stringify(r),{
    status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}
@@ -368,7 +413,3 @@ addEventListener("fetch",(event: FetchEvent)=>{
  if(event.request.method!=="GET" || u.pathname!=="/__selftest") {
    event.respondWith(new Response("ACFUN DTS isolated parity QA only; not a playable game.",{status:404,headers:{"content-type":"text/plain;charset=utf-8"}}));
    return;
- }
- const result=runSelftest();
- event.respondWith(new Response(JSON.stringify(result),{status:result.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}}));
-});
