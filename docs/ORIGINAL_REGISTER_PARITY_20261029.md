@@ -24,3 +24,13 @@
 4. 只有原版 URL、HTML/CSS/JS、图片、账号、房间、技能、道具、数值、战斗、结算、存档和全模式实战均对等通过，才能对外宣称 1:1 已完成。
 
 **发布状态**：仅开发分支；Cloudflare 正式入口和 PHP 原版站点未切换，玩家数据未动。
+
+## 独立 Cloudflare Worker 实际运行验收（2026-10-29）
+- Worker：`dtrgame-original-verification-qa-20261029`（与正式 `dtrgame` 完全分开）。
+- 在线只读自检：`https://dtrgame-original-verification-qa-20261029.dearpassengerscrew-new.workers.dev/__selftest`
+- 部署使用 Cloudflare API 连接器；打包为纯 JavaScript，原 PHP 不参与执行。
+- 实测 HTTP 200，返回 `pass: true`、`phpSourceFixtureChecks: 31`、`corpusCount: 497`、`errors: []`、`gamePlayable: false`、`productionDataAccess: false`。
+- 独立宝塔开发工作区：TypeScript `tsc --noEmit` 成功；Vitest 32 项通过。
+- 更广泛的开发对照：PHP 原源码生成 23 条随机种子案例及 128 条完整题目案例，TypeScript 全部一致。
+- **这不是游戏发布环境**：它没有玩家数据库绑定，只有 `GET /__selftest`，其他路径返回 404。
+
