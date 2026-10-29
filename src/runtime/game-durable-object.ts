@@ -14,6 +14,7 @@ export interface LegacyMatchState {
   forbiddenAreas: number[];
   areaNames: string[];
   mapItems?: LegacyMapItem[];
+  weatherId?: number;
 }
 
 interface StoredLegacyMatch { version: number; state: LegacyMatchState; }
@@ -85,13 +86,28 @@ export class LegacyGameDurableObject {
             forbiddenAreas: working.forbiddenAreas,
             areaNames: working.areaNames,
             mapItems: working.mapItems,
+            opponents: Object.fromEntries(Object.entries(working.players).filter(([candidate]) => candidate !== username)),
+            weatherId: working.weatherId ?? 0,
             ...(body.mode !== undefined ? { mode: body.mode } : {}),
             ...(body.input !== undefined ? { input: body.input } : {}),
             ...(body.requestStartMs !== undefined ? { requestStartMs: body.requestStartMs } : {})
           });
+          let battleResult;
+          if (output.encounter?.kind === "enemy" && !output.encounter.active) {
+            const defender = working.players[output.encounter.username];
+            if (defender) {
+              battleResult = executeLegacyAssault({
+                attacker: defender, defender: player, active: false,
+                weatherId: working.weatherId ?? 0, now: Number(body.now), random: cryptoLegacyRandom
+              });
+              output.log += battleResult.logHtml;
+              if (Number(defender.hp) <= 0 && Number(player.hp) > 0) player.action = `corpse${Number(defender.pid)}`;
+              if (Number(player.hp) <= 0 && Number(defender.hp) > 0) defender.action = `corpse${Number(player.pid)}`;
+            }
+          }
           const next: StoredLegacyMatch = { version: this.#match.version + 1, state: working };
           await this.#commit(next);
-          return json({ version: next.version, mode: output.mode, log: output.log, cmd: output.cmd, action: output.action, player: output.player, craftResult: output.craftResult });
+          return json({ version: next.version, mode: output.mode, log: output.log, cmd: output.cmd, action: output.action, player: output.player, craftResult: output.craftResult, encounter: output.encounter, battleResult });
         });
       }
       if (request.method === "POST" && url.pathname === "/battle") {
@@ -105,6 +121,7 @@ export class LegacyGameDurableObject {
           const attacker = working.players[username];
           const defender = working.players[target];
           if (!attacker || !defender) return json({ error: "玩家数据记录不存在。" }, 404);
+          if (String(attacker.action) !== `enemy${Number(defender.pid)}`) return json({ error: "你没有遇到这个敌人，或已经离开战场。" }, 409);
           if (Number(attacker.pls) !== Number(defender.pls)) return json({ error: "对方已经离开当前区域。" }, 409);
           if (Number(attacker.hp) <= 0 || Number(defender.hp) <= 0) return json({ error: "死亡玩家不能参与战斗。" }, 409);
           const result = executeLegacyAssault({

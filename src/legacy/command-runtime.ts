@@ -1,6 +1,7 @@
 import { LEGACY_MAP_CONFIG } from "./map";
 import { runLegacyCraftAction, legacySlotsFromMixMask, type LegacyCraftActionResult } from "./crafting-action";
 import { checkLegacyMove, checkLegacySearch } from "./explore";
+import { calculateLegacyMeetCharacterRate } from "./explore";
 import { LegacyCompatibilityKernel, LegacyExecutionSession } from "./hooks";
 import { phpInt } from "./php-semantics";
 import type { LegacyPlayerRecord } from "./player";
@@ -14,11 +15,20 @@ import {
 import { cryptoLegacyRandom, type LegacyRandom } from "./random";
 import { applyLegacyRest, LEGACY_HOSPITAL_AREAS, LEGACY_REST_NAMES } from "./rest";
 import { canChangeLegacyPose, canChangeLegacyTactic, getLegacyPose, getLegacyTactic } from "./stance";
+import { calculateLegacyActiveOdds, canDiscoverLegacyCorpse, legacyCorpseHasLoot } from "./social";
+import { getLegacyWeather } from "./weather";
 import { bandageLegacyWound } from "./wound";
 
 export type LegacySearchMode = "search" | "move" | "search2";
 
 export interface LegacyCommandDiscoveryResult { found: boolean; logHtml?: string; }
+export interface LegacyEncounter {
+  username: string;
+  pid: number;
+  name: string;
+  kind: "enemy" | "corpse";
+  active: boolean;
+}
 
 export interface LegacyPlayerCommandState {
   player: LegacyPlayerRecord;
@@ -39,10 +49,13 @@ export interface LegacyPlayerCommandState {
   forbiddenAreas: number[];
   areaNames: string[];
   mapItems: LegacyMapItem[];
+  opponents: Record<string, LegacyPlayerRecord>;
+  weatherId: number;
   roll: (min: number, max: number) => number;
   profile?: { motto?: string; killmsg?: string; lastword?: string };
   discover?: (mode: LegacySearchMode, state: LegacyPlayerCommandState) => LegacyCommandDiscoveryResult;
   craftResult?: LegacyCraftActionResult;
+  encounter?: LegacyEncounter;
 }
 
 export interface LegacyPlayerCommandInput {
@@ -58,6 +71,8 @@ export interface LegacyPlayerCommandInput {
   forbiddenAreas?: number[];
   areaNames?: string[];
   mapItems?: LegacyMapItem[];
+  opponents?: Record<string, LegacyPlayerRecord>;
+  weatherId?: number;
   random?: LegacyRandom;
   profile?: LegacyPlayerCommandState["profile"];
   discover?: LegacyPlayerCommandState["discover"];
@@ -148,6 +163,82 @@ function getPendingItem(state: LegacyPlayerCommandState): void {
     }
   }
   addPendingItemToPack(state);
+}
+
+function equipmentItem(player: LegacyPlayerRecord, slot: "wep" | "arb" | "arh" | "ara" | "arf" | "art"): LegacyItem {
+  return {
+    itm: textField(player, slot), itmk: textField(player, `${slot}k` as keyof LegacyPlayerRecord),
+    itme: numberField(player, `${slot}e` as keyof LegacyPlayerRecord), itms: player[`${slot}s` as keyof LegacyPlayerRecord],
+    itmsk: textField(player, `${slot}sk` as keyof LegacyPlayerRecord)
+  };
+}
+
+function corpseHasLoot(player: LegacyPlayerRecord): boolean {
+  return legacyCorpseHasLoot({
+    money: numberField(player, "money"), weapon: equipmentItem(player, "wep"), body: equipmentItem(player, "arb"),
+    head: equipmentItem(player, "arh"), arms: equipmentItem(player, "ara"), feet: equipmentItem(player, "arf"),
+    accessory: equipmentItem(player, "art"), inventory: readLegacyPlayerInventory(player),
+    cleared: numberField(player, "corpse_clear_flag") === 1
+  });
+}
+
+function shuffledOpponents(state: LegacyPlayerCommandState): [string, LegacyPlayerRecord][] {
+  const area = numberField(state.player, "pls");
+  const pid = numberField(state.player, "pid");
+  const result = Object.entries(state.opponents).filter(([, opponent]) =>
+    numberField(opponent, "pls") === area && numberField(opponent, "pid") !== pid
+    && (numberField(opponent, "hp") > 0 || corpseHasLoot(opponent)));
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const swap = state.roll(0, index);
+    [result[index], result[swap]] = [result[swap]!, result[index]!];
+  }
+  return result;
+}
+
+function discoverOpponent(state: LegacyPlayerCommandState): boolean {
+  const candidates = shuffledOpponents(state);
+  if (!candidates.length) {
+    state.log += '<span class="yellow b">周围一个人都没有。</span><br>';
+    state.mode = "command";
+    return false;
+  }
+  let hidden = false;
+  for (const [username, opponent] of candidates) {
+    const alive = numberField(opponent, "hp") > 0;
+    if (alive) {
+      const findOdds = 70 + getLegacyPose(numberField(state.player, "pose")).findCharacterOdds
+        + getLegacyTactic(numberField(state.player, "tactic")).meetCharacterOdds
+        + getLegacyWeather(state.weatherId).meetCharacterOdds;
+      const hideOdds = getLegacyPose(numberField(opponent, "pose")).hideOdds
+        + getLegacyTactic(numberField(opponent, "tactic")).hideOdds;
+      if (state.roll(0, 99) >= findOdds - hideOdds) { hidden = true; continue; }
+      const activeOdds = calculateLegacyActiveOdds({
+        defenderIsNpc: numberField(opponent, "type") > 0,
+        attackerPose: numberField(state.player, "pose"), defenderPose: numberField(opponent, "pose"),
+        attackerTactic: numberField(state.player, "tactic"), weatherId: state.weatherId
+      });
+      const active = state.roll(0, 99) < activeOdds;
+      state.encounter = { username, pid: numberField(opponent, "pid"), name: textField(opponent, "name"), kind: "enemy", active };
+      state.action = `enemy${state.encounter.pid}`;
+      if (active) {
+        state.cmd = "battlecmd";
+        state.log += `你发现了敌人<span class="red b">${state.encounter.name}</span>！<br>对方好像完全没有注意到你！<br>`;
+      }
+      return true;
+    }
+    if (canDiscoverLegacyCorpse(numberField(opponent, "endtime"), state.now, { int: state.roll })) {
+      state.encounter = {
+        username, pid: numberField(opponent, "pid"), name: textField(opponent, "name"), kind: "corpse", active: true
+      };
+      state.action = `corpse${state.encounter.pid}`;
+      state.cmd = "corpse";
+      state.log += `你发现了<span class="red b">${state.encounter.name}</span>的尸体！<br>想要从尸体上拾取什么？<br>`;
+      return true;
+    }
+  }
+  state.log += hidden ? "似乎有人隐藏着……<br>" : '<span class="yellow b">周围一个人都没有，但你觉得应该有人的……</span><br>';
+  state.mode = "command";
+  return false;
 }
 
 function discover(state: LegacyPlayerCommandState, mode: LegacySearchMode): boolean {
@@ -303,6 +394,10 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
     session.state.log += `你使用了道具 <span class="yellow b">${item.itm}</span> 。<br>但是什么也没有发生。<br>`;
   });
   kernel.register("calculate_itemfind_obbs", "itemmain", () => LEGACY_BASE_ITEM_FIND_ODDS);
+  kernel.register("calculate_itemfind_obbs", "weather", ({ next, session }) =>
+    Number(next()) + getLegacyWeather(session.state.weatherId).itemFindOdds);
+  kernel.register("calculate_itemfind_obbs", "pose", ({ next, session }) =>
+    Number(next()) + getLegacyPose(numberField(session.state.player, "pose")).itemFindOdds);
   kernel.register("calculate_itemfind_obbs_multiplier", "itemmain", () => 1);
   kernel.register("check_discover_item_found", "itemmain", ({ call, session }, buff = 0) => {
     const odds = Number(buff) + Number(call("calculate_itemfind_obbs")) * Number(call("calculate_itemfind_obbs_multiplier"));
@@ -336,6 +431,30 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
     // legacy discovery chain (events/traps/players/items) in parity fixtures.
     if (session.state.discover) return next(mode);
     if (call<boolean>("check_discover_item_found")) return call("discover_item");
+    return next(mode);
+  });
+
+  kernel.register("calculate_meetman_rate", "metman", ({ session }, mode) => {
+    const state = session.state;
+    const area = numberField(state.player, "pls");
+    const pid = numberField(state.player, "pid");
+    const count = Object.values(state.opponents).filter((opponent) =>
+      numberField(opponent, "pls") === area && numberField(opponent, "pid") !== pid
+      && (numberField(opponent, "hp") > 0 || numberField(opponent, "corpse_clear_flag") !== 1)).length;
+    const base = calculateLegacyMeetCharacterRate(String(mode) as LegacySearchMode, count);
+    const pose = getLegacyPose(numberField(state.player, "pose"));
+    const tactic = getLegacyTactic(numberField(state.player, "tactic"));
+    return base + pose.findCharacterOdds - pose.itemFindOdds + tactic.meetCharacterOdds;
+  });
+  kernel.register("discover_player", "metman", ({ session }) => discoverOpponent(session.state));
+  kernel.register("discover", "metman", ({ call, next, session }, mode) => {
+    const state = session.state;
+    if (state.discover) return next(mode);
+    const rate = Math.max(20, Number(call("calculate_meetman_rate", mode)));
+    if (state.roll(0, 99) < rate) {
+      const found = call<boolean>("discover_player");
+      if (found || numberField(state.player, "pose") !== 3 || numberField(state.player, "hp") <= 0) return found;
+    }
     return next(mode);
   });
   kernel.register("itemuse", "edible", ({ next, session }, rawItem) => {
@@ -575,7 +694,7 @@ export function runLegacyPlayerCommand(input: LegacyPlayerCommandInput): LegacyP
     gametype: input.gametype ?? 0,
     log: "",
     cmd: "",
-    action: "",
+    action: textField(input.player, "action"),
     playerDead: false,
     commandCooldown: 0,
     remainingCooldown: 0,
@@ -583,6 +702,8 @@ export function runLegacyPlayerCommand(input: LegacyPlayerCommandInput): LegacyP
     forbiddenAreas: input.forbiddenAreas ?? [],
     areaNames: input.areaNames ?? [...LEGACY_MAP_CONFIG.names],
     mapItems: structuredClone(input.mapItems ?? []),
+    opponents: structuredClone(input.opponents ?? {}),
+    weatherId: input.weatherId ?? 0,
     roll: (min, max) => random.int(min, max),
     ...(input.profile ? { profile: input.profile } : {}),
     ...(input.discover ? { discover: input.discover } : {})
@@ -595,6 +716,7 @@ export function runLegacyPlayerCommand(input: LegacyPlayerCommandInput): LegacyP
     }
     LEGACY_BASE_COMMAND_KERNEL.call(session, "post_act");
   });
+  state.player.action = state.action;
   Object.assign(input.player, state.player);
   state.player = input.player;
   if (input.mapItems) input.mapItems.splice(0, input.mapItems.length, ...state.mapItems);

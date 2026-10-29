@@ -22,7 +22,8 @@ describe("original command.php base action transaction", () => {
     ]);
     expect(LEGACY_BASE_COMMAND_KERNEL.implementations("move")).toEqual(["explore", "cooldown"]);
     expect(LEGACY_BASE_COMMAND_KERNEL.implementations("chginf")).toEqual(["wound"]);
-    expect(LEGACY_BASE_COMMAND_KERNEL.implementations("discover")).toEqual(["explore", "itemmain"]);
+    expect(LEGACY_BASE_COMMAND_KERNEL.implementations("discover")).toEqual(["explore", "itemmain", "metman"]);
+    expect(LEGACY_BASE_COMMAND_KERNEL.implementations("calculate_itemfind_obbs")).toEqual(["itemmain", "pose", "weather"]);
   });
 
   it("wraps move/search with the original 650ms cooldown hook", () => {
@@ -53,7 +54,7 @@ describe("original command.php base action transaction", () => {
     expect(moved.log).toBe("你消耗<span class=\"yellow b\">15</span>点体力，移动到了端点。<br>端点<br>发现流程:move<br>");
 
     const searched = runLegacyPlayerCommand({
-      player: data, command: "search", now: 102, random: new SequenceLegacyRandom([99]),
+      player: data, command: "search", now: 102, random: new SequenceLegacyRandom([99, 99]),
       availableAreas: [0, 1], areaNames: ["无月之影", "端点"]
     });
     expect(data.sp).toBe(270);
@@ -176,7 +177,7 @@ describe("original command.php base action transaction", () => {
     ];
     const result = runLegacyPlayerCommand({
       player: data, command: "search", now: 100, mapItems,
-      random: new SequenceLegacyRandom([0, 1])
+      random: new SequenceLegacyRandom([99, 0, 1])
     });
     expect(result.cmd).toBe("itemfind");
     expect(result.log).toContain("发现了物品 <span class='yellow b'>面包</span>");
@@ -219,5 +220,55 @@ describe("original command.php base action transaction", () => {
     expect(data).toEqual(before);
     expect(mapItems).toHaveLength(1);
     expect(random.consumed).toBe(0);
+  });
+
+  it("discovers a visible player and enters the original active enemy action", () => {
+    const data = player();
+    Object.assign(data, { pid: 1, pose: 1, tactic: 2 });
+    const enemy = player();
+    Object.assign(enemy, { pid: 2, name: "敌人", pls: 0, pose: 0, tactic: 0, type: 0 });
+    const result = runLegacyPlayerCommand({
+      player: data, command: "search", now: 100, opponents: { "敌人": enemy }, weatherId: 2,
+      random: new SequenceLegacyRandom([0, 0, 0])
+    });
+    expect(result.encounter).toEqual({ username: "敌人", pid: 2, name: "敌人", kind: "enemy", active: true });
+    expect(result.action).toBe("enemy2");
+    expect(data.action).toBe("enemy2");
+    expect(result.cmd).toBe("battlecmd");
+    expect(result.log).toContain("你发现了敌人<span class=\"red b\">敌人</span>");
+  });
+
+  it("continues to item discovery in search pose after a player stays hidden", () => {
+    const data = player();
+    Object.assign(data, { pid: 1, pose: 3, tactic: 2 });
+    const enemy = player();
+    Object.assign(enemy, { pid: 2, name: "隐者", pls: 0, pose: 4, tactic: 4, type: 0 });
+    const mapItems: LegacyMapItem[] = [{ iid: 10, pls: 0, itm: "针", itmk: "WC", itme: 10, itms: 2, itmsk: "" }];
+    const result = runLegacyPlayerCommand({
+      player: data, command: "search", now: 100, opponents: { "隐者": enemy }, mapItems, weatherId: 2,
+      random: new SequenceLegacyRandom([0, 99, 0, 0])
+    });
+    expect(result.encounter).toBeUndefined();
+    expect(result.log).toContain("似乎有人隐藏着");
+    expect(result.cmd).toBe("itemfind");
+    expect(data.itm0).toBe("针");
+  });
+
+  it("applies corpse loot filtering and short protection before opening corpse actions", () => {
+    const data = player();
+    Object.assign(data, { pid: 1, pose: 1, tactic: 2 });
+    const corpse = player();
+    Object.assign(corpse, {
+      pid: 2, name: "死者", pls: 0, hp: 0, endtime: 90, money: 1,
+      corpse_clear_flag: 0, type: 0
+    });
+    const result = runLegacyPlayerCommand({
+      player: data, command: "search", now: 100, opponents: { "死者": corpse }, weatherId: 2,
+      random: new SequenceLegacyRandom([0, 0])
+    });
+    expect(result.encounter).toEqual({ username: "死者", pid: 2, name: "死者", kind: "corpse", active: true });
+    expect(result.action).toBe("corpse2");
+    expect(data.action).toBe("corpse2");
+    expect(result.cmd).toBe("corpse");
   });
 });
