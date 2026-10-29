@@ -8,6 +8,7 @@
  * browser JS or GitHub. Does not handle live website routing.
  */
 import type { LegacyUserStore, LegacyAccountRow } from "./original-login";
+import { originalMysqlUsernameKey } from "./original-mysql-collation";
 import type {
   LegacyRegistrationAccount, LegacyRegistrationStore
 } from "./original-register";
@@ -33,11 +34,14 @@ export class SupabaseOriginalUsers implements LegacyUserStore, LegacyRegistratio
 
   async findByUsername(username: string): Promise<LegacyAccountRow | null> {
     if (!username || [...username].length > 15) return null;
+    const key=originalMysqlUsernameKey(username);
+    if(key===null)return null;
     const found = await this.db.query<{
       username: string; password: string; groupid: number; roomid: number;
     }>(
-      "SELECT username,password,groupid,roomid FROM acfun_legacy.users " +
-      "WHERE username = $1 LIMIT 1", [username]
+      "SELECT u.username,u.password,u.groupid,u.roomid FROM acfun_legacy.users u " +
+      "JOIN acfun_legacy.username_weight_index k ON k.uid=u.uid " +
+      "WHERE k.legacy_weight_key=$1 LIMIT 1", [key]
     );
     const row = found.rows[0];
     if (!row) return null;
@@ -50,9 +54,11 @@ export class SupabaseOriginalUsers implements LegacyUserStore, LegacyRegistratio
   }
 
   async exists(username: string): Promise<boolean> {
+    const key=originalMysqlUsernameKey(username);
+    if(key===null)return false;
     const result = await this.db.query<{ present: number }>(
-      "SELECT 1 AS present FROM acfun_legacy.users WHERE username = $1 LIMIT 1",
-      [username]
+      "SELECT 1 AS present FROM acfun_legacy.username_weight_index WHERE legacy_weight_key=$1 LIMIT 1",
+      [key]
     );
     return result.rows.length > 0;
   }
@@ -62,6 +68,8 @@ export class SupabaseOriginalUsers implements LegacyUserStore, LegacyRegistratio
     // PHP register.php sets card_data; the other six receive empty strings
     // explicitly here instead of relying on PostgreSQL implicit behavior.
     // Existing accounts are never updated.
+    const key=originalMysqlUsernameKey(record.username);
+    if(key===null)throw new RangeError("Original MySQL utf8mb3 cannot store this username");
     const values: PgParameter[] = [
       record.username, record.password, record.alt_pswd, record.groupid,
       record.ip, record.credits, record.gold, record.gender, record.icon,
@@ -69,13 +77,15 @@ export class SupabaseOriginalUsers implements LegacyUserStore, LegacyRegistratio
       "", "", "", "", "", "",
     ];
     const result = await this.db.query<{ uid: number }>(
-      "INSERT INTO acfun_legacy.users (" +
+      "WITH created AS (INSERT INTO acfun_legacy.users (" +
       "username,password,alt_pswd,groupid,ip,credits,gold,gender,icon," +
       "motto,killmsg,lastword,card_data,cardenergy,cardlist,elo_history," +
       "u_achievements,n_achievements,u_settings" +
       ") VALUES (" +
       values.map((_, i) => "$" + (i + 1)).join(",") +
-      ") ON CONFLICT (username) DO NOTHING RETURNING uid", values
+      ") ON CONFLICT (username) DO NOTHING RETURNING uid) " +
+      "INSERT INTO acfun_legacy.username_weight_index(uid,legacy_weight_key) " +
+      "SELECT uid,$20 FROM created RETURNING uid", [...values,key]
     );
     return result.rows.length === 1;
   }
@@ -84,9 +94,12 @@ export class SupabaseOriginalUsers implements LegacyUserStore, LegacyRegistratio
     if (!Number.isSafeInteger(timestamp) || timestamp < 0) {
       throw new RangeError("Invalid login timestamp");
     }
+    const key=originalMysqlUsernameKey(username);
+    if(key===null)throw new RangeError("Invalid original account username");
     await this.db.query<{ uid: number }>(
-      "UPDATE acfun_legacy.users SET lastvisit=$1 WHERE username=$2 RETURNING uid",
-      [timestamp, username]
+      "UPDATE acfun_legacy.users SET lastvisit=$1 " +
+      "WHERE uid=(SELECT uid FROM acfun_legacy.username_weight_index WHERE legacy_weight_key=$2) RETURNING uid",
+      [timestamp, key]
     );
   }
 }
