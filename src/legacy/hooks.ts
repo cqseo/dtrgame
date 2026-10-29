@@ -101,6 +101,36 @@ function traceClone<T>(value: T): T {
   catch { return value; }
 }
 
+/** Transaction snapshot clone that preserves request-local callbacks by identity. */
+function checkpointClone<T>(value: T, seen = new Map<object, unknown>()): T {
+  if (typeof value !== "object" || value === null) return value;
+  const cached = seen.get(value);
+  if (cached !== undefined) return cached as T;
+  if (value instanceof Date) return new Date(value.getTime()) as T;
+  if (value instanceof Map) {
+    const result = new Map();
+    seen.set(value, result);
+    for (const [key, entry] of value) result.set(checkpointClone(key, seen), checkpointClone(entry, seen));
+    return result as T;
+  }
+  if (value instanceof Set) {
+    const result = new Set();
+    seen.set(value, result);
+    for (const entry of value) result.add(checkpointClone(entry, seen));
+    return result as T;
+  }
+  if (ArrayBuffer.isView(value)) return structuredClone(value);
+  if (value instanceof ArrayBuffer) return value.slice(0) as T;
+  const result = Array.isArray(value) ? [] : Object.create(Object.getPrototypeOf(value));
+  seen.set(value, result);
+  for (const key of Reflect.ownKeys(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key)!;
+    if ("value" in descriptor) descriptor.value = checkpointClone(descriptor.value, seen);
+    Object.defineProperty(result, key, descriptor);
+  }
+  return result as T;
+}
+
 /** Request/room-local state shared by every translated legacy module. */
 export class LegacyExecutionSession<TState extends object> {
   readonly globals: Record<string, unknown>;
@@ -137,8 +167,8 @@ export class LegacyExecutionSession<TState extends object> {
    * Player/room globals and generated HTML are restored on failure.
    */
   transaction<TResult>(operation: () => TResult): TResult {
-    const stateSnapshot = structuredClone(this.state);
-    const globalsSnapshot = structuredClone(this.globals);
+    const stateSnapshot = checkpointClone(this.state);
+    const globalsSnapshot = checkpointClone(this.globals);
     const outputLength = this.output.length;
     const randomSnapshot = isCheckpointableRandom(this.random) ? this.random.snapshot() : undefined;
     try {

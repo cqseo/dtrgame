@@ -11,10 +11,12 @@ export interface OriginalEnv {
   ASSETS: Fetcher;
   APP_ENV?: string;
   ROOMS: DurableObjectNamespace;
+  GAMES: DurableObjectNamespace;
   SUPABASE_URL?: string;
   SUPABASE_SECRET_KEY?: string;
 }
 export { LegacyRoomDurableObject } from "./runtime/room-durable-object";
+export { LegacyGameDurableObject } from "./runtime/game-durable-object";
 export const ORIGINAL_GUEST_SNAPSHOTS = new Set([
   "/index.php", "/game.php", "/map.php", "/help.php", "/register.php",
   "/login.php", "/alive.php", "/rank.php", "/news.php", "/winner.php",

@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 const root = resolve(process.argv[2] ?? "../legacy-dts");
 const output = resolve(process.argv[3] ?? "docs/legacy-module-migration.json");
 const moduleLines = (await readFile(resolve(root, "gamedata/modules.list.php"), "utf8")).split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-const partialModules = new Set(["player", "map", "lvlctl", "itemmain", "pose", "tactic", "edible", "explore", "weather", "rest", "wound", "metman", "weapon", "wep_n", "wep_p", "wep_k", "wep_g", "wep_c", "wep_d", "wep_f", "wep_b", "wep_j", "armor", "attack", "battle", "team", "enemy", "corpse", "itemmix", "itemmix_sync", "itemmix_overlay", "attrbase", "ex_residue"]);
+const partialModules = new Set(["player", "map", "lvlctl", "itemmain", "pose", "tactic", "edible", "explore", "weather", "rest", "wound", "cooldown", "metman", "weapon", "wep_n", "wep_p", "wep_k", "wep_g", "wep_c", "wep_d", "wep_f", "wep_b", "wep_j", "armor", "attack", "battle", "team", "enemy", "corpse", "itemmix", "itemmix_sync", "itemmix_overlay", "attrbase", "ex_residue"]);
 
 const readAssignment = (source, name) => {
   const match = source.match(new RegExp(`\\$___MODULE_${name}\\s*=\\s*(['\"])(.*?)\\1\\s*;`));

@@ -4,8 +4,8 @@
   "enabled": 735,
   "statuses": {
     "complete": 0,
-    "partial": 33,
-    "pending": 711
+    "partial": 34,
+    "pending": 710
   },
   "completionRule": "A module may be marked complete only after its code/config/template hooks have parity fixtures against the Baota baseline.",
   "modules": [
@@ -14848,7 +14848,7 @@
       "order": 618,
       "enabled": true,
       "capturedFromBaota": true,
-      "migrationStatus": "pending",
+      "migrationStatus": "partial",
       "dependencies": [
         "sys",
         "player",

@@ -118,3 +118,25 @@ export class SupabaseLegacyRooms {
     });
   }
 }
+
+export interface SupabaseMatchSnapshot<TState extends object> {
+  version: number;
+  state: TState;
+}
+
+export class SupabaseMatchSnapshots<TState extends object> {
+  constructor(readonly rest: SupabaseLegacyRest) {}
+
+  async load(matchId: number): Promise<SupabaseMatchSnapshot<TState> | null> {
+    if (!Number.isSafeInteger(matchId) || matchId < 1) return null;
+    const rows = await this.rest.rpc<SupabaseMatchSnapshot<TState>[]>("dtr_match_load", { p_match_id: matchId });
+    return rows[0] ?? null;
+  }
+
+  save(matchId: number, version: number, state: TState): Promise<boolean> {
+    if (!Number.isSafeInteger(matchId) || matchId < 1 || !Number.isSafeInteger(version) || version < 0) {
+      throw new RangeError("Invalid match snapshot identity.");
+    }
+    return this.rest.rpc<boolean>("dtr_match_save", { p_match_id: matchId, p_version: version, p_state: state });
+  }
+}

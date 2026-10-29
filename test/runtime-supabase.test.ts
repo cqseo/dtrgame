@@ -4,7 +4,8 @@ import { legacyEncode } from "../src/original-protocol";
 import {
   SupabaseLegacyAccounts,
   SupabaseLegacyRest,
-  SupabaseLegacyRooms
+  SupabaseLegacyRooms,
+  SupabaseMatchSnapshots
 } from "../src/runtime/supabase";
 
 function client(fetchMock: typeof fetch): SupabaseLegacyRest {
@@ -58,5 +59,26 @@ describe("Supabase legacy runtime adapter", () => {
     expect(new URL(requests[1]!.url).pathname).toBe("/rest/v1/rpc/dtr_legacy_save_room");
     expect(new Headers(requests[1]?.init?.headers).get("content-profile")).toBe("public");
     expect(JSON.parse(String(requests[1]?.init?.body))).toMatchObject({ p_groomtype: 0, p_groomstatus: 10 });
+  });
+
+  it("loads and version-guards complete match snapshots through private server RPCs", async () => {
+    const requests: { path: string; body: unknown }[] = [];
+    const fetchMock = vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => {
+      const path = new URL(String(request)).pathname;
+      const body = JSON.parse(String(init?.body));
+      requests.push({ path, body });
+      if (path.endsWith("/dtr_match_load")) return Response.json([{ version: 7, state: { matchId: 9, gamestate: 10 } }]);
+      return Response.json(true);
+    }) as unknown as typeof fetch;
+    const snapshots = new SupabaseMatchSnapshots<{ matchId: number; gamestate: number }>(client(fetchMock));
+
+    await expect(snapshots.load(9)).resolves.toEqual({ version: 7, state: { matchId: 9, gamestate: 10 } });
+    await expect(snapshots.save(9, 8, { matchId: 9, gamestate: 20 })).resolves.toBe(true);
+    expect(requests).toEqual([
+      { path: "/rest/v1/rpc/dtr_match_load", body: { p_match_id: 9 } },
+      { path: "/rest/v1/rpc/dtr_match_save", body: { p_match_id: 9, p_version: 8, p_state: { matchId: 9, gamestate: 20 } } }
+    ]);
+    await expect(snapshots.load(0)).resolves.toBeNull();
+    expect(() => snapshots.save(9, -1, { matchId: 9, gamestate: 20 })).toThrow("Invalid match snapshot identity");
   });
 });
