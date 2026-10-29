@@ -8,6 +8,7 @@ import { legacyRegisterVerificationQuestionGet } from "../src/original-verificat
 import { LEGACY_VQ_POOL } from "../src/generated/legacy-vq-pool";
 import { legacyDecode } from "../src/original-protocol";
 import { legacyStoredPassword, legacyCookiePassword } from "../src/original-auth";
+import { legacyAuthenticateForm, legacyAuthenticateCookies } from "../src/original-login";
 
 const clock = {
   nowSeconds: 1793242800,
@@ -141,5 +142,28 @@ describe("original register.php POST response with isolated in-memory accounts",
     expect(first.payload.innerHTML.vq_answer_disp0).toBe(expected.answers[0]);
     expect(second.payload.value.register_token).toBe(first.payload.value.register_token);
     expect(Object.keys(first.payload.innerHTML)).toContain("vq_answer_disp"+String(expected.answers.length-1));
+  });
+});
+
+describe("original registration-to-login credential compatibility", () => {
+  it("registers a synthetic account and verifies both original login form and original cookie pair", async () => {
+    const store = new MemoryStore();
+    const result = unwrap(await legacyRegisterPost(form(),env(),store));
+    const userStore = {
+      async findByUsername(username: string) {
+        const row = store.records.get(username);
+        return row ? { username:row.username, password:row.password, groupid:row.groupid, roomid:0 } : null;
+      }
+    };
+    const login = await legacyAuthenticateForm(
+      new URLSearchParams({username:"ParityPlayer",password:"a!password2026"}), userStore
+    );
+    expect(login.ok).toBe(true);
+    const cookieAuth = await legacyAuthenticateCookies(result.cookies.join("; "),userStore,"acbra2_");
+    expect(cookieAuth?.username).toBe("ParityPlayer");
+    const invalid = await legacyAuthenticateForm(
+      new URLSearchParams({username:"ParityPlayer",password:"wrong123"}),userStore
+    );
+    expect(invalid).toEqual({ok:false,error:"wrong_pw"});
   });
 });
