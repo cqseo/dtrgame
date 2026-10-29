@@ -6,6 +6,10 @@ import { LEGACY_VQ_POOL } from "./generated/legacy-vq-pool";
 import { legacyFatenumCreate, legacyRegisterFatenumCreate, legacyRegisterRandomCreate, legacyRegisterVerificationQuestionGet } from "./original-verification";
 import { legacyRegisterPost, legacyRegisterAjaxResponse, type LegacyRegistrationAccount } from "./original-register";
 import { legacyDecode } from "./original-protocol";
+import {originalBaseTrapResolve} from "./original-trap-damage";
+import {originalPlayerKillBase} from "./original-player-kill";
+import {originalWithRoomTransaction} from "./original-room-transaction";
+
 import {originalDiscoverBaseEffects} from "./original-discover-effects";
 import {originalBaseEventSpecial} from "./original-event-base";
 
@@ -267,8 +271,74 @@ async function runOriginalEffectsSelftest(){
    runtime:"Cloudflare Workers",backend:"TypeScript",productionDataAccess:false,gamePlayable:false,errors};
 }
 
+async function runOriginalCombatPhasesSelftest() {
+ const errors:string[]=[];
+ const assert=(yes:boolean,name:string)=>{if(!yes)errors.push(name);};
+ const events:string[]=[];
+ const victim={pid:15,name:"QA受害者",lvl:3,hp:10,state:2,mode:"search",log:"",
+  itm0:"陷阱",itmk0:"TO",itme0:100,itms0:1,itmsk0:"13"};
+ const owner={pid:13,name:"QA设置者",type:0};
+ const ctx={trap:{tid:7,pls:3,itm:"陷阱",itmk:"TO",itme:100,itms:1,itmsk:"13"},
+  owner,ownerIsSelf:false,now:999};
+ const dice=[99,50];
+ let killCount=0,deathCount=0,aliveCount=0;
+ const res=await originalBaseTrapResolve(victim,ctx,{
+  randIntInclusive:()=>dice.shift()!,
+  emitNews:e=>{events.push("news:"+e.kind);},
+  sendOwnerLog:()=>{events.push("owner_log");},
+  onLethalDamage:async state=>{
+   events.push("kill");
+   const mk=(pid:number,name:string)=>({
+    pid,type:0,hp:state.hp,state:state.state,bid:0,name,killnum:0,
+    npckillnum:0,endtime:0,attackwith:"陷阱"
+   });
+   const result=await originalPlayerKillBase(mk(13,owner.name),mk(15,state.name),
+    {deathnum:0,alivenum:2},999,{
+     getKillMessage:()=>"",
+     saveGameInfo:()=>{events.push("save_gameinfo");},
+     setReviveSequence:()=>{events.push("revive_sequence");},
+     processRevive:()=>{events.push("revive_process");},
+     deathNews:()=>{events.push("deathnews");},
+     revivePostDeathNews:()=>{events.push("revive_news");}
+   });
+   killCount=result.attacker.killnum;
+   deathCount=result.counters.deathnum;
+   aliveCount=result.counters.alivenum;
+   return {...state,hp:result.victim.hp,state:result.victim.state};
+  }
+ });
+ assert(res.hit && res.lethallyDamaged && res.damage===100,"original_trap_damage");
+ assert(res.state.hp===0 && res.state.state===27,"original_death_state");
+ assert(res.rolls.length===2 && dice.length===0,"original_trap_rng_count");
+ assert(killCount===1 && deathCount===1 && aliveCount===1,"original_kill_statistics");
+ assert(events.join("|")==="news:trap|owner_log|kill|save_gameinfo|revive_sequence|revive_process|deathnews",
+  "source_save_revive_news_order");
+ const sql:string[]=[];
+ const mock={
+  singleSession:true as const,
+  async query<T extends Record<string,unknown>>(query:string,_args:readonly unknown[]){
+   sql.push(query);return {rows:[] as T[],rowCount:0};
+  }
+ };
+ const saved=await originalWithRoomTransaction(mock,{purpose:"qa-only",roomId:8},
+  async db=>{await db.query("SYNTHETIC_ITEM_CLAIM",[17]);await db.query("SYNTHETIC_PLAYER_SAVE",[15]);return true;});
+ assert(saved && sql[0]==="BEGIN" && sql.at(-1)==="COMMIT","room_single_transaction");
+ assert(sql[1]==="SELECT pg_advisory_xact_lock($1,$2)","room_lock");
+ const deaths=[...events];
+ assert(deaths.includes("deathnews")&&!deaths.includes("revive_news"),"unrevived_source_deathnews");
+ return {pass:errors.length===0,checks:8,gamePlayable:false,
+  syntheticOnly:true,productionDataAccess:false,
+  backend:"TypeScript",runtime:"Cloudflare Workers",errors};
+}
+
 addEventListener("fetch",(event: FetchEvent)=>{
  const u=new URL(event.request.url);
+ if(event.request.method==="GET" && u.pathname==="/__combat_phases_selftest") {
+  event.respondWith(runOriginalCombatPhasesSelftest().then(r=>new Response(JSON.stringify(r),{
+   status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}
+  })));
+  return;
+ }
  if(event.request.method==="GET" && u.pathname==="/__effects_selftest") {
   event.respondWith(runOriginalEffectsSelftest().then(r=>new Response(JSON.stringify(r),{
    status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}
