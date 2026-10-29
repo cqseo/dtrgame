@@ -6,6 +6,9 @@ import { LEGACY_VQ_POOL } from "./generated/legacy-vq-pool";
 import { legacyFatenumCreate, legacyRegisterFatenumCreate, legacyRegisterRandomCreate, legacyRegisterVerificationQuestionGet } from "./original-verification";
 import { legacyRegisterPost, legacyRegisterAjaxResponse, type LegacyRegistrationAccount } from "./original-register";
 import { legacyDecode } from "./original-protocol";
+import {originalDiscoverBaseEffects} from "./original-discover-effects";
+import {originalBaseEventSpecial} from "./original-event-base";
+
 import {
  originalMapCanEnter,originalMapForbidden,originalMove,originalSearch
 } from "./original-explore-map";
@@ -225,8 +228,53 @@ async function runExploreSourceSelftest(){
   checks:12,syntheticOnly:true,productionDataAccess:false,gamePlayable:false,errors};
 }
 
+async function runOriginalEffectsSelftest(){
+ const errors:string[]=[];
+ const check=(test:boolean,label:string)=>{if(!test)errors.push(label)};
+ const actor={pls:3,hp:100,pose:0,mode:"search",log:"",itm0:"",itmk0:"",itme0:0,itms0:0,itmsk0:""};
+ const itemRolls=[99,99,99,0];
+ let picked=0,itemfind=false;
+ const item=await originalDiscover(actor,"search",originalDiscoverBaseEffects({
+  random99:()=>itemRolls.shift()??99,
+  trap:{
+   randIntInclusive:()=>{throw new Error("No inner trap roll after outer failure");},
+   listTraps:()=>[],deleteTrap:()=>true,resolveTrap:s=>s
+  },
+  item:{
+   loadItems:()=>[{iid:14,pls:3,itm:"矿泉水",itmk:"HS",itme:100,itms:30,itmsk:""}],
+   shuffle:arr=>arr,deleteItem:id=>{picked=id;return true;},
+   onItemFind:s=>{itemfind=true;return {...s,mode:"itemfind"};}
+  }
+ }));
+ check(item.stoppedAt==="itemmain"&&item.discovered&&item.state.itm0==="矿泉水","original_mapitem_hand_slot");
+ check(picked===14&&itemfind&&item.state.mode==="itemfind","original_item_claim_and_confirmation");
+ check(itemRolls.length===0,"item_source_rng_count");
+ const rolls=[99,0,0,0],trace:string[]=[];let deleted=0;
+ const trap=await originalDiscover(actor,"search",originalDiscoverBaseEffects({
+  random99:()=>{const r=rolls.shift()!;trace.push("outer:"+r);return r;},
+  trap:{
+   randIntInclusive:(min,max)=>{const r=rolls.shift()!;trace.push(min+".."+max+":"+r);return r;},
+   listTraps:()=>[{tid:7,pls:3,itm:"陷阱",itmk:"TN",itme:100,itms:1,itmsk:""}],
+   deleteTrap:id=>{deleted=id;return true;},
+   resolveTrap:s=>({...s,log:"已进入原版陷阱处理"})
+  },
+  item:{loadItems:()=>[],shuffle:arr=>arr,deleteItem:()=>true,onItemFind:s=>s}
+ }));
+ check(trap.stoppedAt==="trap"&&deleted===7,"original_trap_selection");
+ check(trace.join("|")==="outer:99|outer:0|0..39:0|0..0:0"&&rolls.length===0,"trap_second_roll_only");
+ check(originalBaseEventSpecial("Other",34,false)&&!originalBaseEventSpecial("Untainted Glory",34,false),"source_special_event_gate");
+ return {pass:errors.length===0,checks:6,syntheticOnly:true,
+   runtime:"Cloudflare Workers",backend:"TypeScript",productionDataAccess:false,gamePlayable:false,errors};
+}
+
 addEventListener("fetch",(event: FetchEvent)=>{
  const u=new URL(event.request.url);
+ if(event.request.method==="GET" && u.pathname==="/__effects_selftest") {
+  event.respondWith(runOriginalEffectsSelftest().then(r=>new Response(JSON.stringify(r),{
+   status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}
+  })));
+  return;
+ }
  if(event.request.method==="GET" && u.pathname==="/__explore_selftest") {
   event.respondWith(runExploreSourceSelftest().then(r=>new Response(JSON.stringify(r),{
    status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}
