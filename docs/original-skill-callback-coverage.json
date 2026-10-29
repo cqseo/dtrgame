@@ -1,0 +1,5490 @@
+{
+  "compiled": [
+    {
+      "module": "skill4",
+      "name": "acquire4",
+      "path": "include/modules/base/skills/skill4/main.php"
+    },
+    {
+      "module": "skill4",
+      "name": "lost4",
+      "path": "include/modules/base/skills/skill4/main.php"
+    },
+    {
+      "module": "skill2",
+      "name": "acquire2",
+      "path": "include/modules/base/skills/skill2/main.php"
+    },
+    {
+      "module": "skill2",
+      "name": "lost2",
+      "path": "include/modules/base/skills/skill2/main.php"
+    },
+    {
+      "module": "skill3",
+      "name": "acquire3",
+      "path": "include/modules/base/skills/skill3/main.php"
+    },
+    {
+      "module": "skill3",
+      "name": "lost3",
+      "path": "include/modules/base/skills/skill3/main.php"
+    },
+    {
+      "module": "skill21",
+      "name": "acquire21",
+      "path": "include/modules/extra/club/skills/skill21/main.php"
+    },
+    {
+      "module": "skill21",
+      "name": "lost21",
+      "path": "include/modules/extra/club/skills/skill21/main.php"
+    },
+    {
+      "module": "skill533",
+      "name": "acquire533",
+      "path": "include/modules/extra/card/skills/skill533/main.php"
+    },
+    {
+      "module": "skill533",
+      "name": "lost533",
+      "path": "include/modules/extra/card/skills/skill533/main.php"
+    },
+    {
+      "module": "skill11",
+      "name": "acquire11",
+      "path": "include/modules/extra/club/skills/skill11/main.php"
+    },
+    {
+      "module": "skill11",
+      "name": "lost11",
+      "path": "include/modules/extra/club/skills/skill11/main.php"
+    },
+    {
+      "module": "skill10",
+      "name": "acquire10",
+      "path": "include/modules/extra/club/skills/skill10/main.php"
+    },
+    {
+      "module": "skill10",
+      "name": "lost10",
+      "path": "include/modules/extra/club/skills/skill10/main.php"
+    },
+    {
+      "module": "skill305",
+      "name": "acquire305",
+      "path": "include/modules/extra/achievement/skills/skill305/main.php"
+    },
+    {
+      "module": "skill305",
+      "name": "lost305",
+      "path": "include/modules/extra/achievement/skills/skill305/main.php"
+    },
+    {
+      "module": "skill306",
+      "name": "acquire306",
+      "path": "include/modules/extra/achievement/skills/skill306/main.php"
+    },
+    {
+      "module": "skill306",
+      "name": "lost306",
+      "path": "include/modules/extra/achievement/skills/skill306/main.php"
+    },
+    {
+      "module": "skill324",
+      "name": "acquire324",
+      "path": "include/modules/extra/achievement/skills/skill324/main.php"
+    },
+    {
+      "module": "skill324",
+      "name": "lost324",
+      "path": "include/modules/extra/achievement/skills/skill324/main.php"
+    },
+    {
+      "module": "skill328",
+      "name": "acquire328",
+      "path": "include/modules/extra/activities/nationalday2017/skill328/main.php"
+    },
+    {
+      "module": "skill328",
+      "name": "lost328",
+      "path": "include/modules/extra/activities/nationalday2017/skill328/main.php"
+    },
+    {
+      "module": "skill330",
+      "name": "acquire330",
+      "path": "include/modules/extra/activities/halloween2017/skill330/main.php"
+    },
+    {
+      "module": "skill330",
+      "name": "lost330",
+      "path": "include/modules/extra/activities/halloween2017/skill330/main.php"
+    },
+    {
+      "module": "skill411",
+      "name": "acquire411",
+      "path": "include/modules/extra/card/skills/skill411/main.php"
+    },
+    {
+      "module": "skill411",
+      "name": "lost411",
+      "path": "include/modules/extra/card/skills/skill411/main.php"
+    },
+    {
+      "module": "skill413",
+      "name": "acquire413",
+      "path": "include/modules/extra/card/skills/skill413/main.php"
+    },
+    {
+      "module": "skill413",
+      "name": "lost413",
+      "path": "include/modules/extra/card/skills/skill413/main.php"
+    },
+    {
+      "module": "skill308",
+      "name": "acquire308",
+      "path": "include/modules/extra/achievement/skills/skill308/main.php"
+    },
+    {
+      "module": "skill308",
+      "name": "lost308",
+      "path": "include/modules/extra/achievement/skills/skill308/main.php"
+    },
+    {
+      "module": "skill309",
+      "name": "acquire309",
+      "path": "include/modules/extra/achievement/skills/skill309/main.php"
+    },
+    {
+      "module": "skill309",
+      "name": "lost309",
+      "path": "include/modules/extra/achievement/skills/skill309/main.php"
+    },
+    {
+      "module": "skill317",
+      "name": "acquire317",
+      "path": "include/modules/extra/achievement/skills/skill317/main.php"
+    },
+    {
+      "module": "skill317",
+      "name": "lost317",
+      "path": "include/modules/extra/achievement/skills/skill317/main.php"
+    },
+    {
+      "module": "skill319",
+      "name": "acquire319",
+      "path": "include/modules/extra/achievement/skills/skill319/main.php"
+    },
+    {
+      "module": "skill319",
+      "name": "lost319",
+      "path": "include/modules/extra/achievement/skills/skill319/main.php"
+    },
+    {
+      "module": "skill320",
+      "name": "acquire320",
+      "path": "include/modules/extra/achievement/skills/skill320/main.php"
+    },
+    {
+      "module": "skill320",
+      "name": "lost320",
+      "path": "include/modules/extra/achievement/skills/skill320/main.php"
+    },
+    {
+      "module": "skill431",
+      "name": "acquire431",
+      "path": "include/modules/extra/card/skills/skill431/main.php"
+    },
+    {
+      "module": "skill431",
+      "name": "lost431",
+      "path": "include/modules/extra/card/skills/skill431/main.php"
+    },
+    {
+      "module": "skill22",
+      "name": "acquire22",
+      "path": "include/modules/extra/club/skills/skill22/main.php"
+    },
+    {
+      "module": "skill22",
+      "name": "lost22",
+      "path": "include/modules/extra/club/skills/skill22/main.php"
+    },
+    {
+      "module": "skill316",
+      "name": "acquire316",
+      "path": "include/modules/extra/achievement/skills/skill316/main.php"
+    },
+    {
+      "module": "skill316",
+      "name": "lost316",
+      "path": "include/modules/extra/achievement/skills/skill316/main.php"
+    },
+    {
+      "module": "skill321",
+      "name": "acquire321",
+      "path": "include/modules/extra/achievement/skills/skill321/main.php"
+    },
+    {
+      "module": "skill321",
+      "name": "lost321",
+      "path": "include/modules/extra/achievement/skills/skill321/main.php"
+    },
+    {
+      "module": "skill310",
+      "name": "acquire310",
+      "path": "include/modules/extra/achievement/skills/skill310/main.php"
+    },
+    {
+      "module": "skill310",
+      "name": "lost310",
+      "path": "include/modules/extra/achievement/skills/skill310/main.php"
+    },
+    {
+      "module": "skill311",
+      "name": "acquire311",
+      "path": "include/modules/extra/achievement/skills/skill311/main.php"
+    },
+    {
+      "module": "skill311",
+      "name": "lost311",
+      "path": "include/modules/extra/achievement/skills/skill311/main.php"
+    },
+    {
+      "module": "skill312",
+      "name": "acquire312",
+      "path": "include/modules/extra/achievement/skills/skill312/main.php"
+    },
+    {
+      "module": "skill312",
+      "name": "lost312",
+      "path": "include/modules/extra/achievement/skills/skill312/main.php"
+    },
+    {
+      "module": "skill314",
+      "name": "acquire314",
+      "path": "include/modules/extra/achievement/skills/skill314/main.php"
+    },
+    {
+      "module": "skill314",
+      "name": "lost314",
+      "path": "include/modules/extra/achievement/skills/skill314/main.php"
+    },
+    {
+      "module": "skill443",
+      "name": "acquire443",
+      "path": "include/modules/extra/card/skills/skill443/main.php"
+    },
+    {
+      "module": "skill443",
+      "name": "lost443",
+      "path": "include/modules/extra/card/skills/skill443/main.php"
+    },
+    {
+      "module": "skill477",
+      "name": "acquire477",
+      "path": "include/modules/extra/card/skills/skill477/main.php"
+    },
+    {
+      "module": "skill477",
+      "name": "lost477",
+      "path": "include/modules/extra/card/skills/skill477/main.php"
+    },
+    {
+      "module": "skill479",
+      "name": "acquire479",
+      "path": "include/modules/extra/card/skills/skill479/main.php"
+    },
+    {
+      "module": "skill479",
+      "name": "lost479",
+      "path": "include/modules/extra/card/skills/skill479/main.php"
+    },
+    {
+      "module": "skill327",
+      "name": "acquire327",
+      "path": "include/modules/extra/activities/nationalday2017/skill327/main.php"
+    },
+    {
+      "module": "skill327",
+      "name": "lost327",
+      "path": "include/modules/extra/activities/nationalday2017/skill327/main.php"
+    },
+    {
+      "module": "skill437",
+      "name": "acquire437",
+      "path": "include/modules/extra/card/skills/skill437/main.php"
+    },
+    {
+      "module": "skill437",
+      "name": "lost437",
+      "path": "include/modules/extra/card/skills/skill437/main.php"
+    },
+    {
+      "module": "skill442",
+      "name": "acquire442",
+      "path": "include/modules/extra/card/skills/skill442/main.php"
+    },
+    {
+      "module": "skill442",
+      "name": "lost442",
+      "path": "include/modules/extra/card/skills/skill442/main.php"
+    },
+    {
+      "module": "skill452",
+      "name": "acquire452",
+      "path": "include/modules/extra/card/skills/skill452/main.php"
+    },
+    {
+      "module": "skill452",
+      "name": "lost452",
+      "path": "include/modules/extra/card/skills/skill452/main.php"
+    },
+    {
+      "module": "skill459",
+      "name": "acquire459",
+      "path": "include/modules/extra/card/skills/skill459/main.php"
+    },
+    {
+      "module": "skill459",
+      "name": "lost459",
+      "path": "include/modules/extra/card/skills/skill459/main.php"
+    },
+    {
+      "module": "skill1001",
+      "name": "acquire1001",
+      "path": "include/modules/extra/instance/skill1001/main.php"
+    },
+    {
+      "module": "skill1001",
+      "name": "lost1001",
+      "path": "include/modules/extra/instance/skill1001/main.php"
+    },
+    {
+      "module": "skill204",
+      "name": "acquire204",
+      "path": "include/modules/extra/club/skills/skill204/main.php"
+    },
+    {
+      "module": "skill204",
+      "name": "lost204",
+      "path": "include/modules/extra/club/skills/skill204/main.php"
+    },
+    {
+      "module": "skill485",
+      "name": "acquire485",
+      "path": "include/modules/extra/card/skills/skill485/main.php"
+    },
+    {
+      "module": "skill485",
+      "name": "lost485",
+      "path": "include/modules/extra/card/skills/skill485/main.php"
+    },
+    {
+      "module": "skill486",
+      "name": "acquire486",
+      "path": "include/modules/extra/card/skills/skill486/main.php"
+    },
+    {
+      "module": "skill486",
+      "name": "lost486",
+      "path": "include/modules/extra/card/skills/skill486/main.php"
+    },
+    {
+      "module": "skill488",
+      "name": "acquire488",
+      "path": "include/modules/extra/card/skills/skill488/main.php"
+    },
+    {
+      "module": "skill488",
+      "name": "lost488",
+      "path": "include/modules/extra/card/skills/skill488/main.php"
+    },
+    {
+      "module": "skill52",
+      "name": "acquire52",
+      "path": "include/modules/extra/club/skills/skill52/main.php"
+    },
+    {
+      "module": "skill52",
+      "name": "lost52",
+      "path": "include/modules/extra/club/skills/skill52/main.php"
+    },
+    {
+      "module": "skill71",
+      "name": "acquire71",
+      "path": "include/modules/extra/club/skills/skill71/main.php"
+    },
+    {
+      "module": "skill71",
+      "name": "lost71",
+      "path": "include/modules/extra/club/skills/skill71/main.php"
+    },
+    {
+      "module": "skill414",
+      "name": "acquire414",
+      "path": "include/modules/extra/card/skills/skill414/main.php"
+    },
+    {
+      "module": "skill414",
+      "name": "lost414",
+      "path": "include/modules/extra/card/skills/skill414/main.php"
+    },
+    {
+      "module": "skill519",
+      "name": "acquire519",
+      "path": "include/modules/extra/card/skills/skill519/main.php"
+    },
+    {
+      "module": "skill519",
+      "name": "lost519",
+      "path": "include/modules/extra/card/skills/skill519/main.php"
+    },
+    {
+      "module": "skill520",
+      "name": "acquire520",
+      "path": "include/modules/extra/card/skills/skill520/main.php"
+    },
+    {
+      "module": "skill520",
+      "name": "lost520",
+      "path": "include/modules/extra/card/skills/skill520/main.php"
+    },
+    {
+      "module": "skill446",
+      "name": "acquire446",
+      "path": "include/modules/extra/card/skills/skill446/main.php"
+    },
+    {
+      "module": "skill446",
+      "name": "lost446",
+      "path": "include/modules/extra/card/skills/skill446/main.php"
+    },
+    {
+      "module": "skill447",
+      "name": "acquire447",
+      "path": "include/modules/extra/card/skills/skill447/main.php"
+    },
+    {
+      "module": "skill447",
+      "name": "lost447",
+      "path": "include/modules/extra/card/skills/skill447/main.php"
+    },
+    {
+      "module": "skill453",
+      "name": "acquire453",
+      "path": "include/modules/extra/card/skills/skill453/main.php"
+    },
+    {
+      "module": "skill453",
+      "name": "lost453",
+      "path": "include/modules/extra/card/skills/skill453/main.php"
+    },
+    {
+      "module": "skill455",
+      "name": "acquire455",
+      "path": "include/modules/extra/card/skills/skill455/main.php"
+    },
+    {
+      "module": "skill455",
+      "name": "lost455",
+      "path": "include/modules/extra/card/skills/skill455/main.php"
+    },
+    {
+      "module": "skill456",
+      "name": "acquire456",
+      "path": "include/modules/extra/card/skills/skill456/main.php"
+    },
+    {
+      "module": "skill456",
+      "name": "lost456",
+      "path": "include/modules/extra/card/skills/skill456/main.php"
+    },
+    {
+      "module": "skill253",
+      "name": "acquire253",
+      "path": "include/modules/extra/club/skills/skill253/main.php"
+    },
+    {
+      "module": "skill253",
+      "name": "lost253",
+      "path": "include/modules/extra/club/skills/skill253/main.php"
+    },
+    {
+      "module": "skill483",
+      "name": "acquire483",
+      "path": "include/modules/extra/card/skills/skill483/main.php"
+    },
+    {
+      "module": "skill483",
+      "name": "lost483",
+      "path": "include/modules/extra/card/skills/skill483/main.php"
+    },
+    {
+      "module": "skill1002",
+      "name": "acquire1002",
+      "path": "include/modules/extra/instance/skill1002/main.php"
+    },
+    {
+      "module": "skill1002",
+      "name": "lost1002",
+      "path": "include/modules/extra/instance/skill1002/main.php"
+    },
+    {
+      "module": "skill499",
+      "name": "acquire499",
+      "path": "include/modules/extra/card/skills/skill499/main.php"
+    },
+    {
+      "module": "skill499",
+      "name": "lost499",
+      "path": "include/modules/extra/card/skills/skill499/main.php"
+    },
+    {
+      "module": "skill69",
+      "name": "acquire69",
+      "path": "include/modules/extra/club/skills/skill69/main.php"
+    },
+    {
+      "module": "skill69",
+      "name": "lost69",
+      "path": "include/modules/extra/club/skills/skill69/main.php"
+    },
+    {
+      "module": "skill18",
+      "name": "acquire18",
+      "path": "include/modules/extra/club/skills/skill18/main.php"
+    },
+    {
+      "module": "skill18",
+      "name": "lost18",
+      "path": "include/modules/extra/club/skills/skill18/main.php"
+    },
+    {
+      "module": "skill15",
+      "name": "acquire15",
+      "path": "include/modules/extra/club/skills/skill15/main.php"
+    },
+    {
+      "module": "skill15",
+      "name": "lost15",
+      "path": "include/modules/extra/club/skills/skill15/main.php"
+    },
+    {
+      "module": "skill16",
+      "name": "acquire16",
+      "path": "include/modules/extra/club/skills/skill16/main.php"
+    },
+    {
+      "module": "skill16",
+      "name": "lost16",
+      "path": "include/modules/extra/club/skills/skill16/main.php"
+    },
+    {
+      "module": "skill17",
+      "name": "acquire17",
+      "path": "include/modules/extra/club/skills/skill17/main.php"
+    },
+    {
+      "module": "skill17",
+      "name": "lost17",
+      "path": "include/modules/extra/club/skills/skill17/main.php"
+    },
+    {
+      "module": "skill13",
+      "name": "acquire13",
+      "path": "include/modules/extra/club/skills/skill13/main.php"
+    },
+    {
+      "module": "skill13",
+      "name": "lost13",
+      "path": "include/modules/extra/club/skills/skill13/main.php"
+    },
+    {
+      "module": "skill14",
+      "name": "acquire14",
+      "path": "include/modules/extra/club/skills/skill14/main.php"
+    },
+    {
+      "module": "skill14",
+      "name": "lost14",
+      "path": "include/modules/extra/club/skills/skill14/main.php"
+    },
+    {
+      "module": "skill480",
+      "name": "acquire480",
+      "path": "include/modules/extra/card/skills/skill480/main.php"
+    },
+    {
+      "module": "skill480",
+      "name": "lost480",
+      "path": "include/modules/extra/card/skills/skill480/main.php"
+    },
+    {
+      "module": "skill1011",
+      "name": "acquire1011",
+      "path": "include/modules/extra/gmskills/skill1011/main.php"
+    },
+    {
+      "module": "skill1011",
+      "name": "lost1011",
+      "path": "include/modules/extra/gmskills/skill1011/main.php"
+    },
+    {
+      "module": "skill1010",
+      "name": "acquire1010",
+      "path": "include/modules/extra/gmskills/skill1010/main.php"
+    },
+    {
+      "module": "skill1010",
+      "name": "lost1010",
+      "path": "include/modules/extra/gmskills/skill1010/main.php"
+    },
+    {
+      "module": "skill39",
+      "name": "acquire39",
+      "path": "include/modules/extra/club/skills/skill39/main.php"
+    },
+    {
+      "module": "skill39",
+      "name": "lost39",
+      "path": "include/modules/extra/club/skills/skill39/main.php"
+    },
+    {
+      "module": "skill29",
+      "name": "acquire29",
+      "path": "include/modules/extra/club/skills/skill29/main.php"
+    },
+    {
+      "module": "skill29",
+      "name": "lost29",
+      "path": "include/modules/extra/club/skills/skill29/main.php"
+    },
+    {
+      "module": "skill421",
+      "name": "acquire421",
+      "path": "include/modules/extra/card/skills/skill421/main.php"
+    },
+    {
+      "module": "skill421",
+      "name": "lost421",
+      "path": "include/modules/extra/card/skills/skill421/main.php"
+    },
+    {
+      "module": "skill40",
+      "name": "acquire40",
+      "path": "include/modules/extra/club/skills/skill40/main.php"
+    },
+    {
+      "module": "skill40",
+      "name": "lost40",
+      "path": "include/modules/extra/club/skills/skill40/main.php"
+    },
+    {
+      "module": "skill58",
+      "name": "acquire58",
+      "path": "include/modules/extra/club/skills/skill58/main.php"
+    },
+    {
+      "module": "skill58",
+      "name": "lost58",
+      "path": "include/modules/extra/club/skills/skill58/main.php"
+    },
+    {
+      "module": "skill211",
+      "name": "acquire211",
+      "path": "include/modules/extra/club/skills/skill211/main.php"
+    },
+    {
+      "module": "skill211",
+      "name": "lost211",
+      "path": "include/modules/extra/club/skills/skill211/main.php"
+    },
+    {
+      "module": "skill212",
+      "name": "acquire212",
+      "path": "include/modules/extra/club/skills/skill212/main.php"
+    },
+    {
+      "module": "skill212",
+      "name": "lost212",
+      "path": "include/modules/extra/club/skills/skill212/main.php"
+    },
+    {
+      "module": "skill214",
+      "name": "acquire214",
+      "path": "include/modules/extra/club/skills/skill214/main.php"
+    },
+    {
+      "module": "skill214",
+      "name": "lost214",
+      "path": "include/modules/extra/club/skills/skill214/main.php"
+    },
+    {
+      "module": "skill234",
+      "name": "acquire234",
+      "path": "include/modules/extra/club/skills/skill234/main.php"
+    },
+    {
+      "module": "skill234",
+      "name": "lost234",
+      "path": "include/modules/extra/club/skills/skill234/main.php"
+    },
+    {
+      "module": "skill235",
+      "name": "acquire235",
+      "path": "include/modules/extra/club/skills/skill235/main.php"
+    },
+    {
+      "module": "skill235",
+      "name": "lost235",
+      "path": "include/modules/extra/club/skills/skill235/main.php"
+    },
+    {
+      "module": "skill420",
+      "name": "acquire420",
+      "path": "include/modules/extra/card/skills/skill420/main.php"
+    },
+    {
+      "module": "skill420",
+      "name": "lost420",
+      "path": "include/modules/extra/card/skills/skill420/main.php"
+    },
+    {
+      "module": "skill424",
+      "name": "acquire424",
+      "path": "include/modules/extra/instance/gtype1/skill424/main.php"
+    },
+    {
+      "module": "skill424",
+      "name": "lost424",
+      "path": "include/modules/extra/instance/gtype1/skill424/main.php"
+    },
+    {
+      "module": "skill428",
+      "name": "acquire428",
+      "path": "include/modules/extra/instance/gtype1/skill428/main.php"
+    },
+    {
+      "module": "skill428",
+      "name": "lost428",
+      "path": "include/modules/extra/instance/gtype1/skill428/main.php"
+    },
+    {
+      "module": "skill240",
+      "name": "acquire240",
+      "path": "include/modules/extra/club/skills/skill240/main.php"
+    },
+    {
+      "module": "skill240",
+      "name": "lost240",
+      "path": "include/modules/extra/club/skills/skill240/main.php"
+    },
+    {
+      "module": "skill241",
+      "name": "acquire241",
+      "path": "include/modules/extra/club/skills/skill241/main.php"
+    },
+    {
+      "module": "skill241",
+      "name": "lost241",
+      "path": "include/modules/extra/club/skills/skill241/main.php"
+    },
+    {
+      "module": "skill247",
+      "name": "acquire247",
+      "path": "include/modules/extra/club/skills/skill247/main.php"
+    },
+    {
+      "module": "skill247",
+      "name": "lost247",
+      "path": "include/modules/extra/club/skills/skill247/main.php"
+    },
+    {
+      "module": "skill454",
+      "name": "acquire454",
+      "path": "include/modules/extra/card/skills/skill454/main.php"
+    },
+    {
+      "module": "skill454",
+      "name": "lost454",
+      "path": "include/modules/extra/card/skills/skill454/main.php"
+    },
+    {
+      "module": "skill457",
+      "name": "acquire457",
+      "path": "include/modules/extra/card/skills/skill457/main.php"
+    },
+    {
+      "module": "skill457",
+      "name": "lost457",
+      "path": "include/modules/extra/card/skills/skill457/main.php"
+    },
+    {
+      "module": "skill249",
+      "name": "acquire249",
+      "path": "include/modules/extra/club/skills/skill249/main.php"
+    },
+    {
+      "module": "skill249",
+      "name": "lost249",
+      "path": "include/modules/extra/club/skills/skill249/main.php"
+    },
+    {
+      "module": "skill250",
+      "name": "acquire250",
+      "path": "include/modules/extra/club/skills/skill250/main.php"
+    },
+    {
+      "module": "skill250",
+      "name": "lost250",
+      "path": "include/modules/extra/club/skills/skill250/main.php"
+    },
+    {
+      "module": "skill460",
+      "name": "acquire460",
+      "path": "include/modules/extra/card/skills/skill460/main.php"
+    },
+    {
+      "module": "skill460",
+      "name": "lost460",
+      "path": "include/modules/extra/card/skills/skill460/main.php"
+    },
+    {
+      "module": "skill461",
+      "name": "acquire461",
+      "path": "include/modules/extra/card/skills/skill461/main.php"
+    },
+    {
+      "module": "skill461",
+      "name": "lost461",
+      "path": "include/modules/extra/card/skills/skill461/main.php"
+    },
+    {
+      "module": "skill251",
+      "name": "acquire251",
+      "path": "include/modules/extra/club/skills/skill251/main.php"
+    },
+    {
+      "module": "skill251",
+      "name": "lost251",
+      "path": "include/modules/extra/club/skills/skill251/main.php"
+    },
+    {
+      "module": "skill255",
+      "name": "acquire255",
+      "path": "include/modules/extra/club/skills/skill255/main.php"
+    },
+    {
+      "module": "skill255",
+      "name": "lost255",
+      "path": "include/modules/extra/club/skills/skill255/main.php"
+    },
+    {
+      "module": "skill462",
+      "name": "acquire462",
+      "path": "include/modules/extra/card/skills/skill462/main.php"
+    },
+    {
+      "module": "skill462",
+      "name": "lost462",
+      "path": "include/modules/extra/card/skills/skill462/main.php"
+    },
+    {
+      "module": "skill257",
+      "name": "acquire257",
+      "path": "include/modules/extra/club/skills/skill257/main.php"
+    },
+    {
+      "module": "skill257",
+      "name": "lost257",
+      "path": "include/modules/extra/club/skills/skill257/main.php"
+    },
+    {
+      "module": "skill474",
+      "name": "acquire474",
+      "path": "include/modules/extra/card/skills/skill474/main.php"
+    },
+    {
+      "module": "skill474",
+      "name": "lost474",
+      "path": "include/modules/extra/card/skills/skill474/main.php"
+    },
+    {
+      "module": "skill484",
+      "name": "acquire484",
+      "path": "include/modules/extra/card/skills/skill484/main.php"
+    },
+    {
+      "module": "skill484",
+      "name": "lost484",
+      "path": "include/modules/extra/card/skills/skill484/main.php"
+    },
+    {
+      "module": "skill491",
+      "name": "acquire491",
+      "path": "include/modules/extra/card/skills/skill491/main.php"
+    },
+    {
+      "module": "skill491",
+      "name": "lost491",
+      "path": "include/modules/extra/card/skills/skill491/main.php"
+    },
+    {
+      "module": "skill267",
+      "name": "acquire267",
+      "path": "include/modules/extra/club/skills/skill267/main.php"
+    },
+    {
+      "module": "skill267",
+      "name": "lost267",
+      "path": "include/modules/extra/club/skills/skill267/main.php"
+    },
+    {
+      "module": "skill268",
+      "name": "acquire268",
+      "path": "include/modules/extra/club/skills/skill268/main.php"
+    },
+    {
+      "module": "skill268",
+      "name": "lost268",
+      "path": "include/modules/extra/club/skills/skill268/main.php"
+    },
+    {
+      "module": "skill494",
+      "name": "acquire494",
+      "path": "include/modules/extra/instance/gtype1/skill494/main.php"
+    },
+    {
+      "module": "skill494",
+      "name": "lost494",
+      "path": "include/modules/extra/instance/gtype1/skill494/main.php"
+    },
+    {
+      "module": "skill495",
+      "name": "acquire495",
+      "path": "include/modules/extra/instance/gtype1/skill495/main.php"
+    },
+    {
+      "module": "skill495",
+      "name": "lost495",
+      "path": "include/modules/extra/instance/gtype1/skill495/main.php"
+    },
+    {
+      "module": "skill501",
+      "name": "acquire501",
+      "path": "include/modules/extra/card/skills/skill501/main.php"
+    },
+    {
+      "module": "skill501",
+      "name": "lost501",
+      "path": "include/modules/extra/card/skills/skill501/main.php"
+    },
+    {
+      "module": "skill83",
+      "name": "acquire83",
+      "path": "include/modules/extra/club/skills/skill83/main.php"
+    },
+    {
+      "module": "skill83",
+      "name": "lost83",
+      "path": "include/modules/extra/club/skills/skill83/main.php"
+    },
+    {
+      "module": "skill256",
+      "name": "acquire256",
+      "path": "include/modules/extra/club/skills/skill256/main.php"
+    },
+    {
+      "module": "skill256",
+      "name": "lost256",
+      "path": "include/modules/extra/club/skills/skill256/main.php"
+    },
+    {
+      "module": "skill433",
+      "name": "acquire433",
+      "path": "include/modules/extra/card/skills/skill433/main.php"
+    },
+    {
+      "module": "skill433",
+      "name": "lost433",
+      "path": "include/modules/extra/card/skills/skill433/main.php"
+    },
+    {
+      "module": "skill221",
+      "name": "acquire221",
+      "path": "include/modules/extra/club/skills/skill221/main.php"
+    },
+    {
+      "module": "skill221",
+      "name": "lost221",
+      "path": "include/modules/extra/club/skills/skill221/main.php"
+    },
+    {
+      "module": "skill41",
+      "name": "acquire41",
+      "path": "include/modules/extra/club/skills/skill41/main.php"
+    },
+    {
+      "module": "skill41",
+      "name": "lost41",
+      "path": "include/modules/extra/club/skills/skill41/main.php"
+    },
+    {
+      "module": "skill45",
+      "name": "acquire45",
+      "path": "include/modules/extra/club/skills/skill45/main.php"
+    },
+    {
+      "module": "skill45",
+      "name": "lost45",
+      "path": "include/modules/extra/club/skills/skill45/main.php"
+    },
+    {
+      "module": "skill46",
+      "name": "acquire46",
+      "path": "include/modules/extra/club/skills/skill46/main.php"
+    },
+    {
+      "module": "skill46",
+      "name": "lost46",
+      "path": "include/modules/extra/club/skills/skill46/main.php"
+    },
+    {
+      "module": "skill60",
+      "name": "acquire60",
+      "path": "include/modules/extra/club/skills/skill60/main.php"
+    },
+    {
+      "module": "skill60",
+      "name": "lost60",
+      "path": "include/modules/extra/club/skills/skill60/main.php"
+    },
+    {
+      "module": "skill61",
+      "name": "acquire61",
+      "path": "include/modules/extra/club/skills/skill61/main.php"
+    },
+    {
+      "module": "skill61",
+      "name": "lost61",
+      "path": "include/modules/extra/club/skills/skill61/main.php"
+    },
+    {
+      "module": "skill62",
+      "name": "acquire62",
+      "path": "include/modules/extra/club/skills/skill62/main.php"
+    },
+    {
+      "module": "skill62",
+      "name": "lost62",
+      "path": "include/modules/extra/club/skills/skill62/main.php"
+    },
+    {
+      "module": "skill63",
+      "name": "acquire63",
+      "path": "include/modules/extra/club/skills/skill63/main.php"
+    },
+    {
+      "module": "skill63",
+      "name": "lost63",
+      "path": "include/modules/extra/club/skills/skill63/main.php"
+    },
+    {
+      "module": "skill64",
+      "name": "acquire64",
+      "path": "include/modules/extra/club/skills/skill64/main.php"
+    },
+    {
+      "module": "skill64",
+      "name": "lost64",
+      "path": "include/modules/extra/club/skills/skill64/main.php"
+    },
+    {
+      "module": "skill66",
+      "name": "acquire66",
+      "path": "include/modules/extra/club/skills/skill66/main.php"
+    },
+    {
+      "module": "skill66",
+      "name": "lost66",
+      "path": "include/modules/extra/club/skills/skill66/main.php"
+    },
+    {
+      "module": "skill74",
+      "name": "acquire74",
+      "path": "include/modules/extra/club/skills/skill74/main.php"
+    },
+    {
+      "module": "skill74",
+      "name": "lost74",
+      "path": "include/modules/extra/club/skills/skill74/main.php"
+    },
+    {
+      "module": "skill213",
+      "name": "acquire213",
+      "path": "include/modules/extra/club/skills/skill213/main.php"
+    },
+    {
+      "module": "skill213",
+      "name": "lost213",
+      "path": "include/modules/extra/club/skills/skill213/main.php"
+    },
+    {
+      "module": "skill216",
+      "name": "acquire216",
+      "path": "include/modules/extra/club/skills/skill216/main.php"
+    },
+    {
+      "module": "skill216",
+      "name": "lost216",
+      "path": "include/modules/extra/club/skills/skill216/main.php"
+    },
+    {
+      "module": "skill404",
+      "name": "acquire404",
+      "path": "include/modules/extra/card/skills/skill404/main.php"
+    },
+    {
+      "module": "skill404",
+      "name": "lost404",
+      "path": "include/modules/extra/card/skills/skill404/main.php"
+    },
+    {
+      "module": "skill405",
+      "name": "acquire405",
+      "path": "include/modules/extra/card/skills/skill405/main.php"
+    },
+    {
+      "module": "skill405",
+      "name": "lost405",
+      "path": "include/modules/extra/card/skills/skill405/main.php"
+    },
+    {
+      "module": "skill406",
+      "name": "acquire406",
+      "path": "include/modules/extra/card/skills/skill406/main.php"
+    },
+    {
+      "module": "skill406",
+      "name": "lost406",
+      "path": "include/modules/extra/card/skills/skill406/main.php"
+    },
+    {
+      "module": "skill400",
+      "name": "acquire400",
+      "path": "include/modules/extra/card/skills/skill400/main.php"
+    },
+    {
+      "module": "skill400",
+      "name": "lost400",
+      "path": "include/modules/extra/card/skills/skill400/main.php"
+    },
+    {
+      "module": "skill402",
+      "name": "acquire402",
+      "path": "include/modules/extra/card/skills/skill402/main.php"
+    },
+    {
+      "module": "skill402",
+      "name": "lost402",
+      "path": "include/modules/extra/card/skills/skill402/main.php"
+    },
+    {
+      "module": "skill401",
+      "name": "acquire401",
+      "path": "include/modules/extra/card/skills/skill401/main.php"
+    },
+    {
+      "module": "skill401",
+      "name": "lost401",
+      "path": "include/modules/extra/card/skills/skill401/main.php"
+    },
+    {
+      "module": "skill225",
+      "name": "acquire225",
+      "path": "include/modules/extra/club/skills/skill225/main.php"
+    },
+    {
+      "module": "skill225",
+      "name": "lost225",
+      "path": "include/modules/extra/club/skills/skill225/main.php"
+    },
+    {
+      "module": "skill226",
+      "name": "acquire226",
+      "path": "include/modules/extra/club/skills/skill226/main.php"
+    },
+    {
+      "module": "skill226",
+      "name": "lost226",
+      "path": "include/modules/extra/club/skills/skill226/main.php"
+    },
+    {
+      "module": "skill229",
+      "name": "acquire229",
+      "path": "include/modules/extra/club/skills/skill229/main.php"
+    },
+    {
+      "module": "skill229",
+      "name": "lost229",
+      "path": "include/modules/extra/club/skills/skill229/main.php"
+    },
+    {
+      "module": "skill408",
+      "name": "acquire408",
+      "path": "include/modules/extra/card/skills/skill408/main.php"
+    },
+    {
+      "module": "skill408",
+      "name": "lost408",
+      "path": "include/modules/extra/card/skills/skill408/main.php"
+    },
+    {
+      "module": "skill409",
+      "name": "acquire409",
+      "path": "include/modules/extra/card/skills/skill409/main.php"
+    },
+    {
+      "module": "skill409",
+      "name": "lost409",
+      "path": "include/modules/extra/card/skills/skill409/main.php"
+    },
+    {
+      "module": "skill415",
+      "name": "acquire415",
+      "path": "include/modules/extra/card/skills/skill415/main.php"
+    },
+    {
+      "module": "skill415",
+      "name": "lost415",
+      "path": "include/modules/extra/card/skills/skill415/main.php"
+    },
+    {
+      "module": "skill412",
+      "name": "acquire412",
+      "path": "include/modules/extra/card/skills/skill412/main.php"
+    },
+    {
+      "module": "skill412",
+      "name": "lost412",
+      "path": "include/modules/extra/card/skills/skill412/main.php"
+    },
+    {
+      "module": "skill416",
+      "name": "acquire416",
+      "path": "include/modules/extra/card/skills/skill416/main.php"
+    },
+    {
+      "module": "skill416",
+      "name": "lost416",
+      "path": "include/modules/extra/card/skills/skill416/main.php"
+    },
+    {
+      "module": "skill419",
+      "name": "acquire419",
+      "path": "include/modules/extra/card/skills/skill419/main.php"
+    },
+    {
+      "module": "skill419",
+      "name": "lost419",
+      "path": "include/modules/extra/card/skills/skill419/main.php"
+    },
+    {
+      "module": "skill423",
+      "name": "acquire423",
+      "path": "include/modules/extra/card/skills/skill423/main.php"
+    },
+    {
+      "module": "skill423",
+      "name": "lost423",
+      "path": "include/modules/extra/card/skills/skill423/main.php"
+    },
+    {
+      "module": "skill239",
+      "name": "acquire239",
+      "path": "include/modules/extra/club/skills/skill239/main.php"
+    },
+    {
+      "module": "skill239",
+      "name": "lost239",
+      "path": "include/modules/extra/club/skills/skill239/main.php"
+    },
+    {
+      "module": "skill438",
+      "name": "acquire438",
+      "path": "include/modules/extra/card/skills/skill438/main.php"
+    },
+    {
+      "module": "skill438",
+      "name": "lost438",
+      "path": "include/modules/extra/card/skills/skill438/main.php"
+    },
+    {
+      "module": "skill439",
+      "name": "acquire439",
+      "path": "include/modules/extra/card/skills/skill439/main.php"
+    },
+    {
+      "module": "skill439",
+      "name": "lost439",
+      "path": "include/modules/extra/card/skills/skill439/main.php"
+    },
+    {
+      "module": "skill440",
+      "name": "acquire440",
+      "path": "include/modules/extra/card/skills/skill440/main.php"
+    },
+    {
+      "module": "skill440",
+      "name": "lost440",
+      "path": "include/modules/extra/card/skills/skill440/main.php"
+    },
+    {
+      "module": "skill449",
+      "name": "acquire449",
+      "path": "include/modules/extra/card/skills/skill449/main.php"
+    },
+    {
+      "module": "skill449",
+      "name": "lost449",
+      "path": "include/modules/extra/card/skills/skill449/main.php"
+    },
+    {
+      "module": "skill450",
+      "name": "acquire450",
+      "path": "include/modules/extra/card/skills/skill450/main.php"
+    },
+    {
+      "module": "skill450",
+      "name": "lost450",
+      "path": "include/modules/extra/card/skills/skill450/main.php"
+    },
+    {
+      "module": "skill464",
+      "name": "acquire464",
+      "path": "include/modules/extra/card/skills/skill464/main.php"
+    },
+    {
+      "module": "skill464",
+      "name": "lost464",
+      "path": "include/modules/extra/card/skills/skill464/main.php"
+    },
+    {
+      "module": "skill466",
+      "name": "acquire466",
+      "path": "include/modules/extra/card/skills/skill466/main.php"
+    },
+    {
+      "module": "skill466",
+      "name": "lost466",
+      "path": "include/modules/extra/card/skills/skill466/main.php"
+    },
+    {
+      "module": "skill469",
+      "name": "acquire469",
+      "path": "include/modules/extra/card/skills/skill469/main.php"
+    },
+    {
+      "module": "skill469",
+      "name": "lost469",
+      "path": "include/modules/extra/card/skills/skill469/main.php"
+    },
+    {
+      "module": "skill470",
+      "name": "acquire470",
+      "path": "include/modules/extra/card/skills/skill470/main.php"
+    },
+    {
+      "module": "skill470",
+      "name": "lost470",
+      "path": "include/modules/extra/card/skills/skill470/main.php"
+    },
+    {
+      "module": "skill471",
+      "name": "acquire471",
+      "path": "include/modules/extra/card/skills/skill471/main.php"
+    },
+    {
+      "module": "skill471",
+      "name": "lost471",
+      "path": "include/modules/extra/card/skills/skill471/main.php"
+    },
+    {
+      "module": "skill473",
+      "name": "acquire473",
+      "path": "include/modules/extra/card/skills/skill473/main.php"
+    },
+    {
+      "module": "skill473",
+      "name": "lost473",
+      "path": "include/modules/extra/card/skills/skill473/main.php"
+    },
+    {
+      "module": "skill262",
+      "name": "acquire262",
+      "path": "include/modules/extra/club/skills/skill262/main.php"
+    },
+    {
+      "module": "skill262",
+      "name": "lost262",
+      "path": "include/modules/extra/club/skills/skill262/main.php"
+    },
+    {
+      "module": "skill263",
+      "name": "acquire263",
+      "path": "include/modules/extra/club/skills/skill263/main.php"
+    },
+    {
+      "module": "skill263",
+      "name": "lost263",
+      "path": "include/modules/extra/club/skills/skill263/main.php"
+    },
+    {
+      "module": "skill264",
+      "name": "acquire264",
+      "path": "include/modules/extra/club/skills/skill264/main.php"
+    },
+    {
+      "module": "skill264",
+      "name": "lost264",
+      "path": "include/modules/extra/club/skills/skill264/main.php"
+    },
+    {
+      "module": "skill476",
+      "name": "acquire476",
+      "path": "include/modules/extra/instance/gtype3/skill476/main.php"
+    },
+    {
+      "module": "skill476",
+      "name": "lost476",
+      "path": "include/modules/extra/instance/gtype3/skill476/main.php"
+    },
+    {
+      "module": "skill269",
+      "name": "acquire269",
+      "path": "include/modules/extra/club/skills/skill269/main.php"
+    },
+    {
+      "module": "skill269",
+      "name": "lost269",
+      "path": "include/modules/extra/club/skills/skill269/main.php"
+    },
+    {
+      "module": "skill78",
+      "name": "acquire78",
+      "path": "include/modules/extra/club/skills/skill78/main.php"
+    },
+    {
+      "module": "skill78",
+      "name": "lost78",
+      "path": "include/modules/extra/club/skills/skill78/main.php"
+    },
+    {
+      "module": "skill496",
+      "name": "acquire496",
+      "path": "include/modules/extra/card/skills/skill496/main.php"
+    },
+    {
+      "module": "skill496",
+      "name": "lost496",
+      "path": "include/modules/extra/card/skills/skill496/main.php"
+    },
+    {
+      "module": "skill506",
+      "name": "acquire506",
+      "path": "include/modules/extra/card/skills/skill506/main.php"
+    },
+    {
+      "module": "skill506",
+      "name": "lost506",
+      "path": "include/modules/extra/card/skills/skill506/main.php"
+    },
+    {
+      "module": "skill515",
+      "name": "acquire515",
+      "path": "include/modules/extra/card/skills/skill515/main.php"
+    },
+    {
+      "module": "skill515",
+      "name": "lost515",
+      "path": "include/modules/extra/card/skills/skill515/main.php"
+    },
+    {
+      "module": "skill516",
+      "name": "acquire516",
+      "path": "include/modules/extra/card/skills/skill516/main.php"
+    },
+    {
+      "module": "skill516",
+      "name": "lost516",
+      "path": "include/modules/extra/card/skills/skill516/main.php"
+    },
+    {
+      "module": "skill518",
+      "name": "acquire518",
+      "path": "include/modules/extra/card/skills/skill518/main.php"
+    },
+    {
+      "module": "skill518",
+      "name": "lost518",
+      "path": "include/modules/extra/card/skills/skill518/main.php"
+    },
+    {
+      "module": "skill84",
+      "name": "acquire84",
+      "path": "include/modules/extra/club/skills/skill84/main.php"
+    },
+    {
+      "module": "skill84",
+      "name": "lost84",
+      "path": "include/modules/extra/club/skills/skill84/main.php"
+    },
+    {
+      "module": "skill527",
+      "name": "acquire527",
+      "path": "include/modules/extra/card/skills/skill527/main.php"
+    },
+    {
+      "module": "skill527",
+      "name": "lost527",
+      "path": "include/modules/extra/card/skills/skill527/main.php"
+    },
+    {
+      "module": "skill528",
+      "name": "acquire528",
+      "path": "include/modules/extra/card/skills/skill528/main.php"
+    },
+    {
+      "module": "skill528",
+      "name": "lost528",
+      "path": "include/modules/extra/card/skills/skill528/main.php"
+    },
+    {
+      "module": "skill529",
+      "name": "acquire529",
+      "path": "include/modules/extra/card/skills/skill529/main.php"
+    },
+    {
+      "module": "skill529",
+      "name": "lost529",
+      "path": "include/modules/extra/card/skills/skill529/main.php"
+    },
+    {
+      "module": "skill531",
+      "name": "acquire531",
+      "path": "include/modules/extra/card/skills/skill531/main.php"
+    },
+    {
+      "module": "skill531",
+      "name": "lost531",
+      "path": "include/modules/extra/card/skills/skill531/main.php"
+    },
+    {
+      "module": "skill532",
+      "name": "acquire532",
+      "path": "include/modules/extra/card/skills/skill532/main.php"
+    },
+    {
+      "module": "skill532",
+      "name": "lost532",
+      "path": "include/modules/extra/card/skills/skill532/main.php"
+    },
+    {
+      "module": "skill552",
+      "name": "acquire552",
+      "path": "include/modules/extra/card/skills/skill552/main.php"
+    },
+    {
+      "module": "skill552",
+      "name": "lost552",
+      "path": "include/modules/extra/card/skills/skill552/main.php"
+    },
+    {
+      "module": "skill1012",
+      "name": "acquire1012",
+      "path": "include/modules/extra/gmskills/skill1012/main.php"
+    },
+    {
+      "module": "skill1012",
+      "name": "lost1012",
+      "path": "include/modules/extra/gmskills/skill1012/main.php"
+    },
+    {
+      "module": "skill553",
+      "name": "acquire553",
+      "path": "include/modules/extra/card/skills/skill553/main.php"
+    },
+    {
+      "module": "skill553",
+      "name": "lost553",
+      "path": "include/modules/extra/card/skills/skill553/main.php"
+    },
+    {
+      "module": "skill555",
+      "name": "acquire555",
+      "path": "include/modules/extra/card/skills/skill555/main.php"
+    },
+    {
+      "module": "skill555",
+      "name": "lost555",
+      "path": "include/modules/extra/card/skills/skill555/main.php"
+    },
+    {
+      "module": "skill560",
+      "name": "acquire560",
+      "path": "include/modules/extra/card/skills/skill560/main.php"
+    },
+    {
+      "module": "skill560",
+      "name": "lost560",
+      "path": "include/modules/extra/card/skills/skill560/main.php"
+    },
+    {
+      "module": "skill534",
+      "name": "acquire534",
+      "path": "include/modules/extra/card/skills/skill534/main.php"
+    },
+    {
+      "module": "skill534",
+      "name": "lost534",
+      "path": "include/modules/extra/card/skills/skill534/main.php"
+    },
+    {
+      "module": "skill561",
+      "name": "acquire561",
+      "path": "include/modules/extra/card/skills/skill561/main.php"
+    },
+    {
+      "module": "skill561",
+      "name": "lost561",
+      "path": "include/modules/extra/card/skills/skill561/main.php"
+    },
+    {
+      "module": "skill556",
+      "name": "acquire556",
+      "path": "include/modules/extra/card/skills/skill556/main.php"
+    },
+    {
+      "module": "skill556",
+      "name": "lost556",
+      "path": "include/modules/extra/card/skills/skill556/main.php"
+    },
+    {
+      "module": "skill275",
+      "name": "acquire275",
+      "path": "include/modules/extra/club/skills/skill275/main.php"
+    },
+    {
+      "module": "skill275",
+      "name": "lost275",
+      "path": "include/modules/extra/club/skills/skill275/main.php"
+    },
+    {
+      "module": "skill276",
+      "name": "acquire276",
+      "path": "include/modules/extra/club/skills/skill276/main.php"
+    },
+    {
+      "module": "skill276",
+      "name": "lost276",
+      "path": "include/modules/extra/club/skills/skill276/main.php"
+    },
+    {
+      "module": "skill536",
+      "name": "acquire536",
+      "path": "include/modules/extra/card/skills/skill536/main.php"
+    },
+    {
+      "module": "skill536",
+      "name": "lost536",
+      "path": "include/modules/extra/card/skills/skill536/main.php"
+    },
+    {
+      "module": "skill565",
+      "name": "acquire565",
+      "path": "include/modules/extra/card/skills/skill565/main.php"
+    },
+    {
+      "module": "skill565",
+      "name": "lost565",
+      "path": "include/modules/extra/card/skills/skill565/main.php"
+    },
+    {
+      "module": "skill537",
+      "name": "acquire537",
+      "path": "include/modules/extra/card/skills/skill537/main.php"
+    },
+    {
+      "module": "skill537",
+      "name": "lost537",
+      "path": "include/modules/extra/card/skills/skill537/main.php"
+    },
+    {
+      "module": "skill569",
+      "name": "acquire569",
+      "path": "include/modules/extra/card/skills/skill569/main.php"
+    },
+    {
+      "module": "skill569",
+      "name": "lost569",
+      "path": "include/modules/extra/card/skills/skill569/main.php"
+    },
+    {
+      "module": "skill571",
+      "name": "acquire571",
+      "path": "include/modules/extra/card/skills/skill571/main.php"
+    },
+    {
+      "module": "skill571",
+      "name": "lost571",
+      "path": "include/modules/extra/card/skills/skill571/main.php"
+    },
+    {
+      "module": "skill572",
+      "name": "acquire572",
+      "path": "include/modules/extra/card/skills/skill572/main.php"
+    },
+    {
+      "module": "skill572",
+      "name": "lost572",
+      "path": "include/modules/extra/card/skills/skill572/main.php"
+    },
+    {
+      "module": "skill577",
+      "name": "acquire577",
+      "path": "include/modules/extra/card/skills/skill577/main.php"
+    },
+    {
+      "module": "skill577",
+      "name": "lost577",
+      "path": "include/modules/extra/card/skills/skill577/main.php"
+    },
+    {
+      "module": "skill581",
+      "name": "acquire581",
+      "path": "include/modules/extra/card/skills/skill581/main.php"
+    },
+    {
+      "module": "skill581",
+      "name": "lost581",
+      "path": "include/modules/extra/card/skills/skill581/main.php"
+    },
+    {
+      "module": "skill582",
+      "name": "acquire582",
+      "path": "include/modules/extra/card/skills/skill582/main.php"
+    },
+    {
+      "module": "skill582",
+      "name": "lost582",
+      "path": "include/modules/extra/card/skills/skill582/main.php"
+    },
+    {
+      "module": "skill583",
+      "name": "acquire583",
+      "path": "include/modules/extra/card/skills/skill583/main.php"
+    },
+    {
+      "module": "skill583",
+      "name": "lost583",
+      "path": "include/modules/extra/card/skills/skill583/main.php"
+    },
+    {
+      "module": "skill589",
+      "name": "acquire589",
+      "path": "include/modules/extra/card/skills/skill589/main.php"
+    },
+    {
+      "module": "skill589",
+      "name": "lost589",
+      "path": "include/modules/extra/card/skills/skill589/main.php"
+    },
+    {
+      "module": "skill590",
+      "name": "acquire590",
+      "path": "include/modules/extra/card/skills/skill590/main.php"
+    },
+    {
+      "module": "skill590",
+      "name": "lost590",
+      "path": "include/modules/extra/card/skills/skill590/main.php"
+    },
+    {
+      "module": "skill539",
+      "name": "acquire539",
+      "path": "include/modules/extra/card/skills/skill539/main.php"
+    },
+    {
+      "module": "skill539",
+      "name": "lost539",
+      "path": "include/modules/extra/card/skills/skill539/main.php"
+    },
+    {
+      "module": "skill591",
+      "name": "acquire591",
+      "path": "include/modules/extra/card/skills/skill591/main.php"
+    },
+    {
+      "module": "skill591",
+      "name": "lost591",
+      "path": "include/modules/extra/card/skills/skill591/main.php"
+    },
+    {
+      "module": "skill594",
+      "name": "acquire594",
+      "path": "include/modules/extra/card/skills/skill594/main.php"
+    },
+    {
+      "module": "skill594",
+      "name": "lost594",
+      "path": "include/modules/extra/card/skills/skill594/main.php"
+    },
+    {
+      "module": "skill574",
+      "name": "acquire574",
+      "path": "include/modules/extra/card/skills/skill574/main.php"
+    },
+    {
+      "module": "skill574",
+      "name": "lost574",
+      "path": "include/modules/extra/card/skills/skill574/main.php"
+    },
+    {
+      "module": "skill702",
+      "name": "acquire702",
+      "path": "include/modules/extra/card/skills/skill702/main.php"
+    },
+    {
+      "module": "skill702",
+      "name": "lost702",
+      "path": "include/modules/extra/card/skills/skill702/main.php"
+    },
+    {
+      "module": "skill704",
+      "name": "acquire704",
+      "path": "include/modules/extra/card/skills/skill704/main.php"
+    },
+    {
+      "module": "skill704",
+      "name": "lost704",
+      "path": "include/modules/extra/card/skills/skill704/main.php"
+    },
+    {
+      "module": "skill703",
+      "name": "acquire703",
+      "path": "include/modules/extra/card/skills/skill703/main.php"
+    },
+    {
+      "module": "skill703",
+      "name": "lost703",
+      "path": "include/modules/extra/card/skills/skill703/main.php"
+    },
+    {
+      "module": "skill706",
+      "name": "acquire706",
+      "path": "include/modules/extra/card/skills/skill706/main.php"
+    },
+    {
+      "module": "skill706",
+      "name": "lost706",
+      "path": "include/modules/extra/card/skills/skill706/main.php"
+    },
+    {
+      "module": "skill708",
+      "name": "acquire708",
+      "path": "include/modules/extra/card/skills/skill708/main.php"
+    },
+    {
+      "module": "skill708",
+      "name": "lost708",
+      "path": "include/modules/extra/card/skills/skill708/main.php"
+    },
+    {
+      "module": "skill301",
+      "name": "acquire301",
+      "path": "include/modules/extra/achievement/skills/skill301/main.php"
+    },
+    {
+      "module": "skill301",
+      "name": "lost301",
+      "path": "include/modules/extra/achievement/skills/skill301/main.php"
+    },
+    {
+      "module": "skill307",
+      "name": "acquire307",
+      "path": "include/modules/extra/achievement/skills/skill307/main.php"
+    },
+    {
+      "module": "skill307",
+      "name": "lost307",
+      "path": "include/modules/extra/achievement/skills/skill307/main.php"
+    },
+    {
+      "module": "skill318",
+      "name": "acquire318",
+      "path": "include/modules/extra/achievement/skills/skill318/main.php"
+    },
+    {
+      "module": "skill318",
+      "name": "lost318",
+      "path": "include/modules/extra/achievement/skills/skill318/main.php"
+    },
+    {
+      "module": "skill322",
+      "name": "acquire322",
+      "path": "include/modules/extra/achievement/skills/skill322/main.php"
+    },
+    {
+      "module": "skill322",
+      "name": "lost322",
+      "path": "include/modules/extra/achievement/skills/skill322/main.php"
+    },
+    {
+      "module": "skill323",
+      "name": "acquire323",
+      "path": "include/modules/extra/achievement/skills/skill323/main.php"
+    },
+    {
+      "module": "skill323",
+      "name": "lost323",
+      "path": "include/modules/extra/achievement/skills/skill323/main.php"
+    },
+    {
+      "module": "skill715",
+      "name": "acquire715",
+      "path": "include/modules/extra/card/skills/skill715/main.php"
+    },
+    {
+      "module": "skill715",
+      "name": "lost715",
+      "path": "include/modules/extra/card/skills/skill715/main.php"
+    },
+    {
+      "module": "skill586",
+      "name": "acquire586",
+      "path": "include/modules/extra/card/skills/skill586/main.php"
+    },
+    {
+      "module": "skill586",
+      "name": "lost586",
+      "path": "include/modules/extra/card/skills/skill586/main.php"
+    },
+    {
+      "module": "skill902",
+      "name": "acquire902",
+      "path": "include/modules/extra/instance/instance3_ascension/skill902/main.php"
+    },
+    {
+      "module": "skill902",
+      "name": "lost902",
+      "path": "include/modules/extra/instance/instance3_ascension/skill902/main.php"
+    },
+    {
+      "module": "skill907",
+      "name": "acquire907",
+      "path": "include/modules/extra/instance/instance3_ascension/skill907/main.php"
+    },
+    {
+      "module": "skill907",
+      "name": "lost907",
+      "path": "include/modules/extra/instance/instance3_ascension/skill907/main.php"
+    },
+    {
+      "module": "skill904",
+      "name": "acquire904",
+      "path": "include/modules/extra/instance/instance3_ascension/skill904/main.php"
+    },
+    {
+      "module": "skill904",
+      "name": "lost904",
+      "path": "include/modules/extra/instance/instance3_ascension/skill904/main.php"
+    },
+    {
+      "module": "skill801",
+      "name": "acquire801",
+      "path": "include/modules/extra/card/skills/skill801/main.php"
+    },
+    {
+      "module": "skill801",
+      "name": "lost801",
+      "path": "include/modules/extra/card/skills/skill801/main.php"
+    },
+    {
+      "module": "skill802",
+      "name": "acquire802",
+      "path": "include/modules/extra/card/skills/skill802/main.php"
+    },
+    {
+      "module": "skill802",
+      "name": "lost802",
+      "path": "include/modules/extra/card/skills/skill802/main.php"
+    },
+    {
+      "module": "skill716",
+      "name": "acquire716",
+      "path": "include/modules/extra/card/skills/skill716/main.php"
+    },
+    {
+      "module": "skill716",
+      "name": "lost716",
+      "path": "include/modules/extra/card/skills/skill716/main.php"
+    },
+    {
+      "module": "skill718",
+      "name": "acquire718",
+      "path": "include/modules/extra/card/skills/skill718/main.php"
+    },
+    {
+      "module": "skill718",
+      "name": "lost718",
+      "path": "include/modules/extra/card/skills/skill718/main.php"
+    },
+    {
+      "module": "skill717",
+      "name": "acquire717",
+      "path": "include/modules/extra/card/skills/skill717/main.php"
+    },
+    {
+      "module": "skill717",
+      "name": "lost717",
+      "path": "include/modules/extra/card/skills/skill717/main.php"
+    },
+    {
+      "module": "skill719",
+      "name": "acquire719",
+      "path": "include/modules/extra/card/skills/skill719/main.php"
+    },
+    {
+      "module": "skill719",
+      "name": "lost719",
+      "path": "include/modules/extra/card/skills/skill719/main.php"
+    },
+    {
+      "module": "skill85",
+      "name": "acquire85",
+      "path": "include/modules/extra/club/skills/skill85/main.php"
+    },
+    {
+      "module": "skill85",
+      "name": "lost85",
+      "path": "include/modules/extra/club/skills/skill85/main.php"
+    },
+    {
+      "module": "skill952",
+      "name": "acquire952",
+      "path": "include/modules/extra/instance/instance10_rogue/skill952/main.php"
+    },
+    {
+      "module": "skill952",
+      "name": "lost952",
+      "path": "include/modules/extra/instance/instance10_rogue/skill952/main.php"
+    },
+    {
+      "module": "skill951",
+      "name": "acquire951",
+      "path": "include/modules/extra/instance/instance10_rogue/skill951/main.php"
+    },
+    {
+      "module": "skill951",
+      "name": "lost951",
+      "path": "include/modules/extra/instance/instance10_rogue/skill951/main.php"
+    },
+    {
+      "module": "skill724",
+      "name": "acquire724",
+      "path": "include/modules/extra/card/skills/skill724/main.php"
+    },
+    {
+      "module": "skill724",
+      "name": "lost724",
+      "path": "include/modules/extra/card/skills/skill724/main.php"
+    },
+    {
+      "module": "skill95",
+      "name": "acquire95",
+      "path": "include/modules/extra/club/skills/skill95/main.php"
+    },
+    {
+      "module": "skill95",
+      "name": "lost95",
+      "path": "include/modules/extra/club/skills/skill95/main.php"
+    },
+    {
+      "module": "skill725",
+      "name": "acquire725",
+      "path": "include/modules/extra/card/skills/skill725/main.php"
+    },
+    {
+      "module": "skill725",
+      "name": "lost725",
+      "path": "include/modules/extra/card/skills/skill725/main.php"
+    },
+    {
+      "module": "skill804",
+      "name": "acquire804",
+      "path": "include/modules/extra/card/skills/skill804/main.php"
+    },
+    {
+      "module": "skill804",
+      "name": "lost804",
+      "path": "include/modules/extra/card/skills/skill804/main.php"
+    },
+    {
+      "module": "skill728",
+      "name": "acquire728",
+      "path": "include/modules/extra/card/skills/skill728/main.php"
+    },
+    {
+      "module": "skill728",
+      "name": "lost728",
+      "path": "include/modules/extra/card/skills/skill728/main.php"
+    },
+    {
+      "module": "skill735",
+      "name": "acquire735",
+      "path": "include/modules/extra/card/skills/skill735/main.php"
+    },
+    {
+      "module": "skill735",
+      "name": "lost735",
+      "path": "include/modules/extra/card/skills/skill735/main.php"
+    },
+    {
+      "module": "skill736",
+      "name": "acquire736",
+      "path": "include/modules/extra/card/skills/skill736/main.php"
+    },
+    {
+      "module": "skill736",
+      "name": "lost736",
+      "path": "include/modules/extra/card/skills/skill736/main.php"
+    },
+    {
+      "module": "skill110",
+      "name": "acquire110",
+      "path": "include/modules/extra/club/skills/skill110/main.php"
+    },
+    {
+      "module": "skill110",
+      "name": "lost110",
+      "path": "include/modules/extra/club/skills/skill110/main.php"
+    },
+    {
+      "module": "skill1013",
+      "name": "acquire1013",
+      "path": "include/modules/extra/gmskills/skill1013/main.php"
+    },
+    {
+      "module": "skill1013",
+      "name": "lost1013",
+      "path": "include/modules/extra/gmskills/skill1013/main.php"
+    },
+    {
+      "module": "skill743",
+      "name": "acquire743",
+      "path": "include/modules/extra/card/skills/skill743/main.php"
+    },
+    {
+      "module": "skill743",
+      "name": "lost743",
+      "path": "include/modules/extra/card/skills/skill743/main.php"
+    },
+    {
+      "module": "skill744",
+      "name": "acquire744",
+      "path": "include/modules/extra/card/skills/skill744/main.php"
+    },
+    {
+      "module": "skill744",
+      "name": "lost744",
+      "path": "include/modules/extra/card/skills/skill744/main.php"
+    },
+    {
+      "module": "skill606",
+      "name": "acquire606",
+      "path": "include/modules/extra/club/skills/skill606/main.php"
+    },
+    {
+      "module": "skill606",
+      "name": "lost606",
+      "path": "include/modules/extra/club/skills/skill606/main.php"
+    },
+    {
+      "module": "skill273",
+      "name": "acquire273",
+      "path": "include/modules/extra/club/skills/skill273/main.php"
+    },
+    {
+      "module": "skill273",
+      "name": "lost273",
+      "path": "include/modules/extra/club/skills/skill273/main.php"
+    },
+    {
+      "module": "skill209",
+      "name": "acquire209",
+      "path": "include/modules/extra/club/skills/skill209/main.php"
+    },
+    {
+      "module": "skill209",
+      "name": "lost209",
+      "path": "include/modules/extra/club/skills/skill209/main.php"
+    },
+    {
+      "module": "skill5",
+      "name": "acquire5",
+      "path": "include/modules/extra/attr/skills/skill5/main.php"
+    },
+    {
+      "module": "skill5",
+      "name": "lost5",
+      "path": "include/modules/extra/attr/skills/skill5/main.php"
+    },
+    {
+      "module": "skill6",
+      "name": "acquire6",
+      "path": "include/modules/extra/attr/skills/skill6/main.php"
+    },
+    {
+      "module": "skill6",
+      "name": "lost6",
+      "path": "include/modules/extra/attr/skills/skill6/main.php"
+    },
+    {
+      "module": "skill7",
+      "name": "acquire7",
+      "path": "include/modules/extra/attr/skills/skill7/main.php"
+    },
+    {
+      "module": "skill7",
+      "name": "lost7",
+      "path": "include/modules/extra/attr/skills/skill7/main.php"
+    },
+    {
+      "module": "skill8",
+      "name": "acquire8",
+      "path": "include/modules/extra/attr/skills/skill8/main.php"
+    },
+    {
+      "module": "skill8",
+      "name": "lost8",
+      "path": "include/modules/extra/attr/skills/skill8/main.php"
+    },
+    {
+      "module": "skill9",
+      "name": "acquire9",
+      "path": "include/modules/extra/attr/skills/skill9/main.php"
+    },
+    {
+      "module": "skill9",
+      "name": "lost9",
+      "path": "include/modules/extra/attr/skills/skill9/main.php"
+    },
+    {
+      "module": "skill12",
+      "name": "acquire12",
+      "path": "include/modules/extra/club/skills/skill12/main.php"
+    },
+    {
+      "module": "skill12",
+      "name": "lost12",
+      "path": "include/modules/extra/club/skills/skill12/main.php"
+    },
+    {
+      "module": "skill223",
+      "name": "acquire223",
+      "path": "include/modules/extra/club/skills/skill223/main.php"
+    },
+    {
+      "module": "skill223",
+      "name": "lost223",
+      "path": "include/modules/extra/club/skills/skill223/main.php"
+    },
+    {
+      "module": "skill710",
+      "name": "acquire710",
+      "path": "include/modules/extra/card/skills/skill710/main.php"
+    },
+    {
+      "module": "skill710",
+      "name": "lost710",
+      "path": "include/modules/extra/card/skills/skill710/main.php"
+    },
+    {
+      "module": "skill745",
+      "name": "acquire745",
+      "path": "include/modules/extra/card/skills/skill745/main.php"
+    },
+    {
+      "module": "skill745",
+      "name": "lost745",
+      "path": "include/modules/extra/card/skills/skill745/main.php"
+    },
+    {
+      "module": "skill331",
+      "name": "acquire331",
+      "path": "include/modules/extra/activities/halloween2017/skill331/main.php"
+    },
+    {
+      "module": "skill331",
+      "name": "lost331",
+      "path": "include/modules/extra/activities/halloween2017/skill331/main.php"
+    },
+    {
+      "module": "skill19",
+      "name": "acquire19",
+      "path": "include/modules/extra/club/skills/skill19/main.php"
+    },
+    {
+      "module": "skill19",
+      "name": "lost19",
+      "path": "include/modules/extra/club/skills/skill19/main.php"
+    },
+    {
+      "module": "skill79",
+      "name": "acquire79",
+      "path": "include/modules/extra/club/skills/skill79/main.php"
+    },
+    {
+      "module": "skill79",
+      "name": "lost79",
+      "path": "include/modules/extra/club/skills/skill79/main.php"
+    },
+    {
+      "module": "skill31",
+      "name": "acquire31",
+      "path": "include/modules/extra/club/skills/skill31/main.php"
+    },
+    {
+      "module": "skill31",
+      "name": "lost31",
+      "path": "include/modules/extra/club/skills/skill31/main.php"
+    },
+    {
+      "module": "skill242",
+      "name": "acquire242",
+      "path": "include/modules/extra/club/skills/skill242/main.php"
+    },
+    {
+      "module": "skill242",
+      "name": "lost242",
+      "path": "include/modules/extra/club/skills/skill242/main.php"
+    },
+    {
+      "module": "skill53",
+      "name": "acquire53",
+      "path": "include/modules/extra/club/skills/skill53/main.php"
+    },
+    {
+      "module": "skill53",
+      "name": "lost53",
+      "path": "include/modules/extra/club/skills/skill53/main.php"
+    },
+    {
+      "module": "skill55",
+      "name": "acquire55",
+      "path": "include/modules/extra/club/skills/skill55/main.php"
+    },
+    {
+      "module": "skill55",
+      "name": "lost55",
+      "path": "include/modules/extra/club/skills/skill55/main.php"
+    },
+    {
+      "module": "skill72",
+      "name": "acquire72",
+      "path": "include/modules/extra/club/skills/skill72/main.php"
+    },
+    {
+      "module": "skill72",
+      "name": "lost72",
+      "path": "include/modules/extra/club/skills/skill72/main.php"
+    },
+    {
+      "module": "skill227",
+      "name": "acquire227",
+      "path": "include/modules/extra/club/skills/skill227/main.php"
+    },
+    {
+      "module": "skill227",
+      "name": "lost227",
+      "path": "include/modules/extra/club/skills/skill227/main.php"
+    },
+    {
+      "module": "skill472",
+      "name": "acquire472",
+      "path": "include/modules/extra/card/skills/skill472/main.php"
+    },
+    {
+      "module": "skill472",
+      "name": "lost472",
+      "path": "include/modules/extra/card/skills/skill472/main.php"
+    },
+    {
+      "module": "skill564",
+      "name": "acquire564",
+      "path": "include/modules/extra/card/skills/skill564/main.php"
+    },
+    {
+      "module": "skill564",
+      "name": "lost564",
+      "path": "include/modules/extra/card/skills/skill564/main.php"
+    },
+    {
+      "module": "skill475",
+      "name": "acquire475",
+      "path": "include/modules/extra/instance/gtype2/skill475/main.php"
+    },
+    {
+      "module": "skill475",
+      "name": "lost475",
+      "path": "include/modules/extra/instance/gtype2/skill475/main.php"
+    },
+    {
+      "module": "skill59",
+      "name": "acquire59",
+      "path": "include/modules/extra/club/skills/skill59/main.php"
+    },
+    {
+      "module": "skill59",
+      "name": "lost59",
+      "path": "include/modules/extra/club/skills/skill59/main.php"
+    },
+    {
+      "module": "skill425",
+      "name": "acquire425",
+      "path": "include/modules/extra/instance/gtype1/skill425/main.php"
+    },
+    {
+      "module": "skill425",
+      "name": "lost425",
+      "path": "include/modules/extra/instance/gtype1/skill425/main.php"
+    },
+    {
+      "module": "skill427",
+      "name": "acquire427",
+      "path": "include/modules/extra/instance/gtype1/skill427/main.php"
+    },
+    {
+      "module": "skill427",
+      "name": "lost427",
+      "path": "include/modules/extra/instance/gtype1/skill427/main.php"
+    },
+    {
+      "module": "skill260",
+      "name": "acquire260",
+      "path": "include/modules/extra/club/skills/skill260/main.php"
+    },
+    {
+      "module": "skill260",
+      "name": "lost260",
+      "path": "include/modules/extra/club/skills/skill260/main.php"
+    },
+    {
+      "module": "skill261",
+      "name": "acquire261",
+      "path": "include/modules/extra/club/skills/skill261/main.php"
+    },
+    {
+      "module": "skill261",
+      "name": "lost261",
+      "path": "include/modules/extra/club/skills/skill261/main.php"
+    },
+    {
+      "module": "skill274",
+      "name": "acquire274",
+      "path": "include/modules/extra/club/skills/skill274/main.php"
+    },
+    {
+      "module": "skill274",
+      "name": "lost274",
+      "path": "include/modules/extra/club/skills/skill274/main.php"
+    },
+    {
+      "module": "skill511",
+      "name": "acquire511",
+      "path": "include/modules/extra/card/skills/skill511/main.php"
+    },
+    {
+      "module": "skill511",
+      "name": "lost511",
+      "path": "include/modules/extra/card/skills/skill511/main.php"
+    },
+    {
+      "module": "skill545",
+      "name": "acquire545",
+      "path": "include/modules/extra/card/skills/skill545/main.php"
+    },
+    {
+      "module": "skill545",
+      "name": "lost545",
+      "path": "include/modules/extra/card/skills/skill545/main.php"
+    },
+    {
+      "module": "skill403",
+      "name": "acquire403",
+      "path": "include/modules/extra/card/skills/skill403/main.php"
+    },
+    {
+      "module": "skill403",
+      "name": "lost403",
+      "path": "include/modules/extra/card/skills/skill403/main.php"
+    },
+    {
+      "module": "skill203",
+      "name": "acquire203",
+      "path": "include/modules/extra/club/skills/skill203/main.php"
+    },
+    {
+      "module": "skill203",
+      "name": "lost203",
+      "path": "include/modules/extra/club/skills/skill203/main.php"
+    },
+    {
+      "module": "skill901",
+      "name": "acquire901",
+      "path": "include/modules/extra/instance/instance3_ascension/skill901/main.php"
+    },
+    {
+      "module": "skill901",
+      "name": "lost901",
+      "path": "include/modules/extra/instance/instance3_ascension/skill901/main.php"
+    },
+    {
+      "module": "skill23",
+      "name": "acquire23",
+      "path": "include/modules/extra/club/skills/skill23/main.php"
+    },
+    {
+      "module": "skill23",
+      "name": "lost23",
+      "path": "include/modules/extra/club/skills/skill23/main.php"
+    },
+    {
+      "module": "skill517",
+      "name": "acquire517",
+      "path": "include/modules/extra/card/skills/skill517/main.php"
+    },
+    {
+      "module": "skill517",
+      "name": "lost517",
+      "path": "include/modules/extra/card/skills/skill517/main.php"
+    },
+    {
+      "module": "skill407",
+      "name": "acquire407",
+      "path": "include/modules/extra/card/skills/skill407/main.php"
+    },
+    {
+      "module": "skill407",
+      "name": "lost407",
+      "path": "include/modules/extra/card/skills/skill407/main.php"
+    },
+    {
+      "module": "skill32",
+      "name": "acquire32",
+      "path": "include/modules/extra/club/skills/skill32/main.php"
+    },
+    {
+      "module": "skill32",
+      "name": "lost32",
+      "path": "include/modules/extra/club/skills/skill32/main.php"
+    },
+    {
+      "module": "skill202",
+      "name": "acquire202",
+      "path": "include/modules/extra/club/skills/skill202/main.php"
+    },
+    {
+      "module": "skill202",
+      "name": "lost202",
+      "path": "include/modules/extra/club/skills/skill202/main.php"
+    },
+    {
+      "module": "skill445",
+      "name": "acquire445",
+      "path": "include/modules/extra/card/skills/skill445/main.php"
+    },
+    {
+      "module": "skill445",
+      "name": "lost445",
+      "path": "include/modules/extra/card/skills/skill445/main.php"
+    },
+    {
+      "module": "skill557",
+      "name": "acquire557",
+      "path": "include/modules/extra/card/skills/skill557/main.php"
+    },
+    {
+      "module": "skill557",
+      "name": "lost557",
+      "path": "include/modules/extra/card/skills/skill557/main.php"
+    },
+    {
+      "module": "skill1",
+      "name": "acquire1",
+      "path": "include/modules/base/skills/skill1/main.php"
+    },
+    {
+      "module": "skill1",
+      "name": "lost1",
+      "path": "include/modules/base/skills/skill1/main.php"
+    },
+    {
+      "module": "skill562",
+      "name": "acquire562",
+      "path": "include/modules/extra/card/skills/skill562/main.php"
+    },
+    {
+      "module": "skill562",
+      "name": "lost562",
+      "path": "include/modules/extra/card/skills/skill562/main.php"
+    },
+    {
+      "module": "skill600",
+      "name": "acquire600",
+      "path": "include/modules/extra/club/skills/skill600/main.php"
+    },
+    {
+      "module": "skill600",
+      "name": "lost600",
+      "path": "include/modules/extra/club/skills/skill600/main.php"
+    },
+    {
+      "module": "skill487",
+      "name": "acquire487",
+      "path": "include/modules/extra/card/skills/skill487/main.php"
+    },
+    {
+      "module": "skill487",
+      "name": "lost487",
+      "path": "include/modules/extra/card/skills/skill487/main.php"
+    },
+    {
+      "module": "skill20",
+      "name": "acquire20",
+      "path": "include/modules/extra/club/skills/skill20/main.php"
+    },
+    {
+      "module": "skill20",
+      "name": "lost20",
+      "path": "include/modules/extra/club/skills/skill20/main.php"
+    },
+    {
+      "module": "skill426",
+      "name": "acquire426",
+      "path": "include/modules/extra/instance/gtype1/skill426/main.php"
+    },
+    {
+      "module": "skill426",
+      "name": "lost426",
+      "path": "include/modules/extra/instance/gtype1/skill426/main.php"
+    },
+    {
+      "module": "skill492",
+      "name": "acquire492",
+      "path": "include/modules/extra/card/skills/skill492/main.php"
+    },
+    {
+      "module": "skill492",
+      "name": "lost492",
+      "path": "include/modules/extra/card/skills/skill492/main.php"
+    },
+    {
+      "module": "skill723",
+      "name": "acquire723",
+      "path": "include/modules/extra/card/skills/skill723/main.php"
+    },
+    {
+      "module": "skill723",
+      "name": "lost723",
+      "path": "include/modules/extra/card/skills/skill723/main.php"
+    },
+    {
+      "module": "skill24",
+      "name": "acquire24",
+      "path": "include/modules/extra/club/skills/skill24/main.php"
+    },
+    {
+      "module": "skill24",
+      "name": "lost24",
+      "path": "include/modules/extra/club/skills/skill24/main.php"
+    },
+    {
+      "module": "skill33",
+      "name": "acquire33",
+      "path": "include/modules/extra/club/skills/skill33/main.php"
+    },
+    {
+      "module": "skill33",
+      "name": "lost33",
+      "path": "include/modules/extra/club/skills/skill33/main.php"
+    },
+    {
+      "module": "skill579",
+      "name": "acquire579",
+      "path": "include/modules/extra/card/skills/skill579/main.php"
+    },
+    {
+      "module": "skill579",
+      "name": "lost579",
+      "path": "include/modules/extra/card/skills/skill579/main.php"
+    },
+    {
+      "module": "skill906",
+      "name": "acquire906",
+      "path": "include/modules/extra/instance/instance3_ascension/skill906/main.php"
+    },
+    {
+      "module": "skill906",
+      "name": "lost906",
+      "path": "include/modules/extra/instance/instance3_ascension/skill906/main.php"
+    },
+    {
+      "module": "skill502",
+      "name": "acquire502",
+      "path": "include/modules/extra/card/skills/skill502/main.php"
+    },
+    {
+      "module": "skill502",
+      "name": "lost502",
+      "path": "include/modules/extra/card/skills/skill502/main.php"
+    },
+    {
+      "module": "skill599",
+      "name": "acquire599",
+      "path": "include/modules/extra/card/skills/skill599/main.php"
+    },
+    {
+      "module": "skill599",
+      "name": "lost599",
+      "path": "include/modules/extra/card/skills/skill599/main.php"
+    },
+    {
+      "module": "skill42",
+      "name": "acquire42",
+      "path": "include/modules/extra/club/skills/skill42/main.php"
+    },
+    {
+      "module": "skill42",
+      "name": "lost42",
+      "path": "include/modules/extra/club/skills/skill42/main.php"
+    },
+    {
+      "module": "skill245",
+      "name": "acquire245",
+      "path": "include/modules/extra/club/skills/skill245/main.php"
+    },
+    {
+      "module": "skill245",
+      "name": "lost245",
+      "path": "include/modules/extra/club/skills/skill245/main.php"
+    },
+    {
+      "module": "skill252",
+      "name": "acquire252",
+      "path": "include/modules/extra/club/skills/skill252/main.php"
+    },
+    {
+      "module": "skill252",
+      "name": "lost252",
+      "path": "include/modules/extra/club/skills/skill252/main.php"
+    },
+    {
+      "module": "skill270",
+      "name": "acquire270",
+      "path": "include/modules/extra/club/skills/skill270/main.php"
+    },
+    {
+      "module": "skill270",
+      "name": "lost270",
+      "path": "include/modules/extra/club/skills/skill270/main.php"
+    },
+    {
+      "module": "skill588",
+      "name": "acquire588",
+      "path": "include/modules/extra/card/skills/skill588/main.php"
+    },
+    {
+      "module": "skill588",
+      "name": "lost588",
+      "path": "include/modules/extra/card/skills/skill588/main.php"
+    },
+    {
+      "module": "skill67",
+      "name": "acquire67",
+      "path": "include/modules/extra/club/skills/skill67/main.php"
+    },
+    {
+      "module": "skill67",
+      "name": "lost67",
+      "path": "include/modules/extra/club/skills/skill67/main.php"
+    },
+    {
+      "module": "skill584",
+      "name": "acquire584",
+      "path": "include/modules/extra/card/skills/skill584/main.php"
+    },
+    {
+      "module": "skill584",
+      "name": "lost584",
+      "path": "include/modules/extra/card/skills/skill584/main.php"
+    },
+    {
+      "module": "skill592",
+      "name": "acquire592",
+      "path": "include/modules/extra/card/skills/skill592/main.php"
+    },
+    {
+      "module": "skill592",
+      "name": "lost592",
+      "path": "include/modules/extra/card/skills/skill592/main.php"
+    },
+    {
+      "module": "skill541",
+      "name": "acquire541",
+      "path": "include/modules/extra/card/skills/skill541/main.php"
+    },
+    {
+      "module": "skill541",
+      "name": "lost541",
+      "path": "include/modules/extra/card/skills/skill541/main.php"
+    },
+    {
+      "module": "skill720",
+      "name": "acquire720",
+      "path": "include/modules/extra/card/skills/skill720/main.php"
+    },
+    {
+      "module": "skill720",
+      "name": "lost720",
+      "path": "include/modules/extra/card/skills/skill720/main.php"
+    },
+    {
+      "module": "skill734",
+      "name": "acquire734",
+      "path": "include/modules/extra/card/skills/skill734/main.php"
+    },
+    {
+      "module": "skill734",
+      "name": "lost734",
+      "path": "include/modules/extra/card/skills/skill734/main.php"
+    },
+    {
+      "module": "skill749",
+      "name": "acquire749",
+      "path": "include/modules/extra/card/skills/skill749/main.php"
+    },
+    {
+      "module": "skill749",
+      "name": "lost749",
+      "path": "include/modules/extra/card/skills/skill749/main.php"
+    },
+    {
+      "module": "skill43",
+      "name": "acquire43",
+      "path": "include/modules/extra/club/skills/skill43/main.php"
+    },
+    {
+      "module": "skill43",
+      "name": "lost43",
+      "path": "include/modules/extra/club/skills/skill43/main.php"
+    },
+    {
+      "module": "skill56",
+      "name": "acquire56",
+      "path": "include/modules/extra/club/skills/skill56/main.php"
+    },
+    {
+      "module": "skill56",
+      "name": "lost56",
+      "path": "include/modules/extra/club/skills/skill56/main.php"
+    },
+    {
+      "module": "skill435",
+      "name": "acquire435",
+      "path": "include/modules/extra/card/skills/skill435/main.php"
+    },
+    {
+      "module": "skill435",
+      "name": "lost435",
+      "path": "include/modules/extra/card/skills/skill435/main.php"
+    },
+    {
+      "module": "skill329",
+      "name": "acquire329",
+      "path": "include/modules/extra/activities/nationalday2017/skill329/main.php"
+    },
+    {
+      "module": "skill329",
+      "name": "lost329",
+      "path": "include/modules/extra/activities/nationalday2017/skill329/main.php"
+    },
+    {
+      "module": "skill512",
+      "name": "acquire512",
+      "path": "include/modules/extra/card/skills/skill512/main.php"
+    },
+    {
+      "module": "skill512",
+      "name": "lost512",
+      "path": "include/modules/extra/card/skills/skill512/main.php"
+    },
+    {
+      "module": "skill961",
+      "name": "acquire961",
+      "path": "include/modules/extra/instance/instance10_rogue/skill961/main.php"
+    },
+    {
+      "module": "skill961",
+      "name": "lost961",
+      "path": "include/modules/extra/instance/instance10_rogue/skill961/main.php"
+    },
+    {
+      "module": "skill593",
+      "name": "acquire593",
+      "path": "include/modules/extra/card/skills/skill593/main.php"
+    },
+    {
+      "module": "skill593",
+      "name": "lost593",
+      "path": "include/modules/extra/card/skills/skill593/main.php"
+    },
+    {
+      "module": "skill731",
+      "name": "acquire731",
+      "path": "include/modules/extra/card/skills/skill731/main.php"
+    },
+    {
+      "module": "skill731",
+      "name": "lost731",
+      "path": "include/modules/extra/card/skills/skill731/main.php"
+    },
+    {
+      "module": "skill490",
+      "name": "acquire490",
+      "path": "include/modules/extra/card/skills/skill490/main.php"
+    },
+    {
+      "module": "skill490",
+      "name": "lost490",
+      "path": "include/modules/extra/card/skills/skill490/main.php"
+    },
+    {
+      "module": "skill430",
+      "name": "acquire430",
+      "path": "include/modules/extra/card/skills/skill430/main.php"
+    },
+    {
+      "module": "skill430",
+      "name": "lost430",
+      "path": "include/modules/extra/card/skills/skill430/main.php"
+    },
+    {
+      "module": "skill30",
+      "name": "acquire30",
+      "path": "include/modules/extra/club/skills/skill30/main.php"
+    },
+    {
+      "module": "skill30",
+      "name": "lost30",
+      "path": "include/modules/extra/club/skills/skill30/main.php"
+    },
+    {
+      "module": "skill441",
+      "name": "acquire441",
+      "path": "include/modules/extra/card/skills/skill441/main.php"
+    },
+    {
+      "module": "skill441",
+      "name": "lost441",
+      "path": "include/modules/extra/card/skills/skill441/main.php"
+    },
+    {
+      "module": "skill259",
+      "name": "acquire259",
+      "path": "include/modules/extra/club/skills/skill259/main.php"
+    },
+    {
+      "module": "skill259",
+      "name": "lost259",
+      "path": "include/modules/extra/club/skills/skill259/main.php"
+    },
+    {
+      "module": "skill568",
+      "name": "acquire568",
+      "path": "include/modules/extra/card/skills/skill568/main.php"
+    },
+    {
+      "module": "skill568",
+      "name": "lost568",
+      "path": "include/modules/extra/card/skills/skill568/main.php"
+    },
+    {
+      "module": "skill585",
+      "name": "acquire585",
+      "path": "include/modules/extra/card/skills/skill585/main.php"
+    },
+    {
+      "module": "skill585",
+      "name": "lost585",
+      "path": "include/modules/extra/card/skills/skill585/main.php"
+    },
+    {
+      "module": "skill705",
+      "name": "acquire705",
+      "path": "include/modules/extra/card/skills/skill705/main.php"
+    },
+    {
+      "module": "skill705",
+      "name": "lost705",
+      "path": "include/modules/extra/card/skills/skill705/main.php"
+    },
+    {
+      "module": "skill89",
+      "name": "acquire89",
+      "path": "include/modules/extra/club/skills/skill89/main.php"
+    },
+    {
+      "module": "skill89",
+      "name": "lost89",
+      "path": "include/modules/extra/club/skills/skill89/main.php"
+    },
+    {
+      "module": "skill96",
+      "name": "acquire96",
+      "path": "include/modules/extra/club/skills/skill96/main.php"
+    },
+    {
+      "module": "skill96",
+      "name": "lost96",
+      "path": "include/modules/extra/club/skills/skill96/main.php"
+    },
+    {
+      "module": "skill102",
+      "name": "acquire102",
+      "path": "include/modules/extra/club/skills/skill102/main.php"
+    },
+    {
+      "module": "skill102",
+      "name": "lost102",
+      "path": "include/modules/extra/club/skills/skill102/main.php"
+    },
+    {
+      "module": "skill103",
+      "name": "acquire103",
+      "path": "include/modules/extra/club/skills/skill103/main.php"
+    },
+    {
+      "module": "skill103",
+      "name": "lost103",
+      "path": "include/modules/extra/club/skills/skill103/main.php"
+    },
+    {
+      "module": "skill104",
+      "name": "acquire104",
+      "path": "include/modules/extra/club/skills/skill104/main.php"
+    },
+    {
+      "module": "skill104",
+      "name": "lost104",
+      "path": "include/modules/extra/club/skills/skill104/main.php"
+    },
+    {
+      "module": "skill732",
+      "name": "acquire732",
+      "path": "include/modules/extra/card/skills/skill732/main.php"
+    },
+    {
+      "module": "skill732",
+      "name": "lost732",
+      "path": "include/modules/extra/card/skills/skill732/main.php"
+    },
+    {
+      "module": "skill1000",
+      "name": "acquire1000",
+      "path": "include/modules/extra/instance/instance7_tutorial/skill1000/main.php"
+    },
+    {
+      "module": "skill1000",
+      "name": "lost1000",
+      "path": "include/modules/extra/instance/instance7_tutorial/skill1000/main.php"
+    },
+    {
+      "module": "skill711",
+      "name": "acquire711",
+      "path": "include/modules/extra/card/skills/skill711/main.php"
+    },
+    {
+      "module": "skill711",
+      "name": "lost711",
+      "path": "include/modules/extra/card/skills/skill711/main.php"
+    },
+    {
+      "module": "skill1007",
+      "name": "acquire1007",
+      "path": "include/modules/extra/npc_action/skill1007/main.php"
+    },
+    {
+      "module": "skill1007",
+      "name": "lost1007",
+      "path": "include/modules/extra/npc_action/skill1007/main.php"
+    },
+    {
+      "module": "skill418",
+      "name": "acquire418",
+      "path": "include/modules/extra/card/skills/skill418/main.php"
+    },
+    {
+      "module": "skill418",
+      "name": "lost418",
+      "path": "include/modules/extra/card/skills/skill418/main.php"
+    },
+    {
+      "module": "skill1003",
+      "name": "acquire1003",
+      "path": "include/modules/extra/club/skills/skill1003/main.php"
+    },
+    {
+      "module": "skill1003",
+      "name": "lost1003",
+      "path": "include/modules/extra/club/skills/skill1003/main.php"
+    },
+    {
+      "module": "skill57",
+      "name": "acquire57",
+      "path": "include/modules/extra/club/skills/skill57/main.php"
+    },
+    {
+      "module": "skill57",
+      "name": "lost57",
+      "path": "include/modules/extra/club/skills/skill57/main.php"
+    },
+    {
+      "module": "skill436",
+      "name": "acquire436",
+      "path": "include/modules/extra/card/skills/skill436/main.php"
+    },
+    {
+      "module": "skill436",
+      "name": "lost436",
+      "path": "include/modules/extra/card/skills/skill436/main.php"
+    },
+    {
+      "module": "skill729",
+      "name": "acquire729",
+      "path": "include/modules/extra/card/skills/skill729/main.php"
+    },
+    {
+      "module": "skill729",
+      "name": "lost729",
+      "path": "include/modules/extra/card/skills/skill729/main.php"
+    },
+    {
+      "module": "skill107",
+      "name": "acquire107",
+      "path": "include/modules/extra/club/skills/skill107/main.php"
+    },
+    {
+      "module": "skill107",
+      "name": "lost107",
+      "path": "include/modules/extra/club/skills/skill107/main.php"
+    },
+    {
+      "module": "skill28",
+      "name": "acquire28",
+      "path": "include/modules/extra/club/skills/skill28/main.php"
+    },
+    {
+      "module": "skill28",
+      "name": "lost28",
+      "path": "include/modules/extra/club/skills/skill28/main.php"
+    },
+    {
+      "module": "skill254",
+      "name": "acquire254",
+      "path": "include/modules/extra/club/skills/skill254/main.php"
+    },
+    {
+      "module": "skill254",
+      "name": "lost254",
+      "path": "include/modules/extra/club/skills/skill254/main.php"
+    },
+    {
+      "module": "skill535",
+      "name": "acquire535",
+      "path": "include/modules/extra/card/skills/skill535/main.php"
+    },
+    {
+      "module": "skill535",
+      "name": "lost535",
+      "path": "include/modules/extra/card/skills/skill535/main.php"
+    },
+    {
+      "module": "skill37",
+      "name": "acquire37",
+      "path": "include/modules/extra/club/skills/skill37/main.php"
+    },
+    {
+      "module": "skill37",
+      "name": "lost37",
+      "path": "include/modules/extra/club/skills/skill37/main.php"
+    },
+    {
+      "module": "skill73",
+      "name": "acquire73",
+      "path": "include/modules/extra/club/skills/skill73/main.php"
+    },
+    {
+      "module": "skill73",
+      "name": "lost73",
+      "path": "include/modules/extra/club/skills/skill73/main.php"
+    },
+    {
+      "module": "skill410",
+      "name": "acquire410",
+      "path": "include/modules/extra/card/skills/skill410/main.php"
+    },
+    {
+      "module": "skill410",
+      "name": "lost410",
+      "path": "include/modules/extra/card/skills/skill410/main.php"
+    },
+    {
+      "module": "skill570",
+      "name": "acquire570",
+      "path": "include/modules/extra/card/skills/skill570/main.php"
+    },
+    {
+      "module": "skill570",
+      "name": "lost570",
+      "path": "include/modules/extra/card/skills/skill570/main.php"
+    },
+    {
+      "module": "skill258",
+      "name": "acquire258",
+      "path": "include/modules/extra/club/skills/skill258/main.php"
+    },
+    {
+      "module": "skill258",
+      "name": "lost258",
+      "path": "include/modules/extra/club/skills/skill258/main.php"
+    },
+    {
+      "module": "skill444",
+      "name": "acquire444",
+      "path": "include/modules/extra/card/skills/skill444/main.php"
+    },
+    {
+      "module": "skill444",
+      "name": "lost444",
+      "path": "include/modules/extra/card/skills/skill444/main.php"
+    },
+    {
+      "module": "skill207",
+      "name": "acquire207",
+      "path": "include/modules/extra/club/skills/skill207/main.php"
+    },
+    {
+      "module": "skill207",
+      "name": "lost207",
+      "path": "include/modules/extra/club/skills/skill207/main.php"
+    },
+    {
+      "module": "skill65",
+      "name": "acquire65",
+      "path": "include/modules/extra/club/skills/skill65/main.php"
+    },
+    {
+      "module": "skill65",
+      "name": "lost65",
+      "path": "include/modules/extra/club/skills/skill65/main.php"
+    },
+    {
+      "module": "skill49",
+      "name": "acquire49",
+      "path": "include/modules/extra/club/skills/skill49/main.php"
+    },
+    {
+      "module": "skill49",
+      "name": "lost49",
+      "path": "include/modules/extra/club/skills/skill49/main.php"
+    },
+    {
+      "module": "skill201",
+      "name": "acquire201",
+      "path": "include/modules/extra/club/skills/skill201/main.php"
+    },
+    {
+      "module": "skill201",
+      "name": "lost201",
+      "path": "include/modules/extra/club/skills/skill201/main.php"
+    },
+    {
+      "module": "skill248",
+      "name": "acquire248",
+      "path": "include/modules/extra/club/skills/skill248/main.php"
+    },
+    {
+      "module": "skill248",
+      "name": "lost248",
+      "path": "include/modules/extra/club/skills/skill248/main.php"
+    },
+    {
+      "module": "skill82",
+      "name": "acquire82",
+      "path": "include/modules/extra/club/skills/skill82/main.php"
+    },
+    {
+      "module": "skill82",
+      "name": "lost82",
+      "path": "include/modules/extra/club/skills/skill82/main.php"
+    },
+    {
+      "module": "skill50",
+      "name": "acquire50",
+      "path": "include/modules/extra/club/skills/skill50/main.php"
+    },
+    {
+      "module": "skill50",
+      "name": "lost50",
+      "path": "include/modules/extra/club/skills/skill50/main.php"
+    },
+    {
+      "module": "skill741",
+      "name": "acquire741",
+      "path": "include/modules/extra/card/skills/skill741/main.php"
+    },
+    {
+      "module": "skill741",
+      "name": "lost741",
+      "path": "include/modules/extra/card/skills/skill741/main.php"
+    },
+    {
+      "module": "skill578",
+      "name": "acquire578",
+      "path": "include/modules/extra/card/skills/skill578/main.php"
+    },
+    {
+      "module": "skill578",
+      "name": "lost578",
+      "path": "include/modules/extra/card/skills/skill578/main.php"
+    },
+    {
+      "module": "skill422",
+      "name": "acquire422",
+      "path": "include/modules/extra/card/skills/skill422/main.php"
+    },
+    {
+      "module": "skill422",
+      "name": "lost422",
+      "path": "include/modules/extra/card/skills/skill422/main.php"
+    },
+    {
+      "module": "skill230",
+      "name": "acquire230",
+      "path": "include/modules/extra/club/skills/skill230/main.php"
+    },
+    {
+      "module": "skill230",
+      "name": "lost230",
+      "path": "include/modules/extra/club/skills/skill230/main.php"
+    },
+    {
+      "module": "skill222",
+      "name": "acquire222",
+      "path": "include/modules/extra/club/skills/skill222/main.php"
+    },
+    {
+      "module": "skill222",
+      "name": "lost222",
+      "path": "include/modules/extra/club/skills/skill222/main.php"
+    },
+    {
+      "module": "skill218",
+      "name": "acquire218",
+      "path": "include/modules/extra/club/skills/skill218/main.php"
+    },
+    {
+      "module": "skill218",
+      "name": "lost218",
+      "path": "include/modules/extra/club/skills/skill218/main.php"
+    },
+    {
+      "module": "skill217",
+      "name": "acquire217",
+      "path": "include/modules/extra/club/skills/skill217/main.php"
+    },
+    {
+      "module": "skill217",
+      "name": "lost217",
+      "path": "include/modules/extra/club/skills/skill217/main.php"
+    },
+    {
+      "module": "skill219",
+      "name": "acquire219",
+      "path": "include/modules/extra/club/skills/skill219/main.php"
+    },
+    {
+      "module": "skill219",
+      "name": "lost219",
+      "path": "include/modules/extra/club/skills/skill219/main.php"
+    },
+    {
+      "module": "skill25",
+      "name": "acquire25",
+      "path": "include/modules/extra/club/skills/skill25/main.php"
+    },
+    {
+      "module": "skill25",
+      "name": "lost25",
+      "path": "include/modules/extra/club/skills/skill25/main.php"
+    },
+    {
+      "module": "skill44",
+      "name": "acquire44",
+      "path": "include/modules/extra/club/skills/skill44/main.php"
+    },
+    {
+      "module": "skill44",
+      "name": "lost44",
+      "path": "include/modules/extra/club/skills/skill44/main.php"
+    },
+    {
+      "module": "skill47",
+      "name": "acquire47",
+      "path": "include/modules/extra/club/skills/skill47/main.php"
+    },
+    {
+      "module": "skill47",
+      "name": "lost47",
+      "path": "include/modules/extra/club/skills/skill47/main.php"
+    },
+    {
+      "module": "skill48",
+      "name": "acquire48",
+      "path": "include/modules/extra/club/skills/skill48/main.php"
+    },
+    {
+      "module": "skill48",
+      "name": "lost48",
+      "path": "include/modules/extra/club/skills/skill48/main.php"
+    },
+    {
+      "module": "skill54",
+      "name": "acquire54",
+      "path": "include/modules/extra/club/skills/skill54/main.php"
+    },
+    {
+      "module": "skill54",
+      "name": "lost54",
+      "path": "include/modules/extra/club/skills/skill54/main.php"
+    },
+    {
+      "module": "skill205",
+      "name": "acquire205",
+      "path": "include/modules/extra/club/skills/skill205/main.php"
+    },
+    {
+      "module": "skill205",
+      "name": "lost205",
+      "path": "include/modules/extra/club/skills/skill205/main.php"
+    },
+    {
+      "module": "skill75",
+      "name": "acquire75",
+      "path": "include/modules/extra/club/skills/skill75/main.php"
+    },
+    {
+      "module": "skill75",
+      "name": "lost75",
+      "path": "include/modules/extra/club/skills/skill75/main.php"
+    },
+    {
+      "module": "skill76",
+      "name": "acquire76",
+      "path": "include/modules/extra/club/skills/skill76/main.php"
+    },
+    {
+      "module": "skill76",
+      "name": "lost76",
+      "path": "include/modules/extra/club/skills/skill76/main.php"
+    },
+    {
+      "module": "skill210",
+      "name": "acquire210",
+      "path": "include/modules/extra/club/skills/skill210/main.php"
+    },
+    {
+      "module": "skill210",
+      "name": "lost210",
+      "path": "include/modules/extra/club/skills/skill210/main.php"
+    },
+    {
+      "module": "skill238",
+      "name": "acquire238",
+      "path": "include/modules/extra/club/skills/skill238/main.php"
+    },
+    {
+      "module": "skill238",
+      "name": "lost238",
+      "path": "include/modules/extra/club/skills/skill238/main.php"
+    },
+    {
+      "module": "skill434",
+      "name": "acquire434",
+      "path": "include/modules/extra/card/skills/skill434/main.php"
+    },
+    {
+      "module": "skill434",
+      "name": "lost434",
+      "path": "include/modules/extra/card/skills/skill434/main.php"
+    },
+    {
+      "module": "skill448",
+      "name": "acquire448",
+      "path": "include/modules/extra/card/skills/skill448/main.php"
+    },
+    {
+      "module": "skill448",
+      "name": "lost448",
+      "path": "include/modules/extra/card/skills/skill448/main.php"
+    },
+    {
+      "module": "skill463",
+      "name": "acquire463",
+      "path": "include/modules/extra/card/skills/skill463/main.php"
+    },
+    {
+      "module": "skill463",
+      "name": "lost463",
+      "path": "include/modules/extra/card/skills/skill463/main.php"
+    },
+    {
+      "module": "skill465",
+      "name": "acquire465",
+      "path": "include/modules/extra/card/skills/skill465/main.php"
+    },
+    {
+      "module": "skill465",
+      "name": "lost465",
+      "path": "include/modules/extra/card/skills/skill465/main.php"
+    },
+    {
+      "module": "skill478",
+      "name": "acquire478",
+      "path": "include/modules/extra/card/skills/skill478/main.php"
+    },
+    {
+      "module": "skill478",
+      "name": "lost478",
+      "path": "include/modules/extra/card/skills/skill478/main.php"
+    },
+    {
+      "module": "skill521",
+      "name": "acquire521",
+      "path": "include/modules/extra/card/skills/skill521/main.php"
+    },
+    {
+      "module": "skill521",
+      "name": "lost521",
+      "path": "include/modules/extra/card/skills/skill521/main.php"
+    },
+    {
+      "module": "skill522",
+      "name": "acquire522",
+      "path": "include/modules/extra/card/skills/skill522/main.php"
+    },
+    {
+      "module": "skill522",
+      "name": "lost522",
+      "path": "include/modules/extra/card/skills/skill522/main.php"
+    },
+    {
+      "module": "skill523",
+      "name": "acquire523",
+      "path": "include/modules/extra/card/skills/skill523/main.php"
+    },
+    {
+      "module": "skill523",
+      "name": "lost523",
+      "path": "include/modules/extra/card/skills/skill523/main.php"
+    },
+    {
+      "module": "skill524",
+      "name": "acquire524",
+      "path": "include/modules/extra/card/skills/skill524/main.php"
+    },
+    {
+      "module": "skill524",
+      "name": "lost524",
+      "path": "include/modules/extra/card/skills/skill524/main.php"
+    },
+    {
+      "module": "skill525",
+      "name": "acquire525",
+      "path": "include/modules/extra/card/skills/skill525/main.php"
+    },
+    {
+      "module": "skill525",
+      "name": "lost525",
+      "path": "include/modules/extra/card/skills/skill525/main.php"
+    },
+    {
+      "module": "skill526",
+      "name": "acquire526",
+      "path": "include/modules/extra/card/skills/skill526/main.php"
+    },
+    {
+      "module": "skill526",
+      "name": "lost526",
+      "path": "include/modules/extra/card/skills/skill526/main.php"
+    },
+    {
+      "module": "skill90",
+      "name": "acquire90",
+      "path": "include/modules/extra/club/skills/skill90/main.php"
+    },
+    {
+      "module": "skill90",
+      "name": "lost90",
+      "path": "include/modules/extra/club/skills/skill90/main.php"
+    },
+    {
+      "module": "skill93",
+      "name": "acquire93",
+      "path": "include/modules/extra/club/skills/skill93/main.php"
+    },
+    {
+      "module": "skill93",
+      "name": "lost93",
+      "path": "include/modules/extra/club/skills/skill93/main.php"
+    },
+    {
+      "module": "skill803",
+      "name": "acquire803",
+      "path": "include/modules/extra/card/skills/skill803/main.php"
+    },
+    {
+      "module": "skill803",
+      "name": "lost803",
+      "path": "include/modules/extra/card/skills/skill803/main.php"
+    },
+    {
+      "module": "skill232",
+      "name": "acquire232",
+      "path": "include/modules/extra/club/skills/skill232/main.php"
+    },
+    {
+      "module": "skill232",
+      "name": "lost232",
+      "path": "include/modules/extra/club/skills/skill232/main.php"
+    },
+    {
+      "module": "skill432",
+      "name": "acquire432",
+      "path": "include/modules/extra/card/skills/skill432/main.php"
+    },
+    {
+      "module": "skill432",
+      "name": "lost432",
+      "path": "include/modules/extra/card/skills/skill432/main.php"
+    },
+    {
+      "module": "skill558",
+      "name": "acquire558",
+      "path": "include/modules/extra/card/skills/skill558/main.php"
+    },
+    {
+      "module": "skill558",
+      "name": "lost558",
+      "path": "include/modules/extra/card/skills/skill558/main.php"
+    },
+    {
+      "module": "skill513",
+      "name": "acquire513",
+      "path": "include/modules/extra/card/skills/skill513/main.php"
+    },
+    {
+      "module": "skill513",
+      "name": "lost513",
+      "path": "include/modules/extra/card/skills/skill513/main.php"
+    },
+    {
+      "module": "skill726",
+      "name": "acquire726",
+      "path": "include/modules/extra/card/skills/skill726/main.php"
+    },
+    {
+      "module": "skill726",
+      "name": "lost726",
+      "path": "include/modules/extra/card/skills/skill726/main.php"
+    },
+    {
+      "module": "skill105",
+      "name": "acquire105",
+      "path": "include/modules/extra/club/skills/skill105/main.php"
+    },
+    {
+      "module": "skill105",
+      "name": "lost105",
+      "path": "include/modules/extra/club/skills/skill105/main.php"
+    },
+    {
+      "module": "skill727",
+      "name": "acquire727",
+      "path": "include/modules/extra/card/skills/skill727/main.php"
+    },
+    {
+      "module": "skill727",
+      "name": "lost727",
+      "path": "include/modules/extra/card/skills/skill727/main.php"
+    },
+    {
+      "module": "skill580",
+      "name": "acquire580",
+      "path": "include/modules/extra/card/skills/skill580/main.php"
+    },
+    {
+      "module": "skill580",
+      "name": "lost580",
+      "path": "include/modules/extra/card/skills/skill580/main.php"
+    },
+    {
+      "module": "skill429",
+      "name": "acquire429",
+      "path": "include/modules/extra/instance/gtype1/skill429/main.php"
+    },
+    {
+      "module": "skill429",
+      "name": "lost429",
+      "path": "include/modules/extra/instance/gtype1/skill429/main.php"
+    },
+    {
+      "module": "skill108",
+      "name": "acquire108",
+      "path": "include/modules/extra/club/skills/skill108/main.php"
+    },
+    {
+      "module": "skill108",
+      "name": "lost108",
+      "path": "include/modules/extra/club/skills/skill108/main.php"
+    },
+    {
+      "module": "skill109",
+      "name": "acquire109",
+      "path": "include/modules/extra/club/skills/skill109/main.php"
+    },
+    {
+      "module": "skill109",
+      "name": "lost109",
+      "path": "include/modules/extra/club/skills/skill109/main.php"
+    },
+    {
+      "module": "skill111",
+      "name": "acquire111",
+      "path": "include/modules/extra/club/skills/skill111/main.php"
+    },
+    {
+      "module": "skill111",
+      "name": "lost111",
+      "path": "include/modules/extra/club/skills/skill111/main.php"
+    },
+    {
+      "module": "skill70",
+      "name": "acquire70",
+      "path": "include/modules/extra/club/skills/skill70/main.php"
+    },
+    {
+      "module": "skill70",
+      "name": "lost70",
+      "path": "include/modules/extra/club/skills/skill70/main.php"
+    },
+    {
+      "module": "skill246",
+      "name": "acquire246",
+      "path": "include/modules/extra/club/skills/skill246/main.php"
+    },
+    {
+      "module": "skill246",
+      "name": "lost246",
+      "path": "include/modules/extra/club/skills/skill246/main.php"
+    },
+    {
+      "module": "skill598",
+      "name": "acquire598",
+      "path": "include/modules/extra/card/skills/skill598/main.php"
+    },
+    {
+      "module": "skill598",
+      "name": "lost598",
+      "path": "include/modules/extra/card/skills/skill598/main.php"
+    },
+    {
+      "module": "skill514",
+      "name": "acquire514",
+      "path": "include/modules/extra/card/skills/skill514/main.php"
+    },
+    {
+      "module": "skill514",
+      "name": "lost514",
+      "path": "include/modules/extra/card/skills/skill514/main.php"
+    },
+    {
+      "module": "skill206",
+      "name": "acquire206",
+      "path": "include/modules/extra/club/skills/skill206/main.php"
+    },
+    {
+      "module": "skill206",
+      "name": "lost206",
+      "path": "include/modules/extra/club/skills/skill206/main.php"
+    },
+    {
+      "module": "skill231",
+      "name": "acquire231",
+      "path": "include/modules/extra/club/skills/skill231/main.php"
+    },
+    {
+      "module": "skill231",
+      "name": "lost231",
+      "path": "include/modules/extra/club/skills/skill231/main.php"
+    },
+    {
+      "module": "skill742",
+      "name": "acquire742",
+      "path": "include/modules/extra/card/skills/skill742/main.php"
+    },
+    {
+      "module": "skill742",
+      "name": "lost742",
+      "path": "include/modules/extra/card/skills/skill742/main.php"
+    },
+    {
+      "module": "skill220",
+      "name": "acquire220",
+      "path": "include/modules/extra/club/skills/skill220/main.php"
+    },
+    {
+      "module": "skill220",
+      "name": "lost220",
+      "path": "include/modules/extra/club/skills/skill220/main.php"
+    },
+    {
+      "module": "skill224",
+      "name": "acquire224",
+      "path": "include/modules/extra/club/skills/skill224/main.php"
+    },
+    {
+      "module": "skill224",
+      "name": "lost224",
+      "path": "include/modules/extra/club/skills/skill224/main.php"
+    },
+    {
+      "module": "skill243",
+      "name": "acquire243",
+      "path": "include/modules/extra/club/skills/skill243/main.php"
+    },
+    {
+      "module": "skill243",
+      "name": "lost243",
+      "path": "include/modules/extra/club/skills/skill243/main.php"
+    },
+    {
+      "module": "skill208",
+      "name": "acquire208",
+      "path": "include/modules/extra/club/skills/skill208/main.php"
+    },
+    {
+      "module": "skill208",
+      "name": "lost208",
+      "path": "include/modules/extra/club/skills/skill208/main.php"
+    },
+    {
+      "module": "skill215",
+      "name": "acquire215",
+      "path": "include/modules/extra/club/skills/skill215/main.php"
+    },
+    {
+      "module": "skill215",
+      "name": "lost215",
+      "path": "include/modules/extra/club/skills/skill215/main.php"
+    },
+    {
+      "module": "skill271",
+      "name": "acquire271",
+      "path": "include/modules/extra/club/skills/skill271/main.php"
+    },
+    {
+      "module": "skill271",
+      "name": "lost271",
+      "path": "include/modules/extra/club/skills/skill271/main.php"
+    },
+    {
+      "module": "skill112",
+      "name": "acquire112",
+      "path": "include/modules/extra/club/skills/skill112/main.php"
+    },
+    {
+      "module": "skill112",
+      "name": "lost112",
+      "path": "include/modules/extra/club/skills/skill112/main.php"
+    },
+    {
+      "module": "skill51",
+      "name": "acquire51",
+      "path": "include/modules/extra/club/skills/skill51/main.php"
+    },
+    {
+      "module": "skill51",
+      "name": "lost51",
+      "path": "include/modules/extra/club/skills/skill51/main.php"
+    },
+    {
+      "module": "skill493",
+      "name": "acquire493",
+      "path": "include/modules/extra/card/skills/skill493/main.php"
+    },
+    {
+      "module": "skill493",
+      "name": "lost493",
+      "path": "include/modules/extra/card/skills/skill493/main.php"
+    },
+    {
+      "module": "skill100",
+      "name": "acquire100",
+      "path": "include/modules/extra/club/skills/skill100/main.php"
+    },
+    {
+      "module": "skill100",
+      "name": "lost100",
+      "path": "include/modules/extra/club/skills/skill100/main.php"
+    },
+    {
+      "module": "skill101",
+      "name": "acquire101",
+      "path": "include/modules/extra/club/skills/skill101/main.php"
+    },
+    {
+      "module": "skill101",
+      "name": "lost101",
+      "path": "include/modules/extra/club/skills/skill101/main.php"
+    },
+    {
+      "module": "skill98",
+      "name": "acquire98",
+      "path": "include/modules/extra/club/skills/skill98/main.php"
+    },
+    {
+      "module": "skill98",
+      "name": "lost98",
+      "path": "include/modules/extra/club/skills/skill98/main.php"
+    },
+    {
+      "module": "skill99",
+      "name": "acquire99",
+      "path": "include/modules/extra/club/skills/skill99/main.php"
+    },
+    {
+      "module": "skill99",
+      "name": "lost99",
+      "path": "include/modules/extra/club/skills/skill99/main.php"
+    },
+    {
+      "module": "skill97",
+      "name": "acquire97",
+      "path": "include/modules/extra/club/skills/skill97/main.php"
+    },
+    {
+      "module": "skill97",
+      "name": "lost97",
+      "path": "include/modules/extra/club/skills/skill97/main.php"
+    },
+    {
+      "module": "skill302",
+      "name": "acquire302",
+      "path": "include/modules/extra/achievement/skills/skill302/main.php"
+    },
+    {
+      "module": "skill302",
+      "name": "lost302",
+      "path": "include/modules/extra/achievement/skills/skill302/main.php"
+    },
+    {
+      "module": "skill303",
+      "name": "acquire303",
+      "path": "include/modules/extra/achievement/skills/skill303/main.php"
+    },
+    {
+      "module": "skill303",
+      "name": "lost303",
+      "path": "include/modules/extra/achievement/skills/skill303/main.php"
+    },
+    {
+      "module": "skill304",
+      "name": "acquire304",
+      "path": "include/modules/extra/achievement/skills/skill304/main.php"
+    },
+    {
+      "module": "skill304",
+      "name": "lost304",
+      "path": "include/modules/extra/achievement/skills/skill304/main.php"
+    },
+    {
+      "module": "skill325",
+      "name": "acquire325",
+      "path": "include/modules/extra/achievement/skills/skill325/main.php"
+    },
+    {
+      "module": "skill325",
+      "name": "lost325",
+      "path": "include/modules/extra/achievement/skills/skill325/main.php"
+    },
+    {
+      "module": "skill326",
+      "name": "acquire326",
+      "path": "include/modules/extra/achievement/skills/skill326/main.php"
+    },
+    {
+      "module": "skill326",
+      "name": "lost326",
+      "path": "include/modules/extra/achievement/skills/skill326/main.php"
+    },
+    {
+      "module": "skill315",
+      "name": "acquire315",
+      "path": "include/modules/extra/achievement/skills/skill315/main.php"
+    },
+    {
+      "module": "skill315",
+      "name": "lost315",
+      "path": "include/modules/extra/achievement/skills/skill315/main.php"
+    },
+    {
+      "module": "skill313",
+      "name": "acquire313",
+      "path": "include/modules/extra/achievement/skills/skill313/main.php"
+    },
+    {
+      "module": "skill313",
+      "name": "lost313",
+      "path": "include/modules/extra/achievement/skills/skill313/main.php"
+    },
+    {
+      "module": "skill300",
+      "name": "acquire300",
+      "path": "include/modules/extra/achievement/skills/skill300/main.php"
+    },
+    {
+      "module": "skill300",
+      "name": "lost300",
+      "path": "include/modules/extra/achievement/skills/skill300/main.php"
+    },
+    {
+      "module": "skill332",
+      "name": "acquire332",
+      "path": "include/modules/extra/achievement/skills/skill332/main.php"
+    },
+    {
+      "module": "skill332",
+      "name": "lost332",
+      "path": "include/modules/extra/achievement/skills/skill332/main.php"
+    },
+    {
+      "module": "skill333",
+      "name": "acquire333",
+      "path": "include/modules/extra/achievement/skills/skill333/main.php"
+    },
+    {
+      "module": "skill333",
+      "name": "lost333",
+      "path": "include/modules/extra/achievement/skills/skill333/main.php"
+    },
+    {
+      "module": "skill334",
+      "name": "acquire334",
+      "path": "include/modules/extra/achievement/skills/skill334/main.php"
+    },
+    {
+      "module": "skill334",
+      "name": "lost334",
+      "path": "include/modules/extra/achievement/skills/skill334/main.php"
+    },
+    {
+      "module": "skill335",
+      "name": "acquire335",
+      "path": "include/modules/extra/achievement/skills/skill335/main.php"
+    },
+    {
+      "module": "skill335",
+      "name": "lost335",
+      "path": "include/modules/extra/achievement/skills/skill335/main.php"
+    },
+    {
+      "module": "skill336",
+      "name": "acquire336",
+      "path": "include/modules/extra/achievement/skills/skill336/main.php"
+    },
+    {
+      "module": "skill336",
+      "name": "lost336",
+      "path": "include/modules/extra/achievement/skills/skill336/main.php"
+    },
+    {
+      "module": "skill337",
+      "name": "acquire337",
+      "path": "include/modules/extra/achievement/skills/skill337/main.php"
+    },
+    {
+      "module": "skill337",
+      "name": "lost337",
+      "path": "include/modules/extra/achievement/skills/skill337/main.php"
+    },
+    {
+      "module": "skill338",
+      "name": "acquire338",
+      "path": "include/modules/extra/achievement/skills/skill338/main.php"
+    },
+    {
+      "module": "skill338",
+      "name": "lost338",
+      "path": "include/modules/extra/achievement/skills/skill338/main.php"
+    },
+    {
+      "module": "skill339",
+      "name": "acquire339",
+      "path": "include/modules/extra/achievement/skills/skill339/main.php"
+    },
+    {
+      "module": "skill339",
+      "name": "lost339",
+      "path": "include/modules/extra/achievement/skills/skill339/main.php"
+    },
+    {
+      "module": "skill340",
+      "name": "acquire340",
+      "path": "include/modules/extra/achievement/skills/skill340/main.php"
+    },
+    {
+      "module": "skill340",
+      "name": "lost340",
+      "path": "include/modules/extra/achievement/skills/skill340/main.php"
+    },
+    {
+      "module": "skill341",
+      "name": "acquire341",
+      "path": "include/modules/extra/achievement/skills/skill341/main.php"
+    },
+    {
+      "module": "skill341",
+      "name": "lost341",
+      "path": "include/modules/extra/achievement/skills/skill341/main.php"
+    },
+    {
+      "module": "skill342",
+      "name": "acquire342",
+      "path": "include/modules/extra/achievement/skills/skill342/main.php"
+    },
+    {
+      "module": "skill342",
+      "name": "lost342",
+      "path": "include/modules/extra/achievement/skills/skill342/main.php"
+    },
+    {
+      "module": "skill343",
+      "name": "acquire343",
+      "path": "include/modules/extra/achievement/skills/skill343/main.php"
+    },
+    {
+      "module": "skill343",
+      "name": "lost343",
+      "path": "include/modules/extra/achievement/skills/skill343/main.php"
+    },
+    {
+      "module": "skill344",
+      "name": "acquire344",
+      "path": "include/modules/extra/achievement/skills/skill344/main.php"
+    },
+    {
+      "module": "skill344",
+      "name": "lost344",
+      "path": "include/modules/extra/achievement/skills/skill344/main.php"
+    },
+    {
+      "module": "skill345",
+      "name": "acquire345",
+      "path": "include/modules/extra/achievement/skills/skill345/main.php"
+    },
+    {
+      "module": "skill345",
+      "name": "lost345",
+      "path": "include/modules/extra/achievement/skills/skill345/main.php"
+    },
+    {
+      "module": "skill346",
+      "name": "acquire346",
+      "path": "include/modules/extra/achievement/skills/skill346/main.php"
+    },
+    {
+      "module": "skill346",
+      "name": "lost346",
+      "path": "include/modules/extra/achievement/skills/skill346/main.php"
+    },
+    {
+      "module": "skill347",
+      "name": "acquire347",
+      "path": "include/modules/extra/achievement/skills/skill347/main.php"
+    },
+    {
+      "module": "skill347",
+      "name": "lost347",
+      "path": "include/modules/extra/achievement/skills/skill347/main.php"
+    },
+    {
+      "module": "skill348",
+      "name": "acquire348",
+      "path": "include/modules/extra/achievement/skills/skill348/main.php"
+    },
+    {
+      "module": "skill348",
+      "name": "lost348",
+      "path": "include/modules/extra/achievement/skills/skill348/main.php"
+    },
+    {
+      "module": "skill349",
+      "name": "acquire349",
+      "path": "include/modules/extra/achievement/skills/skill349/main.php"
+    },
+    {
+      "module": "skill349",
+      "name": "lost349",
+      "path": "include/modules/extra/achievement/skills/skill349/main.php"
+    },
+    {
+      "module": "skill350",
+      "name": "acquire350",
+      "path": "include/modules/extra/achievement/skills/skill350/main.php"
+    },
+    {
+      "module": "skill350",
+      "name": "lost350",
+      "path": "include/modules/extra/achievement/skills/skill350/main.php"
+    },
+    {
+      "module": "skill353",
+      "name": "acquire353",
+      "path": "include/modules/extra/achievement/skills/skill353/main.php"
+    },
+    {
+      "module": "skill353",
+      "name": "lost353",
+      "path": "include/modules/extra/achievement/skills/skill353/main.php"
+    },
+    {
+      "module": "skill354",
+      "name": "acquire354",
+      "path": "include/modules/extra/achievement/skills/skill354/main.php"
+    },
+    {
+      "module": "skill354",
+      "name": "lost354",
+      "path": "include/modules/extra/achievement/skills/skill354/main.php"
+    },
+    {
+      "module": "skill355",
+      "name": "acquire355",
+      "path": "include/modules/extra/achievement/skills/skill355/main.php"
+    },
+    {
+      "module": "skill355",
+      "name": "lost355",
+      "path": "include/modules/extra/achievement/skills/skill355/main.php"
+    },
+    {
+      "module": "skill356",
+      "name": "acquire356",
+      "path": "include/modules/extra/achievement/skills/skill356/main.php"
+    },
+    {
+      "module": "skill356",
+      "name": "lost356",
+      "path": "include/modules/extra/achievement/skills/skill356/main.php"
+    },
+    {
+      "module": "skill357",
+      "name": "acquire357",
+      "path": "include/modules/extra/achievement/skills/skill357/main.php"
+    },
+    {
+      "module": "skill357",
+      "name": "lost357",
+      "path": "include/modules/extra/achievement/skills/skill357/main.php"
+    },
+    {
+      "module": "skill358",
+      "name": "acquire358",
+      "path": "include/modules/extra/achievement/skills/skill358/main.php"
+    },
+    {
+      "module": "skill358",
+      "name": "lost358",
+      "path": "include/modules/extra/achievement/skills/skill358/main.php"
+    },
+    {
+      "module": "skill359",
+      "name": "acquire359",
+      "path": "include/modules/extra/achievement/skills/skill359/main.php"
+    },
+    {
+      "module": "skill359",
+      "name": "lost359",
+      "path": "include/modules/extra/achievement/skills/skill359/main.php"
+    },
+    {
+      "module": "skill360",
+      "name": "acquire360",
+      "path": "include/modules/extra/activities/lunany2018/skill360/main.php"
+    },
+    {
+      "module": "skill360",
+      "name": "lost360",
+      "path": "include/modules/extra/activities/lunany2018/skill360/main.php"
+    },
+    {
+      "module": "skill364",
+      "name": "acquire364",
+      "path": "include/modules/extra/achievement/skills/skill364/main.php"
+    },
+    {
+      "module": "skill364",
+      "name": "lost364",
+      "path": "include/modules/extra/achievement/skills/skill364/main.php"
+    },
+    {
+      "module": "skill367",
+      "name": "acquire367",
+      "path": "include/modules/extra/achievement/skills/skill367/main.php"
+    },
+    {
+      "module": "skill367",
+      "name": "lost367",
+      "path": "include/modules/extra/achievement/skills/skill367/main.php"
+    },
+    {
+      "module": "skill368",
+      "name": "acquire368",
+      "path": "include/modules/extra/achievement/skills/skill368/main.php"
+    },
+    {
+      "module": "skill368",
+      "name": "lost368",
+      "path": "include/modules/extra/achievement/skills/skill368/main.php"
+    },
+    {
+      "module": "skill369",
+      "name": "acquire369",
+      "path": "include/modules/extra/achievement/skills/skill369/main.php"
+    },
+    {
+      "module": "skill369",
+      "name": "lost369",
+      "path": "include/modules/extra/achievement/skills/skill369/main.php"
+    },
+    {
+      "module": "skill370",
+      "name": "acquire370",
+      "path": "include/modules/extra/achievement/skills/skill370/main.php"
+    },
+    {
+      "module": "skill370",
+      "name": "lost370",
+      "path": "include/modules/extra/achievement/skills/skill370/main.php"
+    },
+    {
+      "module": "skill530",
+      "name": "acquire530",
+      "path": "include/modules/extra/card/skills/skill530/main.php"
+    },
+    {
+      "module": "skill530",
+      "name": "lost530",
+      "path": "include/modules/extra/card/skills/skill530/main.php"
+    },
+    {
+      "module": "skill372",
+      "name": "acquire372",
+      "path": "include/modules/extra/achievement/skills/skill372/main.php"
+    },
+    {
+      "module": "skill372",
+      "name": "lost372",
+      "path": "include/modules/extra/achievement/skills/skill372/main.php"
+    },
+    {
+      "module": "skill373",
+      "name": "acquire373",
+      "path": "include/modules/extra/achievement/skills/skill373/main.php"
+    },
+    {
+      "module": "skill373",
+      "name": "lost373",
+      "path": "include/modules/extra/achievement/skills/skill373/main.php"
+    },
+    {
+      "module": "skill374",
+      "name": "acquire374",
+      "path": "include/modules/extra/achievement/skills/skill374/main.php"
+    },
+    {
+      "module": "skill374",
+      "name": "lost374",
+      "path": "include/modules/extra/achievement/skills/skill374/main.php"
+    },
+    {
+      "module": "skill377",
+      "name": "acquire377",
+      "path": "include/modules/extra/achievement/skills/skill377/main.php"
+    },
+    {
+      "module": "skill377",
+      "name": "lost377",
+      "path": "include/modules/extra/achievement/skills/skill377/main.php"
+    },
+    {
+      "module": "skill378",
+      "name": "acquire378",
+      "path": "include/modules/extra/achievement/skills/skill378/main.php"
+    },
+    {
+      "module": "skill378",
+      "name": "lost378",
+      "path": "include/modules/extra/achievement/skills/skill378/main.php"
+    },
+    {
+      "module": "skill380",
+      "name": "acquire380",
+      "path": "include/modules/extra/achievement/skills/skill380/main.php"
+    },
+    {
+      "module": "skill380",
+      "name": "lost380",
+      "path": "include/modules/extra/achievement/skills/skill380/main.php"
+    },
+    {
+      "module": "skill375",
+      "name": "acquire375",
+      "path": "include/modules/extra/achievement/skills/skill375/main.php"
+    },
+    {
+      "module": "skill375",
+      "name": "lost375",
+      "path": "include/modules/extra/achievement/skills/skill375/main.php"
+    },
+    {
+      "module": "skill382",
+      "name": "acquire382",
+      "path": "include/modules/extra/achievement/skills/skill382/main.php"
+    },
+    {
+      "module": "skill382",
+      "name": "lost382",
+      "path": "include/modules/extra/achievement/skills/skill382/main.php"
+    },
+    {
+      "module": "skill351",
+      "name": "acquire351",
+      "path": "include/modules/extra/achievement/skills/skill351/main.php"
+    },
+    {
+      "module": "skill351",
+      "name": "lost351",
+      "path": "include/modules/extra/achievement/skills/skill351/main.php"
+    },
+    {
+      "module": "skill352",
+      "name": "acquire352",
+      "path": "include/modules/extra/achievement/skills/skill352/main.php"
+    },
+    {
+      "module": "skill352",
+      "name": "lost352",
+      "path": "include/modules/extra/achievement/skills/skill352/main.php"
+    },
+    {
+      "module": "skill504",
+      "name": "acquire504",
+      "path": "include/modules/extra/card/skills/skill504/main.php"
+    },
+    {
+      "module": "skill504",
+      "name": "lost504",
+      "path": "include/modules/extra/card/skills/skill504/main.php"
+    },
+    {
+      "module": "skill740",
+      "name": "acquire740",
+      "path": "include/modules/extra/card/skills/skill740/main.php"
+    },
+    {
+      "module": "skill740",
+      "name": "lost740",
+      "path": "include/modules/extra/card/skills/skill740/main.php"
+    },
+    {
+      "module": "skill182",
+      "name": "acquire182",
+      "path": "include/modules/extra/club/skills/skill182/main.php"
+    },
+    {
+      "module": "skill182",
+      "name": "lost182",
+      "path": "include/modules/extra/club/skills/skill182/main.php"
+    },
+    {
+      "module": "skill458",
+      "name": "acquire458",
+      "path": "include/modules/extra/card/skills/skill458/main.php"
+    },
+    {
+      "module": "skill458",
+      "name": "lost458",
+      "path": "include/modules/extra/card/skills/skill458/main.php"
+    },
+    {
+      "module": "skill498",
+      "name": "acquire498",
+      "path": "include/modules/extra/card/skills/skill498/main.php"
+    },
+    {
+      "module": "skill498",
+      "name": "lost498",
+      "path": "include/modules/extra/card/skills/skill498/main.php"
+    },
+    {
+      "module": "skill181",
+      "name": "acquire181",
+      "path": "include/modules/extra/club/skills/skill181/main.php"
+    },
+    {
+      "module": "skill181",
+      "name": "lost181",
+      "path": "include/modules/extra/club/skills/skill181/main.php"
+    },
+    {
+      "module": "skill376",
+      "name": "acquire376",
+      "path": "include/modules/extra/achievement/skills/skill376/main.php"
+    },
+    {
+      "module": "skill376",
+      "name": "lost376",
+      "path": "include/modules/extra/achievement/skills/skill376/main.php"
+    },
+    {
+      "module": "skill381",
+      "name": "acquire381",
+      "path": "include/modules/extra/achievement/skills/skill381/main.php"
+    },
+    {
+      "module": "skill381",
+      "name": "lost381",
+      "path": "include/modules/extra/achievement/skills/skill381/main.php"
+    },
+    {
+      "module": "skill88",
+      "name": "acquire88",
+      "path": "include/modules/extra/club/skills/skill88/main.php"
+    },
+    {
+      "module": "skill88",
+      "name": "lost88",
+      "path": "include/modules/extra/club/skills/skill88/main.php"
+    },
+    {
+      "module": "skill91",
+      "name": "acquire91",
+      "path": "include/modules/extra/club/skills/skill91/main.php"
+    },
+    {
+      "module": "skill91",
+      "name": "lost91",
+      "path": "include/modules/extra/club/skills/skill91/main.php"
+    },
+    {
+      "module": "skill92",
+      "name": "acquire92",
+      "path": "include/modules/extra/club/skills/skill92/main.php"
+    },
+    {
+      "module": "skill92",
+      "name": "lost92",
+      "path": "include/modules/extra/club/skills/skill92/main.php"
+    },
+    {
+      "module": "skill739",
+      "name": "acquire739",
+      "path": "include/modules/extra/card/skills/skill739/main.php"
+    },
+    {
+      "module": "skill739",
+      "name": "lost739",
+      "path": "include/modules/extra/card/skills/skill739/main.php"
+    },
+    {
+      "module": "skill747",
+      "name": "acquire747",
+      "path": "include/modules/extra/card/skills/skill747/main.php"
+    },
+    {
+      "module": "skill747",
+      "name": "lost747",
+      "path": "include/modules/extra/card/skills/skill747/main.php"
+    },
+    {
+      "module": "skill77",
+      "name": "acquire77",
+      "path": "include/modules/extra/club/skills/skill77/main.php"
+    },
+    {
+      "module": "skill77",
+      "name": "lost77",
+      "path": "include/modules/extra/club/skills/skill77/main.php"
+    },
+    {
+      "module": "skill379",
+      "name": "acquire379",
+      "path": "include/modules/extra/achievement/skills/skill379/main.php"
+    },
+    {
+      "module": "skill379",
+      "name": "lost379",
+      "path": "include/modules/extra/achievement/skills/skill379/main.php"
+    },
+    {
+      "module": "skill244",
+      "name": "acquire244",
+      "path": "include/modules/extra/club/skills/skill244/main.php"
+    },
+    {
+      "module": "skill244",
+      "name": "lost244",
+      "path": "include/modules/extra/club/skills/skill244/main.php"
+    },
+    {
+      "module": "skill508",
+      "name": "acquire508",
+      "path": "include/modules/extra/card/skills/skill508/main.php"
+    },
+    {
+      "module": "skill508",
+      "name": "lost508",
+      "path": "include/modules/extra/card/skills/skill508/main.php"
+    },
+    {
+      "module": "skill233",
+      "name": "acquire233",
+      "path": "include/modules/extra/club/skills/skill233/main.php"
+    },
+    {
+      "module": "skill233",
+      "name": "lost233",
+      "path": "include/modules/extra/club/skills/skill233/main.php"
+    },
+    {
+      "module": "skill371",
+      "name": "acquire371",
+      "path": "include/modules/extra/achievement/skills/skill371/main.php"
+    },
+    {
+      "module": "skill371",
+      "name": "lost371",
+      "path": "include/modules/extra/achievement/skills/skill371/main.php"
+    },
+    {
+      "module": "skill363",
+      "name": "acquire363",
+      "path": "include/modules/extra/achievement/skills/skill363/main.php"
+    },
+    {
+      "module": "skill363",
+      "name": "lost363",
+      "path": "include/modules/extra/achievement/skills/skill363/main.php"
+    },
+    {
+      "module": "skill361",
+      "name": "acquire361",
+      "path": "include/modules/extra/activities/lunany2018/skill361/main.php"
+    },
+    {
+      "module": "skill361",
+      "name": "lost361",
+      "path": "include/modules/extra/activities/lunany2018/skill361/main.php"
+    },
+    {
+      "module": "skill362",
+      "name": "acquire362",
+      "path": "include/modules/extra/activities/lunany2018/skill362/main.php"
+    },
+    {
+      "module": "skill362",
+      "name": "lost362",
+      "path": "include/modules/extra/activities/lunany2018/skill362/main.php"
+    },
+    {
+      "module": "skill365",
+      "name": "acquire365",
+      "path": "include/modules/extra/activities/aprilfool2018/skill365/main.php"
+    },
+    {
+      "module": "skill365",
+      "name": "lost365",
+      "path": "include/modules/extra/activities/aprilfool2018/skill365/main.php"
+    },
+    {
+      "module": "skill601",
+      "name": "acquire601",
+      "path": "include/modules/extra/club/skills/skill601/main.php"
+    },
+    {
+      "module": "skill601",
+      "name": "lost601",
+      "path": "include/modules/extra/club/skills/skill601/main.php"
+    },
+    {
+      "module": "skill602",
+      "name": "acquire602",
+      "path": "include/modules/extra/club/skills/skill602/main.php"
+    },
+    {
+      "module": "skill602",
+      "name": "lost602",
+      "path": "include/modules/extra/club/skills/skill602/main.php"
+    },
+    {
+      "module": "skill603",
+      "name": "acquire603",
+      "path": "include/modules/extra/club/skills/skill603/main.php"
+    },
+    {
+      "module": "skill603",
+      "name": "lost603",
+      "path": "include/modules/extra/club/skills/skill603/main.php"
+    },
+    {
+      "module": "skill738",
+      "name": "acquire738",
+      "path": "include/modules/extra/card/skills/skill738/main.php"
+    },
+    {
+      "module": "skill738",
+      "name": "lost738",
+      "path": "include/modules/extra/card/skills/skill738/main.php"
+    },
+    {
+      "module": "skill87",
+      "name": "acquire87",
+      "path": "include/modules/extra/club/skills/skill87/main.php"
+    },
+    {
+      "module": "skill87",
+      "name": "lost87",
+      "path": "include/modules/extra/club/skills/skill87/main.php"
+    },
+    {
+      "module": "skill94",
+      "name": "acquire94",
+      "path": "include/modules/extra/club/skills/skill94/main.php"
+    },
+    {
+      "module": "skill94",
+      "name": "lost94",
+      "path": "include/modules/extra/club/skills/skill94/main.php"
+    },
+    {
+      "module": "skill68",
+      "name": "acquire68",
+      "path": "include/modules/extra/club/skills/skill68/main.php"
+    },
+    {
+      "module": "skill68",
+      "name": "lost68",
+      "path": "include/modules/extra/club/skills/skill68/main.php"
+    },
+    {
+      "module": "skill497",
+      "name": "acquire497",
+      "path": "include/modules/extra/card/skills/skill497/main.php"
+    },
+    {
+      "module": "skill497",
+      "name": "lost497",
+      "path": "include/modules/extra/card/skills/skill497/main.php"
+    },
+    {
+      "module": "skill503",
+      "name": "acquire503",
+      "path": "include/modules/extra/card/skills/skill503/main.php"
+    },
+    {
+      "module": "skill503",
+      "name": "lost503",
+      "path": "include/modules/extra/card/skills/skill503/main.php"
+    },
+    {
+      "module": "skill559",
+      "name": "acquire559",
+      "path": "include/modules/extra/card/skills/skill559/main.php"
+    },
+    {
+      "module": "skill559",
+      "name": "lost559",
+      "path": "include/modules/extra/card/skills/skill559/main.php"
+    },
+    {
+      "module": "skill544",
+      "name": "acquire544",
+      "path": "include/modules/extra/card/skills/skill544/main.php"
+    },
+    {
+      "module": "skill544",
+      "name": "lost544",
+      "path": "include/modules/extra/card/skills/skill544/main.php"
+    },
+    {
+      "module": "skill366",
+      "name": "acquire366",
+      "path": "include/modules/extra/activities/aprilfool2018/skill366/main.php"
+    },
+    {
+      "module": "skill366",
+      "name": "lost366",
+      "path": "include/modules/extra/activities/aprilfool2018/skill366/main.php"
+    },
+    {
+      "module": "skill721",
+      "name": "acquire721",
+      "path": "include/modules/extra/card/skills/skill721/main.php"
+    },
+    {
+      "module": "skill721",
+      "name": "lost721",
+      "path": "include/modules/extra/card/skills/skill721/main.php"
+    },
+    {
+      "module": "skill228",
+      "name": "acquire228",
+      "path": "include/modules/extra/club/skills/skill228/main.php"
+    },
+    {
+      "module": "skill228",
+      "name": "lost228",
+      "path": "include/modules/extra/club/skills/skill228/main.php"
+    },
+    {
+      "module": "skill236",
+      "name": "acquire236",
+      "path": "include/modules/extra/club/skills/skill236/main.php"
+    },
+    {
+      "module": "skill236",
+      "name": "lost236",
+      "path": "include/modules/extra/club/skills/skill236/main.php"
+    },
+    {
+      "module": "skill237",
+      "name": "acquire237",
+      "path": "include/modules/extra/club/skills/skill237/main.php"
+    },
+    {
+      "module": "skill237",
+      "name": "lost237",
+      "path": "include/modules/extra/club/skills/skill237/main.php"
+    },
+    {
+      "module": "skill35",
+      "name": "acquire35",
+      "path": "include/modules/extra/club/skills/skill35/main.php"
+    },
+    {
+      "module": "skill35",
+      "name": "lost35",
+      "path": "include/modules/extra/club/skills/skill35/main.php"
+    },
+    {
+      "module": "skill467",
+      "name": "acquire467",
+      "path": "include/modules/extra/card/skills/skill467/main.php"
+    },
+    {
+      "module": "skill467",
+      "name": "lost467",
+      "path": "include/modules/extra/card/skills/skill467/main.php"
+    },
+    {
+      "module": "skill468",
+      "name": "acquire468",
+      "path": "include/modules/extra/card/skills/skill468/main.php"
+    },
+    {
+      "module": "skill468",
+      "name": "lost468",
+      "path": "include/modules/extra/card/skills/skill468/main.php"
+    },
+    {
+      "module": "skill481",
+      "name": "acquire481",
+      "path": "include/modules/extra/card/skills/skill481/main.php"
+    },
+    {
+      "module": "skill481",
+      "name": "lost481",
+      "path": "include/modules/extra/card/skills/skill481/main.php"
+    },
+    {
+      "module": "skill482",
+      "name": "acquire482",
+      "path": "include/modules/extra/card/skills/skill482/main.php"
+    },
+    {
+      "module": "skill482",
+      "name": "lost482",
+      "path": "include/modules/extra/card/skills/skill482/main.php"
+    },
+    {
+      "module": "skill596",
+      "name": "acquire596",
+      "path": "include/modules/extra/card/skills/skill596/main.php"
+    },
+    {
+      "module": "skill596",
+      "name": "lost596",
+      "path": "include/modules/extra/card/skills/skill596/main.php"
+    },
+    {
+      "module": "skill595",
+      "name": "acquire595",
+      "path": "include/modules/extra/card/skills/skill595/main.php"
+    },
+    {
+      "module": "skill595",
+      "name": "lost595",
+      "path": "include/modules/extra/card/skills/skill595/main.php"
+    },
+    {
+      "module": "skill500",
+      "name": "acquire500",
+      "path": "include/modules/extra/card/skills/skill500/main.php"
+    },
+    {
+      "module": "skill500",
+      "name": "lost500",
+      "path": "include/modules/extra/card/skills/skill500/main.php"
+    },
+    {
+      "module": "skill500",
+      "name": "lost603",
+      "path": "include/modules/extra/card/skills/skill500/main.php"
+    },
+    {
+      "module": "skill701",
+      "name": "acquire701",
+      "path": "include/modules/extra/card/skills/skill701/main.php"
+    },
+    {
+      "module": "skill701",
+      "name": "lost701",
+      "path": "include/modules/extra/card/skills/skill701/main.php"
+    },
+    {
+      "module": "skill567",
+      "name": "acquire567",
+      "path": "include/modules/extra/card/skills/skill567/main.php"
+    },
+    {
+      "module": "skill567",
+      "name": "lost567",
+      "path": "include/modules/extra/card/skills/skill567/main.php"
+    },
+    {
+      "module": "skill80",
+      "name": "acquire80",
+      "path": "include/modules/extra/club/skills/skill80/main.php"
+    },
+    {
+      "module": "skill80",
+      "name": "lost80",
+      "path": "include/modules/extra/club/skills/skill80/main.php"
+    },
+    {
+      "module": "skill551",
+      "name": "acquire551",
+      "path": "include/modules/extra/card/skills/skill551/main.php"
+    },
+    {
+      "module": "skill551",
+      "name": "lost551",
+      "path": "include/modules/extra/card/skills/skill551/main.php"
+    },
+    {
+      "module": "skill554",
+      "name": "acquire554",
+      "path": "include/modules/extra/card/skills/skill554/main.php"
+    },
+    {
+      "module": "skill554",
+      "name": "lost554",
+      "path": "include/modules/extra/card/skills/skill554/main.php"
+    },
+    {
+      "module": "skill1006",
+      "name": "acquire1006",
+      "path": "include/modules/extra/club/skills/skill1006/main.php"
+    },
+    {
+      "module": "skill1006",
+      "name": "lost1006",
+      "path": "include/modules/extra/club/skills/skill1006/main.php"
+    },
+    {
+      "module": "skill542",
+      "name": "acquire542",
+      "path": "include/modules/extra/card/skills/skill542/main.php"
+    },
+    {
+      "module": "skill542",
+      "name": "lost542",
+      "path": "include/modules/extra/card/skills/skill542/main.php"
+    },
+    {
+      "module": "skill905",
+      "name": "acquire905",
+      "path": "include/modules/extra/instance/instance3_ascension/skill905/main.php"
+    },
+    {
+      "module": "skill905",
+      "name": "lost905",
+      "path": "include/modules/extra/instance/instance3_ascension/skill905/main.php"
+    },
+    {
+      "module": "skill605",
+      "name": "acquire605",
+      "path": "include/modules/extra/club/skills/skill605/main.php"
+    },
+    {
+      "module": "skill605",
+      "name": "lost605",
+      "path": "include/modules/extra/club/skills/skill605/main.php"
+    },
+    {
+      "module": "skill563",
+      "name": "acquire563",
+      "path": "include/modules/extra/card/skills/skill563/main.php"
+    },
+    {
+      "module": "skill563",
+      "name": "lost563",
+      "path": "include/modules/extra/card/skills/skill563/main.php"
+    },
+    {
+      "module": "skill36",
+      "name": "acquire36",
+      "path": "include/modules/extra/club/skills/skill36/main.php"
+    },
+    {
+      "module": "skill36",
+      "name": "lost36",
+      "path": "include/modules/extra/club/skills/skill36/main.php"
+    },
+    {
+      "module": "skill38",
+      "name": "acquire38",
+      "path": "include/modules/extra/club/skills/skill38/main.php"
+    },
+    {
+      "module": "skill38",
+      "name": "lost38",
+      "path": "include/modules/extra/club/skills/skill38/main.php"
+    },
+    {
+      "module": "skill34",
+      "name": "acquire34",
+      "path": "include/modules/extra/club/skills/skill34/main.php"
+    },
+    {
+      "module": "skill34",
+      "name": "lost34",
+      "path": "include/modules/extra/club/skills/skill34/main.php"
+    },
+    {
+      "module": "skill538",
+      "name": "acquire538",
+      "path": "include/modules/extra/card/skills/skill538/main.php"
+    },
+    {
+      "module": "skill538",
+      "name": "lost538",
+      "path": "include/modules/extra/card/skills/skill538/main.php"
+    },
+    {
+      "module": "skill272",
+      "name": "acquire272",
+      "path": "include/modules/extra/club/skills/skill272/main.php"
+    },
+    {
+      "module": "skill272",
+      "name": "lost272",
+      "path": "include/modules/extra/club/skills/skill272/main.php"
+    },
+    {
+      "module": "skill707",
+      "name": "acquire707",
+      "path": "include/modules/extra/card/skills/skill707/main.php"
+    },
+    {
+      "module": "skill707",
+      "name": "lost707",
+      "path": "include/modules/extra/card/skills/skill707/main.php"
+    },
+    {
+      "module": "skill576",
+      "name": "acquire576",
+      "path": "include/modules/extra/card/skills/skill576/main.php"
+    },
+    {
+      "module": "skill576",
+      "name": "lost576",
+      "path": "include/modules/extra/card/skills/skill576/main.php"
+    },
+    {
+      "module": "skill575",
+      "name": "acquire575",
+      "path": "include/modules/extra/card/skills/skill575/main.php"
+    },
+    {
+      "module": "skill575",
+      "name": "lost575",
+      "path": "include/modules/extra/card/skills/skill575/main.php"
+    },
+    {
+      "module": "skill597",
+      "name": "acquire597",
+      "path": "include/modules/extra/card/skills/skill597/main.php"
+    },
+    {
+      "module": "skill597",
+      "name": "lost597",
+      "path": "include/modules/extra/card/skills/skill597/main.php"
+    },
+    {
+      "module": "skill713",
+      "name": "acquire713",
+      "path": "include/modules/extra/card/skills/skill713/main.php"
+    },
+    {
+      "module": "skill713",
+      "name": "lost713",
+      "path": "include/modules/extra/card/skills/skill713/main.php"
+    },
+    {
+      "module": "skill712",
+      "name": "acquire712",
+      "path": "include/modules/extra/card/skills/skill712/main.php"
+    },
+    {
+      "module": "skill712",
+      "name": "lost712",
+      "path": "include/modules/extra/card/skills/skill712/main.php"
+    },
+    {
+      "module": "skill587",
+      "name": "acquire587",
+      "path": "include/modules/extra/card/skills/skill587/main.php"
+    },
+    {
+      "module": "skill587",
+      "name": "lost587",
+      "path": "include/modules/extra/card/skills/skill587/main.php"
+    },
+    {
+      "module": "skill543",
+      "name": "acquire543",
+      "path": "include/modules/extra/card/skills/skill543/main.php"
+    },
+    {
+      "module": "skill543",
+      "name": "lost543",
+      "path": "include/modules/extra/card/skills/skill543/main.php"
+    },
+    {
+      "module": "skill733",
+      "name": "acquire733",
+      "path": "include/modules/extra/card/skills/skill733/main.php"
+    },
+    {
+      "module": "skill733",
+      "name": "lost733",
+      "path": "include/modules/extra/card/skills/skill733/main.php"
+    },
+    {
+      "module": "skill183",
+      "name": "acquire183",
+      "path": "include/modules/extra/club/skills/skill183/main.php"
+    },
+    {
+      "module": "skill183",
+      "name": "lost183",
+      "path": "include/modules/extra/club/skills/skill183/main.php"
+    },
+    {
+      "module": "skill566",
+      "name": "acquire566",
+      "path": "include/modules/extra/card/skills/skill566/main.php"
+    },
+    {
+      "module": "skill566",
+      "name": "lost566",
+      "path": "include/modules/extra/card/skills/skill566/main.php"
+    },
+    {
+      "module": "skill604",
+      "name": "acquire604",
+      "path": "include/modules/extra/club/skills/skill604/main.php"
+    },
+    {
+      "module": "skill604",
+      "name": "lost604",
+      "path": "include/modules/extra/club/skills/skill604/main.php"
+    },
+    {
+      "module": "skill903",
+      "name": "acquire903",
+      "path": "include/modules/extra/instance/instance3_ascension/skill903/main.php"
+    },
+    {
+      "module": "skill903",
+      "name": "lost903",
+      "path": "include/modules/extra/instance/instance3_ascension/skill903/main.php"
+    },
+    {
+      "module": "skill730",
+      "name": "acquire730",
+      "path": "include/modules/extra/card/skills/skill730/main.php"
+    },
+    {
+      "module": "skill730",
+      "name": "lost730",
+      "path": "include/modules/extra/card/skills/skill730/main.php"
+    },
+    {
+      "module": "skill746",
+      "name": "acquire746",
+      "path": "include/modules/extra/card/skills/skill746/main.php"
+    },
+    {
+      "module": "skill746",
+      "name": "lost746",
+      "path": "include/modules/extra/card/skills/skill746/main.php"
+    },
+    {
+      "module": "skill505",
+      "name": "acquire505",
+      "path": "include/modules/extra/card/skills/skill505/main.php"
+    },
+    {
+      "module": "skill505",
+      "name": "lost505",
+      "path": "include/modules/extra/card/skills/skill505/main.php"
+    },
+    {
+      "module": "skill960",
+      "name": "acquire960",
+      "path": "include/modules/extra/instance/instance10_rogue/skill960/main.php"
+    },
+    {
+      "module": "skill960",
+      "name": "lost960",
+      "path": "include/modules/extra/instance/instance10_rogue/skill960/main.php"
+    },
+    {
+      "module": "skill964",
+      "name": "acquire964",
+      "path": "include/modules/extra/instance/instance10_rogue/skill964/main.php"
+    },
+    {
+      "module": "skill964",
+      "name": "lost964",
+      "path": "include/modules/extra/instance/instance10_rogue/skill964/main.php"
+    },
+    {
+      "module": "skill106",
+      "name": "acquire106",
+      "path": "include/modules/extra/club/skills/skill106/main.php"
+    },
+    {
+      "module": "skill106",
+      "name": "lost106",
+      "path": "include/modules/extra/club/skills/skill106/main.php"
+    },
+    {
+      "module": "skill709",
+      "name": "acquire709",
+      "path": "include/modules/extra/card/skills/skill709/main.php"
+    },
+    {
+      "module": "skill709",
+      "name": "lost709",
+      "path": "include/modules/extra/card/skills/skill709/main.php"
+    },
+    {
+      "module": "skill722",
+      "name": "acquire722",
+      "path": "include/modules/extra/card/skills/skill722/main.php"
+    },
+    {
+      "module": "skill722",
+      "name": "lost722",
+      "path": "include/modules/extra/card/skills/skill722/main.php"
+    },
+    {
+      "module": "skill737",
+      "name": "acquire737",
+      "path": "include/modules/extra/card/skills/skill737/main.php"
+    },
+    {
+      "module": "skill737",
+      "name": "lost737",
+      "path": "include/modules/extra/card/skills/skill737/main.php"
+    },
+    {
+      "module": "skill714",
+      "name": "acquire714",
+      "path": "include/modules/extra/card/skills/skill714/main.php"
+    },
+    {
+      "module": "skill714",
+      "name": "lost714",
+      "path": "include/modules/extra/card/skills/skill714/main.php"
+    },
+    {
+      "module": "skill26",
+      "name": "acquire26",
+      "path": "include/modules/extra/club/skills/skill26/main.php"
+    },
+    {
+      "module": "skill26",
+      "name": "lost26",
+      "path": "include/modules/extra/club/skills/skill26/main.php"
+    },
+    {
+      "module": "skill265",
+      "name": "acquire265",
+      "path": "include/modules/extra/club/skills/skill265/main.php"
+    },
+    {
+      "module": "skill265",
+      "name": "lost265",
+      "path": "include/modules/extra/club/skills/skill265/main.php"
+    },
+    {
+      "module": "skill507",
+      "name": "acquire507",
+      "path": "include/modules/extra/card/skills/skill507/main.php"
+    },
+    {
+      "module": "skill507",
+      "name": "lost507",
+      "path": "include/modules/extra/card/skills/skill507/main.php"
+    },
+    {
+      "module": "skill113",
+      "name": "acquire113",
+      "path": "include/modules/extra/club/skills/skill113/main.php"
+    },
+    {
+      "module": "skill113",
+      "name": "lost113",
+      "path": "include/modules/extra/club/skills/skill113/main.php"
+    },
+    {
+      "module": "skill748",
+      "name": "acquire748",
+      "path": "include/modules/extra/card/skills/skill748/main.php"
+    },
+    {
+      "module": "skill748",
+      "name": "lost748",
+      "path": "include/modules/extra/card/skills/skill748/main.php"
+    },
+    {
+      "module": "skill27",
+      "name": "acquire27",
+      "path": "include/modules/extra/club/skills/skill27/main.php"
+    },
+    {
+      "module": "skill27",
+      "name": "lost27",
+      "path": "include/modules/extra/club/skills/skill27/main.php"
+    },
+    {
+      "module": "skill489",
+      "name": "acquire489",
+      "path": "include/modules/extra/card/skills/skill489/main.php"
+    },
+    {
+      "module": "skill489",
+      "name": "lost489",
+      "path": "include/modules/extra/card/skills/skill489/main.php"
+    },
+    {
+      "module": "skill266",
+      "name": "acquire266",
+      "path": "include/modules/extra/club/skills/skill266/main.php"
+    },
+    {
+      "module": "skill266",
+      "name": "lost266",
+      "path": "include/modules/extra/club/skills/skill266/main.php"
+    },
+    {
+      "module": "skill81",
+      "name": "acquire81",
+      "path": "include/modules/extra/club/skills/skill81/main.php"
+    },
+    {
+      "module": "skill81",
+      "name": "lost81",
+      "path": "include/modules/extra/club/skills/skill81/main.php"
+    },
+    {
+      "module": "skill509",
+      "name": "acquire509",
+      "path": "include/modules/extra/card/skills/skill509/main.php"
+    },
+    {
+      "module": "skill509",
+      "name": "lost509",
+      "path": "include/modules/extra/card/skills/skill509/main.php"
+    },
+    {
+      "module": "skill510",
+      "name": "acquire510",
+      "path": "include/modules/extra/card/skills/skill510/main.php"
+    },
+    {
+      "module": "skill510",
+      "name": "lost510",
+      "path": "include/modules/extra/card/skills/skill510/main.php"
+    },
+    {
+      "module": "skill962",
+      "name": "acquire962",
+      "path": "include/modules/extra/instance/instance10_rogue/skill962/main.php"
+    },
+    {
+      "module": "skill962",
+      "name": "lost962",
+      "path": "include/modules/extra/instance/instance10_rogue/skill962/main.php"
+    }
+  ],
+  "pending": []
+}

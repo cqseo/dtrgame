@@ -1,0 +1,75 @@
+{
+  "compiled": [
+    {
+      "module": "player",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/core/player/main.php"
+    },
+    {
+      "module": "skillbase",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/base/skillbase/main.php"
+    },
+    {
+      "module": "skill569",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/extra/card/skills/skill569/main.php"
+    },
+    {
+      "module": "skill577",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/extra/card/skills/skill577/main.php"
+    },
+    {
+      "module": "skill952",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/extra/instance/instance10_rogue/skill952/main.php"
+    },
+    {
+      "module": "cardbase",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/extra/card/cardbase/main.php"
+    },
+    {
+      "module": "skill584",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/extra/card/skills/skill584/main.php"
+    },
+    {
+      "module": "skill1003",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/extra/club/skills/skill1003/main.php"
+    },
+    {
+      "module": "achievement_base",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/extra/achievement/achievement_base/main.php"
+    },
+    {
+      "module": "instance3",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/extra/instance/instance3_ascension/main.php"
+    },
+    {
+      "module": "instance11",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/extra/instance/instance11_observe/main.php"
+    },
+    {
+      "module": "skill1006",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/extra/club/skills/skill1006/main.php"
+    },
+    {
+      "module": "skill714",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/extra/card/skills/skill714/main.php"
+    },
+    {
+      "module": "instance10",
+      "name": "post_enterbattlefield_events",
+      "path": "include/modules/extra/instance/instance10_rogue/main.php"
+    }
+  ],
+  "pending": []
+}

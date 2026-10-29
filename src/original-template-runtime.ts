@@ -3,6 +3,7 @@ export type TemplateContext = Record<string, unknown>;
 export type TemplateConstants = Readonly<Record<string, string | number | boolean>>;
 export type TemplateReadAsset = (path: string) => string;
 export function phpTruthy(value: unknown): boolean {
+  if (value instanceof Map) return value.size !== 0;
   if (Array.isArray(value)) return value.length !== 0;
   if (value !== null && typeof value === 'object') return Object.keys(value).length !== 0;
   return value !== undefined && value !== null && value !== false && value !== 0 && value !== '' && value !== '0';

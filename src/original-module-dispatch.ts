@@ -25,6 +25,7 @@ export class OriginalModuleDispatcher {
   missing(name:string):string[]{
     return (this.catalog[name.toLowerCase()]??[]).map(h=>h.module.toLowerCase()+'\\'+h.name.toLowerCase()).filter(key=>!this.implementations.has(key));
   }
+  sourceDefined(module:string,name:string):boolean{return !!this.catalog[name.toLowerCase()]?.some(h=>h.module.toLowerCase()===module.toLowerCase());}
   async call(module:string,name:string,...args:unknown[]):Promise<unknown>{return this.invoke(module,name,args,null,0);}
   private async invoke(module:string,name:string,args:unknown[],caller:string|null,depth:number):Promise<unknown>{
     if(depth>500)throw new Error('Original hook recursion limit exceeded');
