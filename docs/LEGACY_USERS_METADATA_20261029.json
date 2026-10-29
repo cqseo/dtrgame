@@ -1,0 +1,469 @@
+{
+  "source": "production installed MySQL users schema; metadata only",
+  "table": "acbra2_users",
+  "columnCount": 39,
+  "columns": [
+    {
+      "name": "uid",
+      "sqlType": "mediumint(8) unsigned",
+      "nullable": false,
+      "default": null,
+      "extra": "auto_increment",
+      "key": "PRI",
+      "ordinal": 1
+    },
+    {
+      "name": "username",
+      "sqlType": "char(15)",
+      "nullable": false,
+      "default": "",
+      "extra": "",
+      "key": "UNI",
+      "ordinal": 2
+    },
+    {
+      "name": "password",
+      "sqlType": "char(32)",
+      "nullable": false,
+      "default": "",
+      "extra": "",
+      "key": "",
+      "ordinal": 3
+    },
+    {
+      "name": "alt_pswd",
+      "sqlType": "tinyint(1) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 4
+    },
+    {
+      "name": "ip",
+      "sqlType": "char(15)",
+      "nullable": false,
+      "default": "",
+      "extra": "",
+      "key": "",
+      "ordinal": 5
+    },
+    {
+      "name": "groupid",
+      "sqlType": "tinyint(3) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 6
+    },
+    {
+      "name": "roomid",
+      "sqlType": "tinyint(3) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 7
+    },
+    {
+      "name": "gender",
+      "sqlType": "char(1)",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 8
+    },
+    {
+      "name": "motto",
+      "sqlType": "char(30)",
+      "nullable": false,
+      "default": "",
+      "extra": "",
+      "key": "",
+      "ordinal": 9
+    },
+    {
+      "name": "killmsg",
+      "sqlType": "char(30)",
+      "nullable": false,
+      "default": "",
+      "extra": "",
+      "key": "",
+      "ordinal": 10
+    },
+    {
+      "name": "lastword",
+      "sqlType": "char(30)",
+      "nullable": false,
+      "default": "",
+      "extra": "",
+      "key": "",
+      "ordinal": 11
+    },
+    {
+      "name": "lastvisit",
+      "sqlType": "int(10) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 12
+    },
+    {
+      "name": "lastwin",
+      "sqlType": "int(10) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 13
+    },
+    {
+      "name": "lastgame",
+      "sqlType": "char(10)",
+      "nullable": false,
+      "default": "",
+      "extra": "",
+      "key": "",
+      "ordinal": 14
+    },
+    {
+      "name": "validgames",
+      "sqlType": "mediumint(8) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 15
+    },
+    {
+      "name": "wingames",
+      "sqlType": "mediumint(8) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 16
+    },
+    {
+      "name": "credits",
+      "sqlType": "int(10)",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "MUL",
+      "ordinal": 17
+    },
+    {
+      "name": "totalcredits",
+      "sqlType": "int(10)",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 18
+    },
+    {
+      "name": "credits2",
+      "sqlType": "mediumint(9)",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 19
+    },
+    {
+      "name": "gold",
+      "sqlType": "int(10) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 20
+    },
+    {
+      "name": "gold2",
+      "sqlType": "int(10) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 21
+    },
+    {
+      "name": "elo_rating",
+      "sqlType": "int(10) unsigned",
+      "nullable": false,
+      "default": "1500",
+      "extra": "",
+      "key": "",
+      "ordinal": 22
+    },
+    {
+      "name": "elo_volatility",
+      "sqlType": "int(10) unsigned",
+      "nullable": false,
+      "default": "400",
+      "extra": "",
+      "key": "",
+      "ordinal": 23
+    },
+    {
+      "name": "elo_playedtimes",
+      "sqlType": "int(10) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 24
+    },
+    {
+      "name": "card",
+      "sqlType": "int(10) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 25
+    },
+    {
+      "name": "cd_s",
+      "sqlType": "int(10) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 26
+    },
+    {
+      "name": "cd_a",
+      "sqlType": "int(10) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 27
+    },
+    {
+      "name": "cd_a1",
+      "sqlType": "int(10) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 28
+    },
+    {
+      "name": "cd_b",
+      "sqlType": "int(10) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 29
+    },
+    {
+      "name": "cardenergylastupd",
+      "sqlType": "int(10) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 30
+    },
+    {
+      "name": "u_templateid",
+      "sqlType": "tinyint(1) unsigned",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 31
+    },
+    {
+      "name": "icon",
+      "sqlType": "varchar(255)",
+      "nullable": false,
+      "default": "0",
+      "extra": "",
+      "key": "",
+      "ordinal": 32
+    },
+    {
+      "name": "card_data",
+      "sqlType": "text",
+      "nullable": false,
+      "default": null,
+      "extra": "",
+      "key": "",
+      "ordinal": 33
+    },
+    {
+      "name": "cardenergy",
+      "sqlType": "text",
+      "nullable": false,
+      "default": null,
+      "extra": "",
+      "key": "",
+      "ordinal": 34
+    },
+    {
+      "name": "cardlist",
+      "sqlType": "text",
+      "nullable": false,
+      "default": null,
+      "extra": "",
+      "key": "",
+      "ordinal": 35
+    },
+    {
+      "name": "elo_history",
+      "sqlType": "text",
+      "nullable": false,
+      "default": null,
+      "extra": "",
+      "key": "",
+      "ordinal": 36
+    },
+    {
+      "name": "u_achievements",
+      "sqlType": "text",
+      "nullable": false,
+      "default": null,
+      "extra": "",
+      "key": "",
+      "ordinal": 37
+    },
+    {
+      "name": "n_achievements",
+      "sqlType": "text",
+      "nullable": false,
+      "default": null,
+      "extra": "",
+      "key": "",
+      "ordinal": 38
+    },
+    {
+      "name": "u_settings",
+      "sqlType": "text",
+      "nullable": false,
+      "default": null,
+      "extra": "",
+      "key": "",
+      "ordinal": 39
+    }
+  ],
+  "collations": [
+    {
+      "COLUMN_NAME": "username",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "password",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "ip",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "gender",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "motto",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "killmsg",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "lastword",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "lastgame",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "icon",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "card_data",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "cardenergy",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "cardlist",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "elo_history",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "u_achievements",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "n_achievements",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    },
+    {
+      "COLUMN_NAME": "u_settings",
+      "COLLATION_NAME": "utf8_general_ci",
+      "CHARACTER_SET_NAME": "utf8"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "PRIMARY",
+      "column": "uid",
+      "nonUnique": "0",
+      "seq": "1"
+    },
+    {
+      "name": "username",
+      "column": "username",
+      "nonUnique": "0",
+      "seq": "1"
+    },
+    {
+      "name": "DFT",
+      "column": "credits",
+      "nonUnique": "1",
+      "seq": "1"
+    },
+    {
+      "name": "DFT",
+      "column": "wingames",
+      "nonUnique": "1",
+      "seq": "2"
+    }
+  ],
+  "dataRowsIncluded": false,
+  "credentialsIncluded": false,
+  "capturedAt": "2026-10-29"
+}
