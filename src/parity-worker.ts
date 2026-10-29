@@ -6,6 +6,15 @@ import { LEGACY_VQ_POOL } from "./generated/legacy-vq-pool";
 import { legacyFatenumCreate, legacyRegisterFatenumCreate, legacyRegisterRandomCreate, legacyRegisterVerificationQuestionGet } from "./original-verification";
 import { legacyRegisterPost, legacyRegisterAjaxResponse, type LegacyRegistrationAccount } from "./original-register";
 import { legacyDecode } from "./original-protocol";
+import {
+  originalTacticAct,originalAttackMultipliers,originalDefenseMultipliers,
+  originalTrapDamage,originalCanCounter,originalCanAvoidKillArea,
+  originalFindManOdds,originalHideOdds
+} from "./original-tactic";
+import {
+  originalCooldownBegin,originalCooldownBeforeAction,
+  originalCooldownPostAct,originalCooldownResponse
+} from "./original-cooldown";
 const entropyGolden = {"source":"installed original PHP implementation","now":1793242800,"gameUrl":"https://dts.example.invalid/","calendar":"29,10,2026,4","fixtures":[{"kind":"fatenum","seed":"","expected":"41898988427"},{"kind":"fatenum","seed":"abc","expected":"9001509837281772"},{"kind":"fatenum","seed":"中文玩家","expected":"691429653296"},{"kind":"fatenum","seed":"123456789","expected":"25979432116240"},{"kind":"fatenum","seed":"0000","expected":"47141486539"},{"kind":"fatenum","seed":"αβγ123","expected":"329624469674"},{"kind":"fatenum","seed":"  ","expected":"2358110251586"},{"kind":"fatenum","seed":"0000000000","expected":"17081947092"},{"kind":"register","seed":"abc","expected":"2250356479699"},{"kind":"random","min":0,"max":5,"seed":"abc","expected":1},{"kind":"random","min":3,"max":7,"seed":"abc","expected":7},{"kind":"random","min":5,"max":5,"seed":"abc","expected":5},{"kind":"random","min":1,"max":2147483647,"seed":"abc","expected":1941101291},{"kind":"register","seed":"12345","expected":"85611867388399"},{"kind":"random","min":0,"max":5,"seed":"12345","expected":1},{"kind":"random","min":3,"max":7,"seed":"12345","expected":7},{"kind":"random","min":5,"max":5,"seed":"12345","expected":5},{"kind":"random","min":1,"max":2147483647,"seed":"12345","expected":284317098},{"kind":"register","seed":"9876543211234567890","expected":"258987252223"},{"kind":"random","min":0,"max":5,"seed":"9876543211234567890","expected":1},{"kind":"random","min":3,"max":7,"seed":"9876543211234567890","expected":6},{"kind":"random","min":5,"max":5,"seed":"9876543211234567890","expected":5},{"kind":"random","min":1,"max":2147483647,"seed":"9876543211234567890","expected":1289214584}]};
 const questionGolden = {"source":"live installed PHP user.func.php and vqpool.php","poolSha256":"da25d7732cd5a6fa6ffb01550fdbdfac3349ee6655142eb31968cc63f9a92899","now":1793242800,"gameUrl":"https://dts.example.invalid/","calendar":"29,10,2026,4","fixtures":[{"seed":"abc","expected":{"question":"如果对方没有发现你，▁▁▁▁以酌情点击","answers":["那么你可","为0时不","复合武器","攻击属性","的“熟练","机未禁地"],"correct_i":0}},{"seed":"12345","expected":{"question":"可以切换到进▁▁▁▁示。","answers":["此两大部","行状况显","戏进行中","后30%","“幻境解","治疗姿态"],"correct_i":1}},{"seed":"9876543211234567890","expected":{"question":"比如，【解牛】技能附加30+对方等级伤害，就是在这个阶▁▁▁▁基础值上。","answers":["后结束本次","段加到终伤","消）生效，","中途离开游","能再任意加"],"correct_i":1}},{"seed":"9","expected":{"question":"如果名字▁▁▁▁正确则无效","answers":["或者头像不","-道具发现","熟练度；使","度，以及对","能通过这个"],"correct_i":0}},{"seed":"hello","expected":{"question":"作为▁▁▁▁文本为主要表现形式的webgame","answers":["：场上","见下方","合成。","一款以","乘到基"],"correct_i":3}},{"seed":"QA-a","expected":{"question":"战斗中，角色每次攻击都可能对敌人某个身体部▁▁▁▁致伤攻击”。","answers":["”和“特","位发出“","行中的画","消音”属","书”或者"],"correct_i":1}},{"seed":"0","expected":{"question":"这里只列出最常▁▁▁▁路线，其他路线或者其他游戏模式的打法也请玩家自行探索。","answers":["再组建或","装备以后","弹”会将","发起方有","见的游戏"],"correct_i":4}},{"seed":"test-registered","expected":{"question":"干扰▁▁▁▁暂时解除禁","answers":["，自己可以","耗1个技能","若干陷阱，","能发现物品","因此请利用","：游戏目标","幻境，用以"],"correct_i":6}}]};
 function context(golden: { calendar: string; now: number; gameUrl: string }) {
@@ -75,8 +84,43 @@ async function runRegistrationSelftest() {
    noDatabaseBinding:true};
 }
 
+/** Source-checked game mechanics running directly on isolated Cloudflare Workers. */
+function runGameplaySelftest() {
+  const errors:string[]=[];
+  function check(condition:boolean,label:string){if(!condition)errors.push(label);}
+  const tac=originalTacticAct({mode:"special",command:"tac3",tactic:2,log:""});
+  check(tac.handled && tac.state.tactic===3 && tac.state.mode==="command","tactic_switch");
+  check(tac.state.log==='应战策略变为<span class="yellow b">重视反击</span>。<br> ',"tactic_original_html");
+  check(JSON.stringify(originalAttackMultipliers([1.1,0.7],3))===JSON.stringify([1.25,1.1,0.7]),"attack_multipliers");
+  check(JSON.stringify(originalDefenseMultipliers([0.9,1.7],2))===JSON.stringify([1.5,0.9,1.7]),"defense_multipliers");
+  check(!originalCanCounter(4,true),"avoid_tactic_no_counter");
+  check(originalCanAvoidKillArea(39,4,false) && !originalCanAvoidKillArea(40,4,false),"avoid_killarea_threshold");
+  check(originalFindManOdds(21,4)===6 && originalHideOdds(21,4)===46,"encounter_hide");
+  check(originalTrapDamage(10,2,74)===8 && originalTrapDamage(10,2,75)===10,"trap_75_percent");
+  const initial=originalCooldownBegin(0,0);
+  const prepared=originalCooldownBeforeAction(initial,"move",2000);
+  check(!prepared.blocked && prepared.state.cmdcdtime===650,"move_cd_650ms");
+  const posted=originalCooldownPostAct(prepared.state,1500.9,1777.4);
+  check(posted.cdsec===2 && posted.cdmsec===150 && posted.rmcdtime===373,"cooldown_page_start_anchoring");
+  const response=originalCooldownResponse(posted,1777.4,100);
+  check(response.timer===373 && response.log.includes('demiSecTimerStarter(373)'),"original_cooldown_response");
+  const blocked=originalCooldownBeforeAction(posted,"search",1777.4);
+  check(blocked.blocked && blocked.state.mode==="command","blocked_action_cannot_execute");
+  return {
+    pass:errors.length===0,source:"installed original PHP tactic + cooldown",
+    runtime:"Cloudflare Workers",mechanics:"tactic/cooldown",
+    syntheticOnly:true,productionDataAccess:false,
+    gamePlayable:false,checks:12,errors
+  };
+}
+
 addEventListener("fetch",(event: FetchEvent)=>{
  const u=new URL(event.request.url);
+ if(event.request.method==="GET" && u.pathname==="/__gameplay_selftest") {
+   const r=runGameplaySelftest();
+   event.respondWith(new Response(JSON.stringify(r),{status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}}));
+   return;
+ }
  if(event.request.method==="GET" && u.pathname==="/__register_selftest") {
    event.respondWith(runRegistrationSelftest().then(r=>new Response(JSON.stringify(r),{status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}})));
    return;
