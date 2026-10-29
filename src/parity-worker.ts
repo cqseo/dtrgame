@@ -7,6 +7,13 @@ import { legacyFatenumCreate, legacyRegisterFatenumCreate, legacyRegisterRandomC
 import { legacyRegisterPost, legacyRegisterAjaxResponse, type LegacyRegistrationAccount } from "./original-register";
 import { legacyDecode } from "./original-protocol";
 import {
+ originalPlayerPreAct,originalPlayerAct,originalPlayerPostAct,
+ originalPlanPlayerSave,originalPlayerSaveSql,originalCommandActDecision,
+ type OriginalPlayerActionState
+} from "./original-player-action";
+import {executeOriginalCommandAct} from "./original-command-pipeline";
+
+import {
   originalTacticAct,originalAttackMultipliers,originalDefenseMultipliers,
   originalTrapDamage,originalCanCounter,originalCanAvoidKillArea,
   originalFindManOdds,originalHideOdds
@@ -114,8 +121,62 @@ function runGameplaySelftest() {
   };
 }
 
+async function runPlayerPipelineSelftest() {
+ const errors:string[]=[];
+ const phases:string[]=[];
+ const expect=(ok:boolean,label:string)=>{if(!ok)errors.push(label);};
+ type SyntheticPlayer=OriginalPlayerActionState & {pid:number;name:string;type:number};
+ const player:SyntheticPlayer={
+   pid:7,name:"QaPlayerA",type:0,hp:80,state:2,playerDeadFlag:0,
+   mode:"command",command:"special",spCmd:"special",
+   motto:"old",killmsg:"old",lastword:"old"
+ };
+ const result=await executeOriginalCommandAct(20,player,{
+  initPlayerData(s){phases.push("init");return s;},
+  preAct(s){phases.push("pre");return originalPlayerPreAct(s);},
+  getActionFields(s){return {hp:s.hp,state:s.state};},
+  act(s){phases.push("act");return originalPlayerAct(s);},
+  postAct(s){phases.push("post");return originalPlayerPostAct(s,{motto:"签名",killmsg:"击败",lastword:"遗言"});},
+  prepareResponse(s){phases.push("prepare");return {mode:s.mode,log:"原版测试"};},
+  parseProfile(_s,r){phases.push("profile");return r;},
+  parseGameInfo(_s,r){phases.push("gameinfo");return r;},
+  encodeResponse(r){phases.push("encode");return JSON.stringify(r);},
+  emitResponse(_r){phases.push("emit");},
+  updateSdata(s){phases.push("update");return s;},
+  beforeLastSave(s){phases.push("before_save");return s;},
+  savePlayer(_s){phases.push("save");},
+ });
+ const expectedPhases=["init","pre","act","post","prepare","profile","gameinfo",
+  "encode","emit","update","before_save","save"];
+ expect(JSON.stringify(phases)===JSON.stringify(expectedPhases),"source_phase_order");
+ expect(result.acted&&result.state.mode==="special","command_special");
+ expect(result.state.motto==="签名"&&result.state.killmsg==="击败"&&result.state.lastword==="遗言","postact_account_words");
+ expect(result.encoded===JSON.stringify({mode:"special",log:"原版测试"}),"response_serialization_phase");
+ const planned=originalPlanPlayerSave(
+  {pid:7,type:0,name:"QaPlayerA",hp:0,player_dead_flag:0,motto:"签名"},
+  ["pid","type","name","hp","player_dead_flag","motto"],
+  {pid:7,type:0,name:"QaPlayerA",hp:80,player_dead_flag:0,motto:"old"}
+ );
+ const update=originalPlayerSaveSql("s8_players",planned,
+   ["pid","type","name","hp","player_dead_flag","motto"]);
+ expect(planned.changes.player_dead_flag===1&&planned.nextPool?.player_dead_flag===1,"dead_flag_one_way");
+ expect(Boolean(update?.sql.includes('acfun_legacy.mysql_username_weight_key("name")')),"legacy_name_guard");
+ expect(update?.args.at(-1)==="005100410050004c00410059004500520041","source_collation_parameter");
+ const dead=originalPlayerPreAct({...player,hp:100,playerDeadFlag:1});
+ expect(!originalCommandActDecision("Qa","hash",true,20,dead.hp,dead.state).kind.includes("redirect")&&dead.hp===0,"death_pre_act");
+ expect(originalCommandActDecision(null,null,false,20,100,2).kind==="no_login","no_login_gate");
+ return {pass:errors.length===0,syntheticOnly:true,productionDataAccess:false,
+  gamePlayable:false,verifiedStages:expectedPhases.length,checks:9,
+  backend:"TypeScript",runtime:"Cloudflare Workers",errors};
+}
+
 addEventListener("fetch",(event: FetchEvent)=>{
  const u=new URL(event.request.url);
+ if(event.request.method==="GET" && u.pathname==="/__player_pipeline_selftest") {
+   event.respondWith(runPlayerPipelineSelftest().then(r=>
+    new Response(JSON.stringify(r),{status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}})));
+   return;
+ }
  if(event.request.method==="GET" && u.pathname==="/__gameplay_selftest") {
    const r=runGameplaySelftest();
    event.respondWith(new Response(JSON.stringify(r),{status:r.pass?200:500,headers:{"content-type":"application/json;charset=utf-8","cache-control":"no-store"}}));
