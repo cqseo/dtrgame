@@ -10,7 +10,7 @@ This ledger is generated against the captured Baota baseline. It prevents a part
 - Player/game-state fields captured in the prior migration inventory: **124** (NOT the accounts table).
 - Live installed MySQL account users table (metadata-only inspection, 2026-10-29): **39 columns**, see docs/LEGACY_USERS_METADATA_20261029.json.
 - Account usernames use MySQL utf8_general_ci. Actual original BMP weights are ported and checked against all 53 original usernames in private Supabase staging, but production login/session and concurrent-registration E2E parity remain pending.
-- Automated TypeScript parity tests in the latest isolated workbench: **4,265/4,265**, including 265 PHP-reference tactic/cooldown golden vectors
+- Automated TypeScript parity tests in the latest isolated workbench: **4,282/4,282**, including 265 PHP-reference tactic/cooldown golden vectors
 
 Partially ported modules: `player`, `map`, `lvlctl`, `cooldown`, `itemmain`, `pose`, `tactic`, `edible`, `explore`, `weather`, `rest`, `wound`, `metman`, `weapon`, `wep_n`, `wep_p`, `wep_k`, `wep_g`, `wep_c`, `wep_d`, `wep_f`, `wep_b`, `wep_j`, `armor`, `attack`, `battle`, `team`, `enemy`, `corpse`, `itemmix`.
 
@@ -31,3 +31,5 @@ Run `npm run generate:migration` beside the captured legacy source to regenerate
 2026-10-29 source revive and gameinfo persistence: [report](ORIGINAL_REVIVE_GAMEINFO_PORT_20261029.md). 270 PHP-reference synthetic revive priority cases, original source room-field skip plus compressed gamevars handling. Cloudflare QA /__revive_gameinfo_selftest HTTP 200 with 8 synthetic checks, zero DB bindings. 4,205 Vitest cases across 20 files passing, 0 original modules full-accepted, no playable route, live PHP source unchanged. User-requested daily acceptance watch DISABLED; not a development worker.
 
 2026-10-29 interrupted Work recovery: [recovery report](WORK_INTERRUPTION_RECOVERY_20261029.md). Fixed missing closing fetch handler in source QA Worker. Recovered previously uncommitted PHP-derived original battle, encounter, initiative, enemy command, QA-only PG encounter adapters, source synthetic fixtures and tests. 22 test files / 4,265 tests passing and TypeScript compilation passing. Real isolated Cloudflare QA /__encounter_battle_selftest 200/pass:true (22 synthetic battles); 0 DB bindings. Real /game.php remains 404; **0 fully parity-accepted original game modules and 0 playable versions**. No production PHP or main Cloudflare Worker cutover.
+
+2026-10-29 source game.php/command_game entry gate: [original game entry and release safety report](ORIGINAL_GAME_ENTRY_GATE_20261029.md). Original Cookie/session check, room→player mapping, source redirects and modes ported, 17 new cases, 4,282/4,282 tests; QA Cloudflare /__game_entry_selftest 6/6 HTTP 200. QA has 0 DB bindings, game.php still 404, original PHP untouched. This is a pure **QA-only gate**, not a playable game or a passed original 1:1 module.
