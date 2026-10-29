@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createLegacyPlayerRecord } from "../src/generated/legacy-registry";
 import type { LegacyPlayerRecord } from "../src/legacy/player";
 import { LegacyGameDurableObject, type LegacyMatchState } from "../src/runtime/game-durable-object";
@@ -47,6 +47,7 @@ const post = (path: string, body: unknown) => new Request(`https://game.invalid$
 });
 
 describe("legacy match Durable Object", () => {
+  afterEach(() => vi.restoreAllMocks());
   it("hydrates one match and commits a complete command transaction with a new version", async () => {
     const test = harness();
     await test.ready();
@@ -94,5 +95,37 @@ describe("legacy match Durable Object", () => {
     const response = await test.object.fetch(post("/hydrate", { version: 0, state: { matchId: 0, players: {} } }));
     expect(response.status).toBe(400);
     expect(test.values.has("match")).toBe(false);
+  });
+
+  it("commits both sides of a battle in one match version", async () => {
+    vi.spyOn(crypto, "getRandomValues").mockImplementation((array) => {
+      (array as Uint32Array)[0] = 0;
+      return array;
+    });
+    const test = harness();
+    await test.ready();
+    const battleState = state();
+    Object.assign(battleState.players["测试者"]!, {
+      pid: 1, pls: 0, wep: "调色刀", wepk: "WK", wepe: 45, weps: 9,
+      att: 100, def: 100, wk: 100, lvl: 0, exp: 0, skillpoint: 0
+    });
+    const enemy = player();
+    Object.assign(enemy, {
+      pid: 2, name: "敌人", pls: 0, hp: 1, mhp: 400,
+      wep: "地雷", wepk: "WD", weps: 1, att: 100, def: 100,
+      wp: 100, wk: 100, wg: 100, wc: 100, wd: 100, wf: 100,
+      lvl: 0, exp: 0, skillpoint: 0
+    });
+    battleState.players["敌人"] = enemy;
+    await test.object.fetch(post("/hydrate", { version: 0, state: battleState }));
+
+    const response = await test.object.fetch(post("/battle", {
+      username: "测试者", target: "敌人", active: true, weatherId: 2, now: 123
+    }));
+    expect(response.status).toBe(200);
+    const stored = test.values.get("match") as { version: number; state: LegacyMatchState };
+    expect(stored.version).toBe(1);
+    expect(stored.state.players["敌人"]).toMatchObject({ hp: 0, state: 22, bid: 1 });
+    expect(stored.state.players["测试者"]).toMatchObject({ killnum: 1, action: "corpse2" });
   });
 });

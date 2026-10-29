@@ -53,7 +53,7 @@ describe("original command.php base action transaction", () => {
     expect(moved.log).toBe("你消耗<span class=\"yellow b\">15</span>点体力，移动到了端点。<br>端点<br>发现流程:move<br>");
 
     const searched = runLegacyPlayerCommand({
-      player: data, command: "search", now: 102,
+      player: data, command: "search", now: 102, random: new SequenceLegacyRandom([99]),
       availableAreas: [0, 1], areaNames: ["无月之影", "端点"]
     });
     expect(data.sp).toBe(270);
