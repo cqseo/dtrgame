@@ -1,0 +1,14 @@
+{
+  "name": "deny-include-common",
+  "request": {
+    "method": "GET",
+    "path": "/include/common.inc.php",
+    "body": null
+  },
+  "status": 403,
+  "headers": {
+    "content-type": "text/html; charset=utf-8"
+  },
+  "bodyBytes": 146,
+  "body": "<html>\r\n<head><title>403 Forbidden</title></head>\r\n<body>\r\n<center><h1>403 Forbidden</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>\r\n"
+}

@@ -68,6 +68,8 @@
 - PHP 参考解释器：**必须是 PHP 8.2.x**。线上 nginx 走 `php-cgi-82.sock`（8.2.35），此前文档写的 `php8.3` 会引入次版本语义差异，不得用于黄金样本。
 - 服务器端冻结只读副本：`/opt/dts-sandbox/parity/legacy-dts`（已 `chmod -R a-w`，4,395 文件，与本地副本一致）。
 - `tools/php-remote` 通过 SSH 桥接宝塔主机上的 8.2.35；`npm run test:php-parity` 默认使用它，并在非 8.2 版本上直接拒绝运行。
+- **隔离黄金样本实例**：`/opt/dts-sandbox/parity/instance`（可写副本）+ 独立库 `dts_final_qa_20261027`（生产库快照克隆），nginx vhost `dts-parity-golden.conf` 监听 `127.0.0.1:18090`，路由规则逐条复刻生产的 `dts.zhangyingyin.top.conf`（`command.php` 仅 POST、`/gamedata/` 403 但放行 `css`、`/include/javascript/` 扩展名白名单、`install_NEW.php` 410 等）。生产库和生产 docroot 只读不写。
+- 采集链路：`npm run golden:up` 建立 SSH 端口转发，`npm run capture:golden` 把整条响应写入 `test/fixtures/golden/`，`test/original-routes-golden.test.mjs` 以此为准绳比对 Worker。注意 `dts-sandbox.conf`（18089）指向的是**生产 docroot**，是线上 daemon 地址，不可用于取样。
 - 已验证 1,565 个原版展示文件 hash/length 全部一致，不得自行改动原素材。
 
 如果 Claude 所在环境没有 `../legacy-dts`，必须从宝塔原路径重新拉取一份只读副本，不要在线修改 PHP 来迎合 TypeScript。

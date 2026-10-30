@@ -1,0 +1,64 @@
+#!/bin/bash
+# Local port-forward to the isolated golden-master instance of the original.
+#
+# That instance listens on loopback only on the Baota host and serves a
+# writable copy of the captured source against an isolated database, with the
+# same nginx routing contract as the live site. Forwarding it here lets the
+# capture driver and browser checks drive the real original without touching
+# production.
+#
+# Usage: tools/golden-tunnel up | down | status
+#
+# Connection details come from the environment or tools/.php-remote.local,
+# which is untracked because this repository is public.
+set -eu
+
+here="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091
+[ -f "$here/.php-remote.local" ] && . "$here/.php-remote.local"
+
+if [ -z "${DTS_SSH_HOST:-}" ]; then
+  echo "golden-tunnel: set DTS_SSH_HOST (user@host) in the environment or tools/.php-remote.local" >&2
+  exit 1
+fi
+
+SSH_KEY="${DTS_SSH_KEY:-$HOME/.ssh/id_ed25519}"
+PORT="${DTS_GOLDEN_PORT:-18090}"
+REMOTE_PORT="${DTS_GOLDEN_REMOTE_PORT:-18090}"
+CONTROL="$HOME/.ssh/cm-dts-golden-$PORT"
+
+case "${1:-status}" in
+  up)
+    if [ -S "$CONTROL" ] && ssh -S "$CONTROL" -O check "$DTS_SSH_HOST" 2>/dev/null; then
+      echo "golden-tunnel: already up on 127.0.0.1:$PORT"
+    else
+      rm -f "$CONTROL"
+      ssh -i "$SSH_KEY" -o StrictHostKeyChecking=accept-new -o BatchMode=yes \
+          -M -S "$CONTROL" -fN -L "$PORT:127.0.0.1:$REMOTE_PORT" "$DTS_SSH_HOST"
+      echo "golden-tunnel: up on 127.0.0.1:$PORT"
+    fi
+    code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:$PORT/index.php" --max-time 30 || echo 000)
+    echo "golden-tunnel: /index.php -> $code"
+    [ "$code" = "200" ] || { echo "golden-tunnel: instance did not answer 200" >&2; exit 1; }
+    ;;
+  down)
+    if [ -S "$CONTROL" ]; then
+      ssh -S "$CONTROL" -O exit "$DTS_SSH_HOST" 2>/dev/null || true
+      echo "golden-tunnel: down"
+    else
+      echo "golden-tunnel: not running"
+    fi
+    ;;
+  status)
+    if [ -S "$CONTROL" ] && ssh -S "$CONTROL" -O check "$DTS_SSH_HOST" 2>/dev/null; then
+      echo "golden-tunnel: up on 127.0.0.1:$PORT"
+    else
+      echo "golden-tunnel: down"
+      exit 1
+    fi
+    ;;
+  *)
+    echo "usage: tools/golden-tunnel up | down | status" >&2
+    exit 2
+    ;;
+esac

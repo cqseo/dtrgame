@@ -25,6 +25,12 @@ The live original is served through `php-cgi-82.sock`, so golden masters must be
 
 Before this harness ran, the seven PHP-oracle assertions had always been reported as skipped, so no TypeScript behaviour had ever been compared against the original interpreter. They now execute and pass, which makes crafting the first area with evidence rather than intent behind it. `npm run test:php-parity` auto-discovers every `test/*.parity.test.mjs` suite, so new areas join the gate as they are written.
 
+## Request-level parity
+
+The PHP oracle compares pure functions. Whole responses are now compared too: an isolated instance of the captured source runs under PHP 8.2.35 behind a copy of the production nginx routing contract, against its own database, so it can be driven freely without touching the live site or live player data. `npm run capture:golden` records whole responses from it into `test/fixtures/golden/`, and `test/original-routes-golden.test.mjs` replays each one against the Worker.
+
+Current result: **0 of 23 captured routes match the original**. Every original page still answers 501 or 404, the two client scripts the original ships are not served, and the routing contract (`/gamedata/` 403, `/include/` 403, `install_NEW.php` 410, `command.php` GET 403 / POST only) is not reproduced. No `assets` binding is configured in `wrangler.jsonc`, so the guest-snapshot path in `src/index.ts` cannot serve anything. The figure is a ratchet; raise it only when a route genuinely starts matching.
+
 ## Milestones
 
 Compatibility-kernel milestone: the original loader order, mandatory dependency graph, newest-first hook dispatch, `$chprocess` parent calls (including repeated calls and changed arguments), PHP reference parameters, request globals, deterministic RNG checkpoints, state rollback and execution tracing are implemented. The captured graph contains **3,211 hook names / 5,235 implementations / 505 overloaded chains**. This infrastructure does not count any unported hook body as complete.

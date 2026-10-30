@@ -1,0 +1,14 @@
+{
+  "name": "roomupdate-get",
+  "request": {
+    "method": "GET",
+    "path": "/roomupdate.php",
+    "body": null
+  },
+  "status": 200,
+  "headers": {
+    "content-type": "text/html; charset=UTF-8"
+  },
+  "bodyBytes": 68,
+  "body": "H4sIAAAAAAAAA6tWKi3KUbJSSi0qyi/SK8goUNKBsHOL05Ws8kpzcmoBQoviJyMAAAA="
+}

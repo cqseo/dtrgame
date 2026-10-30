@@ -1,0 +1,14 @@
+{
+  "name": "page-chat",
+  "request": {
+    "method": "GET",
+    "path": "/chat.php",
+    "body": null
+  },
+  "status": 200,
+  "headers": {
+    "content-type": "text/html; charset=UTF-8"
+  },
+  "bodyBytes": 12,
+  "body": "Not in game."
+}

@@ -1,0 +1,144 @@
+{
+  "origin": "isolated golden-master instance",
+  "capturedRoutes": 23,
+  "routes": [
+    {
+      "name": "page-index",
+      "path": "/index.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "page-login",
+      "path": "/login.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "page-register",
+      "path": "/register.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "page-game",
+      "path": "/game.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "page-help",
+      "path": "/help.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "page-rank",
+      "path": "/rank.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "page-map",
+      "path": "/map.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "page-itemhelp",
+      "path": "/itemhelp.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "page-cardbook",
+      "path": "/cardbook.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "page-kujilist",
+      "path": "/kujilist.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "page-chat",
+      "path": "/chat.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "page-end",
+      "path": "/end.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "page-donate",
+      "path": "/donate.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "asset-game-20240318-js",
+      "path": "/include/javascript/game.20240318.js",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "asset-common-20240301-js",
+      "path": "/include/javascript/common.20240301.js",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "deny-gamedata-modules",
+      "path": "/gamedata/modules.list.php",
+      "method": "GET",
+      "status": 403
+    },
+    {
+      "name": "deny-include-common",
+      "path": "/include/common.inc.php",
+      "method": "GET",
+      "status": 403
+    },
+    {
+      "name": "deny-install-dir",
+      "path": "/install/",
+      "method": "GET",
+      "status": 403
+    },
+    {
+      "name": "gone-install-new",
+      "path": "/install_NEW.php",
+      "method": "GET",
+      "status": 410
+    },
+    {
+      "name": "command-get-denied",
+      "path": "/command.php",
+      "method": "GET",
+      "status": 403
+    },
+    {
+      "name": "roomcmd-get",
+      "path": "/roomcmd.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "roomupdate-get",
+      "path": "/roomupdate.php",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "name": "command-post-empty",
+      "path": "/command.php",
+      "method": "POST",
+      "status": 200
+    }
+  ]
+}
