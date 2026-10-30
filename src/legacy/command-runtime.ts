@@ -8,8 +8,8 @@ import type { LegacyPlayerRecord } from "./player";
 import { readLegacyPlayerInventory, writeLegacyPendingItem, writeLegacyPlayerInventory } from "./player-inventory";
 import {
   LEGACY_BASE_ITEM_FIND_ODDS, LEGACY_INFINITE_DURABILITY,
-  clearLegacyItem, emptyLegacyItem, getLegacyMergeType, getLegacyPackBlank, isLegacyItemEmpty,
-  mergeLegacyItems, moveLegacyInventoryItem, useLegacyEdible,
+  checkLegacyAttribute, clearLegacyItem, emptyLegacyItem, getLegacyMergeType, getLegacyPackBlank, isLegacyItemEmpty,
+  mergeLegacyItems, moveLegacyInventoryItem, reduceLegacyItem, useLegacyEdible,
   type LegacyItem, type LegacyMapItem
 } from "./item";
 import { cryptoLegacyRandom, type LegacyRandom } from "./random";
@@ -18,7 +18,7 @@ import { canChangeLegacyPose, canChangeLegacyTactic, getLegacyPose, getLegacyTac
 import { calculateLegacyActiveOdds, canDiscoverLegacyCorpse, legacyCorpseHasLoot } from "./social";
 import { createLegacyTeam, joinLegacyTeam, quitLegacyTeam } from "./social";
 import { getLegacyWeather } from "./weather";
-import { bandageLegacyWound } from "./wound";
+import { bandageLegacyWound, LEGACY_WOUND_PLACES } from "./wound";
 
 export type LegacySearchMode = "search" | "move" | "search2";
 
@@ -174,7 +174,7 @@ function equipmentItem(player: LegacyPlayerRecord, slot: "wep" | "arb" | "arh" |
   };
 }
 
-function writeEquipmentItem(player: LegacyPlayerRecord, slot: "wep" | "arb" | "arh" | "ara" | "arf", item: LegacyItem): void {
+function writeEquipmentItem(player: LegacyPlayerRecord, slot: "wep" | "arb" | "arh" | "ara" | "arf" | "art", item: LegacyItem): void {
   player[slot] = item.itm;
   player[`${slot}k` as keyof LegacyPlayerRecord] = item.itmk;
   player[`${slot}e` as keyof LegacyPlayerRecord] = item.itme;
@@ -182,7 +182,7 @@ function writeEquipmentItem(player: LegacyPlayerRecord, slot: "wep" | "arb" | "a
   player[`${slot}sk` as keyof LegacyPlayerRecord] = item.itmsk;
 }
 
-function equipFromItem(state: LegacyPlayerCommandState, item: LegacyItem, slot: "wep" | "arb" | "arh" | "ara" | "arf", emptyKind = ""): void {
+function equipFromItem(state: LegacyPlayerCommandState, item: LegacyItem, slot: "wep" | "arb" | "arh" | "ara" | "arf" | "art", emptyKind = ""): void {
   const current = equipmentItem(state.player, slot);
   const slotEmpty = (emptyKind !== "" && current.itmk.startsWith(emptyKind)) || isLegacyItemEmpty(current);
   if (slotEmpty) {
@@ -201,8 +201,8 @@ function equipFromItem(state: LegacyPlayerCommandState, item: LegacyItem, slot: 
 function dropPlayerItem(state: LegacyPlayerCommandState, position: string): boolean {
   let item: LegacyItem;
   if (/^itm[0-6]$/.test(position)) item = readPlayerItem(state.player, phpInt(position.slice(3)));
-  else if (["wep", "arb", "arh", "ara", "arf"].includes(position)) {
-    item = equipmentItem(state.player, position as "wep" | "arb" | "arh" | "ara" | "arf");
+  else if (["wep", "arb", "arh", "ara", "arf", "art"].includes(position)) {
+    item = equipmentItem(state.player, position as "wep" | "arb" | "arh" | "ara" | "arf" | "art");
   } else {
     state.log += "该物品不存在！<br>";
     return false;
@@ -222,17 +222,17 @@ function dropPlayerItem(state: LegacyPlayerCommandState, position: string): bool
   else if (position === "arb") writeEquipmentItem(state.player, "arb", {
     itm: "内衣", itmk: "DN", itme: 0, itms: LEGACY_INFINITE_DURABILITY, itmsk: ""
   });
-  else writeEquipmentItem(state.player, position as "arh" | "ara" | "arf", emptyLegacyItem());
+  else writeEquipmentItem(state.player, position as "arh" | "ara" | "arf" | "art", emptyLegacyItem());
   state.mode = "command";
   return true;
 }
 
 function unequipPlayerItem(state: LegacyPlayerCommandState, position: string): boolean {
-  if (!["wep", "arb", "arh", "ara", "arf"].includes(position)) {
+  if (!["wep", "arb", "arh", "ara", "arf", "art"].includes(position)) {
     state.log += "该物品不存在！<br>";
     return false;
   }
-  const slot = position as "wep" | "arb" | "arh" | "ara" | "arf";
+  const slot = position as "wep" | "arb" | "arh" | "ara" | "arf" | "art";
   const item = equipmentItem(state.player, slot);
   if (isLegacyItemEmpty(item) || item.itmk === "WN" || item.itmk === "DN") {
     state.log += "该物品不存在！<br>";
@@ -485,6 +485,81 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
     else if (item.itmk.startsWith("DA")) equipFromItem(session.state, item, "ara");
     else if (item.itmk.startsWith("DF")) equipFromItem(session.state, item, "arf");
     else return next(item);
+  });
+  kernel.register("itemuse", "armor_art", ({ next, session }, rawItem) => {
+    const item = rawItem as LegacyItem;
+    if (!item.itmk.startsWith("A")) return next(item);
+    equipFromItem(session.state, item, "art");
+  });
+  kernel.register("itemuse", "item_uc", ({ next, session }, rawItem) => {
+    const item = rawItem as LegacyItem;
+    if (!item.itmk.startsWith("C")) return next(item);
+    const state = session.state;
+    const condition = item.itmk.slice(1, 2);
+    const names: Record<string, string> = {
+      p: '<span class="purple b">中毒</span>', u: '<span class="red b">烧伤</span>',
+      i: '<span class="cyan b">冻结</span>', e: '<span class="yellow b">身体麻痹</span>',
+      w: '<span class="grey b">混乱</span>'
+    };
+    if (condition === "a") {
+      state.log += `服用了<span class="red b">${item.itm}</span>。<br>`;
+      let healed = false;
+      for (const current of [...textField(state.player, "inf")]) {
+        if (!LEGACY_WOUND_PLACES.includes(current)) {
+          state.player.inf = textField(state.player, "inf").split(current).join("");
+          state.log += `${names[current] ?? current}状态解除了。<br>`;
+          healed = true;
+        }
+      }
+      if (!healed) state.log += "但是什么也没发生。<br>";
+    } else if (textField(state.player, "inf").includes(condition)) {
+      state.player.inf = textField(state.player, "inf").split(condition).join("");
+      state.log += `服用了<span class="red b">${item.itm}</span>，${names[condition] ?? condition}状态解除了。<br>`;
+    } else {
+      state.log += `服用了<span class="red b">${item.itm}</span>，但是什么效果也没有。<br>`;
+    }
+    state.log += reduceLegacyItem(item);
+  });
+  kernel.register("itemuse", "ammunition", ({ next, session }, rawItem) => {
+    const item = rawItem as LegacyItem;
+    if (!item.itmk.startsWith("GB")) return next(item);
+    const state = session.state;
+    const weaponKind = textField(state.player, "wepk");
+    const attributes = textField(state.player, "wepsk");
+    if (!weaponKind.startsWith("WG") && !weaponKind.startsWith("WJ")) {
+      state.log += '<span class="red b">你没有装备枪械，不能使用子弹。</span><br>';
+      state.mode = "command";
+      return;
+    }
+    if (checkLegacyAttribute("o", attributes)) {
+      state.log += `<span class="red b">${textField(state.player, "wep")}的弹匣是焊死的，不能装填弹药。</span><br>`;
+      state.mode = "command";
+      return;
+    }
+    let bulletKind = "GBss";
+    let capacity = 6;
+    if (weaponKind.startsWith("WJ")) { bulletKind = "GBh"; capacity = 4; }
+    else if (["e", "w", "i", "u"].some((mark) => checkLegacyAttribute(mark, attributes))) { bulletKind = "GBee"; capacity = 10; }
+    else if (checkLegacyAttribute("r", attributes)) { bulletKind = "GBss"; capacity = 24; }
+    if (capacity <= 10 && checkLegacyAttribute("r", attributes)) capacity = bulletKind === "GBh" ? 6 : 12;
+    if (item.itmk !== bulletKind) {
+      state.log += `<span class='red b'>弹药类型不匹配，需要</span><span class='yellow b'>${bulletKind}</span>。<br>`;
+      state.mode = "command";
+      return;
+    }
+    if (state.player.weps === LEGACY_INFINITE_DURABILITY) state.player.weps = 0;
+    const amount = Math.min(Math.max(capacity - numberField(state.player, "weps"), 0), Number(item.itms));
+    if (amount <= 0) {
+      state.log += `<span class="red b">${textField(state.player, "wep")}的弹匣是满的，不能装弹。</span>`;
+      return;
+    }
+    item.itms = Number(item.itms) - amount;
+    state.player.weps = numberField(state.player, "weps") + amount;
+    state.log += `为<span class="red b">${textField(state.player, "wep")}</span>装填了<span class="red b">${item.itm}</span>，<span class="red b">${textField(state.player, "wep")}</span>残弹数增加了<span class="yellow b">${amount}</span>。<br>`;
+    if (Number(item.itms) <= 0) {
+      state.log += `<span class="red b">${item.itm}</span>用光了。<br>`;
+      clearLegacyItem(item);
+    }
   });
   kernel.register("calculate_itemfind_obbs", "itemmain", () => LEGACY_BASE_ITEM_FIND_ODDS);
   kernel.register("calculate_itemfind_obbs", "weather", ({ next, session }) =>

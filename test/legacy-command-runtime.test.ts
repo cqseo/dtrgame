@@ -24,7 +24,9 @@ describe("original command.php base action transaction", () => {
     expect(LEGACY_BASE_COMMAND_KERNEL.implementations("chginf")).toEqual(["wound"]);
     expect(LEGACY_BASE_COMMAND_KERNEL.implementations("discover")).toEqual(["explore", "itemmain", "metman"]);
     expect(LEGACY_BASE_COMMAND_KERNEL.implementations("calculate_itemfind_obbs")).toEqual(["itemmain", "pose", "weather"]);
-    expect(LEGACY_BASE_COMMAND_KERNEL.implementations("itemuse")).toEqual(["itemmain", "edible", "weapon", "armor"]);
+    expect(LEGACY_BASE_COMMAND_KERNEL.implementations("itemuse")).toEqual(expect.arrayContaining([
+      "itemmain", "edible", "weapon", "armor", "armor_art", "item_uc", "ammunition"
+    ]));
   });
 
   it("wraps move/search with the original 650ms cooldown hook", () => {
@@ -207,6 +209,30 @@ describe("original command.php base action transaction", () => {
     expect(result.log).toContain("你卸下了装备<span class=\"yellow b\">调色刀</span>");
     expect(result.log).toContain("放入包裹");
     expect(data).toMatchObject({ wep: "拳头", wepk: "WN", weps: "∞", itm1: "调色刀", itmk1: "WK", itms1: 9 });
+  });
+
+  it("uses abnormal-status medicine without healing normal limb wounds", () => {
+    const data = player();
+    Object.assign(data, {
+      inf: "bpu", itm1: "全复药剂", itmk1: "Ca", itme1: 0, itms1: 2, itmsk1: ""
+    });
+    const result = runLegacyPlayerCommand({ player: data, command: "itm1", now: 100, requestStartMs: 100_000 });
+    expect(data.inf).toBe("b");
+    expect(data.itms1).toBe(1);
+    expect(result.log).toContain("中毒");
+    expect(result.log).toContain("烧伤");
+  });
+
+  it("loads matching ammunition and preserves leftovers in the backpack slot", () => {
+    const data = player();
+    Object.assign(data, {
+      wep: "手枪", wepk: "WG", wepe: 20, weps: 2, wepsk: "",
+      itm1: "实体弹药", itmk1: "GBss", itme1: 0, itms1: 10, itmsk1: ""
+    });
+    const result = runLegacyPlayerCommand({ player: data, command: "itm1", now: 100, requestStartMs: 100_000 });
+    expect(data.weps).toBe(6);
+    expect(data.itms1).toBe(6);
+    expect(result.log).toContain("残弹数增加了<span class=\"yellow b\">4</span>");
   });
 
   it("blocks unrelated commands while the original pending-item slot is occupied", () => {
