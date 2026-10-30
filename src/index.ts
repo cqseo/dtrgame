@@ -3,9 +3,8 @@
  * No "MUGEN LOOP" UI, simplified game world, or synthetic gameplay.
  * Original Baota asset files are hosted separately through Cloudflare Assets.
  *
- * THIS VERSION IS STAGING ONLY. When real backend behavior for all 735 enabled
- * modules has parity tests, the /command.php, account, room, and mode handlers
- * can replace the explicit 501 responses below.
+ * THIS VERSION IS STAGING ONLY. Account login and the waiting-room transaction
+ * boundary are wired; unported command/module paths remain explicit 501s.
  */
 export interface OriginalEnv {
   ASSETS: Fetcher;
@@ -23,6 +22,13 @@ import {
   selectOriginalPage
 } from "./original-pages";
 import { applyOriginalRouting } from "./original-routing";
+import { handleLegacyLogin } from "./runtime/http-auth";
+import { handleLegacyRoomCommand } from "./runtime/http-room";
+import { LegacyLobbyService } from "./runtime/lobby-service";
+import { LegacyRoomService } from "./runtime/room-service";
+import {
+  createSupabaseRuntime, SupabaseLegacyAccounts, SupabaseLegacyLobby, SupabaseLegacyRooms
+} from "./runtime/supabase";
 export { applyOriginalRouting } from "./original-routing";
 export { LegacyRoomDurableObject } from "./runtime/room-durable-object";
 export { LegacyGameDurableObject } from "./runtime/game-durable-object";
@@ -38,7 +44,9 @@ export const ORIGINAL_STAGING_STATUS = {
   playable: false,
   legacyModuleScope: 735,
   originProxy: false,
-  readonly: true
+  readonly: false,
+  accountSession: "wired",
+  roomLifecycle: "partial"
 };
 const text = (body: string, status: number): Response => new Response(body, {
   status, headers: { "content-type": "text/plain;charset=utf-8", "cache-control": "no-store" }
@@ -57,6 +65,31 @@ export default {
       return new Response(JSON.stringify(ORIGINAL_STAGING_STATUS), {
         headers: { "content-type": "application/json;charset=utf-8", "cache-control": "no-store" }
       });
+    }
+    const postedLogin = request.method === "POST"
+      ? new URLSearchParams(await request.clone().text())
+      : undefined;
+    const hasPostedLogin = postedLogin?.has("username") === true || postedLogin?.has("password") === true;
+    if (url.pathname === "/login.php" && (hasPostedLogin || url.searchParams.get("mode") === "quit")) {
+      const rest = createSupabaseRuntime(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
+      if (!rest) return text("登录服务尚未配置。", 503);
+      const response = await handleLegacyLogin(request, new SupabaseLegacyAccounts(rest), env.ASSETS);
+      if (response) return response;
+    }
+    const hasPostedRoomCommand = request.method === "POST" &&
+      new URLSearchParams(await request.clone().text()).has("command");
+    if (url.pathname === "/roomcmd.php" && (hasPostedRoomCommand || url.searchParams.has("command"))) {
+      const rest = createSupabaseRuntime(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
+      if (!rest) return text("房间服务尚未配置。", 503);
+      const accounts = new SupabaseLegacyAccounts(rest);
+      const rooms = new SupabaseLegacyRooms(rest);
+      const response = await handleLegacyRoomCommand(
+        request,
+        new LegacyLobbyService(env.ROOMS, accounts, new SupabaseLegacyLobby(rest), rooms),
+        new LegacyRoomService(env.ROOMS, accounts, rooms),
+        env.ASSETS
+      );
+      if (response) return response;
     }
     if (request.method !== "GET" && request.method !== "HEAD") {
       return text("原版游戏后端指令尚未完成 1:1 移植；本环境不会写入玩家数据。", 501);

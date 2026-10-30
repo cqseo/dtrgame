@@ -144,6 +144,13 @@ function chat(room: LegacyWaitingRoom, html: string): void {
   room.timestamp += 1;
 }
 
+/** room_enter() announces every successful entry without occupying a slot. */
+export function enterLegacyWaitingRoom(record: LegacyRoomRecord, username: string): LegacyRoomRecord {
+  const next = structuredClone(record);
+  chat(next.room, `<span class="grey b">${username}进入了房间</span><br>`);
+  return next;
+}
+
 function positionOf(room: LegacyWaitingRoom, user: string): number {
   const limit = legacyRoomParticipantLimit(room);
   return room.player.findIndex((slot, index) => index < limit && !slot.forbidden && slot.name === user);

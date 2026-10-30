@@ -84,6 +84,11 @@ export class SupabaseLegacyAccounts implements LegacyUserStore {
   }
 }
 
+export function createSupabaseRuntime(url: string | undefined, secretKey: string | undefined): SupabaseLegacyRest | null {
+  if (!url || !secretKey) return null;
+  return new SupabaseLegacyRest({ url, secretKey });
+}
+
 export class SupabaseLegacyRooms {
   constructor(readonly rest: SupabaseLegacyRest) {}
 
@@ -116,6 +121,31 @@ export class SupabaseLegacyRooms {
       p_gamestate: record.gamestate,
       p_roomvars: await legacyEncode(record.room)
     });
+  }
+}
+
+export class SupabaseLegacyLobby {
+  constructor(readonly rest: SupabaseLegacyRest) {}
+
+  async createRoom(username: string, record: LegacyRoomRecord): Promise<number> {
+    const rows = await this.rest.rpc<Array<{ room_id: number }>>("dtr_legacy_create_room", {
+      p_username: username,
+      p_room_type: record.groomtype,
+      p_game_type: record.gametype,
+      p_roomvars: await legacyEncode(record.room)
+    });
+    const roomId = Number(rows[0]?.room_id);
+    if (!Number.isSafeInteger(roomId) || roomId < 1) throw new Error("房间数目已经达到上限，请加入一个已存在的房间");
+    return roomId;
+  }
+
+  async joinRoom(username: string, roomId: number): Promise<SupabaseGameRow | null> {
+    if (!Number.isSafeInteger(roomId) || roomId < 1) return null;
+    const rows = await this.rest.rpc<SupabaseGameRow[]>("dtr_legacy_join_room", {
+      p_username: username,
+      p_room_id: roomId
+    });
+    return rows[0] ?? null;
   }
 }
 

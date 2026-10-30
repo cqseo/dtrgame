@@ -148,7 +148,7 @@ function pageConstants(curscript: string): Map<string, PhpValue> {
 const configGlobals = (): Map<string, PhpValue> =>
   new Map(Object.entries(LEGACY_CONFIG) as [string, PhpValue][]);
 
-function errorMessage(key: string): string {
+export function originalErrorMessage(key: string): string {
   const errors = (LEGACY_CONFIG as Record<string, unknown>)._ERROR as Record<string, string> | undefined;
   return errors?.[key] ?? "";
 }
@@ -177,7 +177,7 @@ export function renderOriginalPage(page: OriginalPage, sources: ReadonlyMap<stri
   for (const name of GEXIT_GLOBALS) {
     if (globals.has(name)) scope.set(name, globals.get(name) ?? null);
   }
-  scope.set("message", errorMessage(page.errorKey));
+  scope.set("message", originalErrorMessage(page.errorKey));
   scope.set("file", "");
   scope.set("line", 0);
 
@@ -188,6 +188,30 @@ export function renderOriginalPage(page: OriginalPage, sources: ReadonlyMap<stri
     globals,
     constants: pageConstants(page.curscript),
     compileOptions
+  });
+}
+
+/** Render gexit() with a caller supplied message, preserving its function scope. */
+export function renderOriginalError(
+  message: string,
+  curscript: string,
+  sources: ReadonlyMap<string, string>
+): string {
+  const globals = configGlobals();
+  const scope = new Map<string, PhpValue>();
+  for (const name of GEXIT_GLOBALS) {
+    if (globals.has(name)) scope.set(name, globals.get(name) ?? null);
+  }
+  scope.set("message", message);
+  scope.set("file", "");
+  scope.set("line", 0);
+  return renderTemplate("error", {
+    ...createTemplateContext({ loadTemplate: (name) => sources.get(name) }),
+    functions: createOriginalFunctions(),
+    variables: scope,
+    globals,
+    constants: pageConstants(curscript),
+    compileOptions: { language: LEGACY_TEMPLATE_LANGUAGE }
   });
 }
 

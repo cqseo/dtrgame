@@ -1,6 +1,7 @@
 import {
   applyLegacyRoomCommand,
   createLegacyRoomRecord,
+  enterLegacyWaitingRoom,
   type LegacyRoomCommand,
   type LegacyRoomCommandName,
   type LegacyRoomRecord,
@@ -14,6 +15,7 @@ const COMMANDS = new Set<LegacyRoomCommandName>([
 ]);
 
 interface InitializeBody { roomId: number; roomType: number; founder: string; now: number; }
+interface EnterBody { username: string; }
 interface LegacyRoomObjectEnv extends Cloudflare.Env {
   SUPABASE_URL?: string;
   SUPABASE_SECRET_KEY?: string;
@@ -73,6 +75,21 @@ export class LegacyRoomDurableObject {
         this.#record = structuredClone(body);
         await this.ctx.storage.put("record", this.#record);
         return json(this.#record, 201);
+      }
+      if (request.method === "POST" && url.pathname === "/enter") {
+        return this.#exclusive(async () => {
+          if (!this.#record) return json({ error: "房间数据记录不存在。" }, 404);
+          const body = await request.json<EnterBody>();
+          const username = String(body.username ?? "");
+          if (!username) return json({ error: "Missing username." }, 400);
+          this.#record = enterLegacyWaitingRoom(this.#record, username);
+          if (this.#env.SUPABASE_URL && this.#env.SUPABASE_SECRET_KEY) {
+            const rest = new SupabaseLegacyRest({ url: this.#env.SUPABASE_URL, secretKey: this.#env.SUPABASE_SECRET_KEY });
+            await new SupabaseLegacyRooms(rest).saveRecord(this.#record);
+          }
+          await this.ctx.storage.put("record", this.#record);
+          return json(this.#record);
+        });
       }
       if (request.method === "POST" && url.pathname === "/command") {
         const raw = await request.json<Partial<LegacyRoomCommand>>();
