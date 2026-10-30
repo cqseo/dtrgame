@@ -1,0 +1,21 @@
+<br>
+<div class="subtitle">$stateinfo[$state]</div>
+<div><!--{eval echo \player\get_dinfo($sdata);}--></div>
+<br>
+<div>死亡时间：$dtime</div>
+<!--{if !empty($kname) && (in_array($state,Array(20,21,22,23,24,26,28,29)))}--><div>凶手：$kname</div><!--{/if}-->
+<br>
+<span class="dmg">你死了。</span>
+<br><br>
+
+<input type="button" class="cmdbutton" value="我靠！" disabled>
+
+<!--{if defined('MOD_SKILL475')}-->
+{template MOD_SKILL475_RESPAWNTIMER}
+<!--{/if}-->
+<div style="margin:14px auto 8px;padding:11px 14px;max-width:500px;border:1px solid #59637c;border-radius:8px;background:rgba(18,25,42,.9);color:#e8efff;line-height:1.7;text-align:center;">
+  <div style="font-weight:bold;margin-bottom:6px;">本次生命已结束</div>
+  <a href="index.php" style="display:inline-block;margin:3px 5px;padding:6px 13px;background:#244965;border-radius:6px;color:#fff;text-decoration:none;">返回大厅 / 房间列表</a>
+  <button type="button" class="cmdbutton" style="margin:3px 5px;padding:6px 13px;" onclick="if(window.confirm('退出当前房间后，可能无法继续等待本局复活或结算。确认退出房间吗？')) room_quit();">退出当前房间</button>
+  <div style="margin-top:5px;color:#b7c7dd;font-size:12px;">部分玩法有复活机制；如果仍在等待复活，请勿退出房间。</div>
+</div>

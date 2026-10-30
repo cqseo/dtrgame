@@ -1,0 +1,9 @@
+<option value="main" selected>■ 选择移动目的地 ■</option>
+<option value="main" disabled>当前位置：$plsinfo[$pls]</option>
+<optgroup label="可进入的地点">
+<!--{loop $plsinfo $key $value}-->
+<!--{if (\map\check_can_enter($key) && $pls != $key)}-->
+<option value="$key">$value($xyinfo[$key])</option>
+<!--{/if}-->
+<!--{/loop}-->
+</optgroup>

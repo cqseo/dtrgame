@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import worker from "../src/index";
 import { GOLDEN_ROUTES, normalizeGoldenBody } from "../scripts/golden-routes.mjs";
@@ -15,17 +15,32 @@ import { GOLDEN_ROUTES, normalizeGoldenBody } from "../scripts/golden-routes.mjs
  * MATCHING_ROUTES is a ratchet. Raise it only when a route genuinely starts
  * matching the original, never to make a run pass.
  */
-const MATCHING_ROUTES = 5;
+const MATCHING_ROUTES = 7;
 
 const dir = "test/fixtures/golden";
 const load = name => JSON.parse(readFileSync(`${dir}/${name}.json`, "utf8"));
 
-// No assets binding is configured in wrangler.jsonc, so nothing is served from
-// a static bundle; this mirrors that rather than inventing a capability.
+// Mirrors the assets binding: serves public/ exactly, and 404s otherwise
+// because not_found_handling is "none".
+const ASSET_TYPES = {
+  js: "text/javascript", css: "text/css", htm: "text/html", html: "text/html",
+  png: "image/png", gif: "image/gif", jpg: "image/jpeg", ico: "image/x-icon",
+  webmanifest: "application/manifest+json"
+};
 const env = {
   APP_ENV: "test",
   SUPABASE_URL: "https://example.invalid",
-  ASSETS: { fetch: async () => new Response("", { status: 404 }) }
+  ASSETS: {
+    fetch: async request => {
+      const path = `public${new URL(request.url).pathname}`;
+      if (!existsSync(path) || !statSync(path).isFile()) return new Response("", { status: 404 });
+      const type = ASSET_TYPES[path.slice(path.lastIndexOf(".") + 1).toLowerCase()];
+      return new Response(readFileSync(path), {
+        status: 200,
+        headers: type ? { "content-type": type } : {}
+      });
+    }
+  }
 };
 
 async function callWorker(fixture) {

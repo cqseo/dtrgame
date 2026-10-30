@@ -1,0 +1,14 @@
+{template header}
+<div class="subtitle">用户登录</div>
+<div>
+<form method="post" name="login" action="login.php">
+    <input type="hidden" name="mode" value="main">
+    {lang username}<input type="text" name="username" size="20" maxlength="20" value="$cuser"><br>
+    {lang password}<input type="password" name="password" size="20" maxlength="24" autocomplete="current-password"><br>
+    <input type="submit" name="enter" value="{lang login}">
+</form>
+<p style="max-width:530px;margin:14px auto;padding:11px;background:#1c2838;border:1px solid #42506b;border-radius:6px;line-height:1.6;">
+  <strong>忘记密码？</strong> 使用你提前保存的账号恢复码，可在 <a href="recovery.php">密码恢复页面</a> 自助重置。已登录玩家应先生成并离线保存恢复码；没有恢复码的旧账号仍需管理员核验。
+</p>
+</div>
+{template footer}

@@ -1,0 +1,21 @@
+<!--{eval bubblebox_start('id:persistent-newroombox;height:425;width:310;scroll-bar:1;cancellable:1;');}-->
+<div id="loading"></div>
+<div style="text-align:center;">
+	<span style="line-height:32px;">创建新房间：</span>
+    <div style="font-size:12px;line-height:1.6;color:#e0e2e9;text-align:left;margin:4px 8px 10px;">
+      同一账号最多同时创建 <strong>$max_private_room_num</strong> 个未结束的非常驻房间；部分模式另有同类型限制。<br>
+      「SOLO模式」实际为<strong>双人1v1</strong>，需两名玩家入座并准备；进入房间后仍须点击空座位。
+    </div>
+	<!--{eval global $roomtypelist,$max_private_room_num;}-->
+	<!--{loop $roomtypelist $i $value}-->
+		<!--{if check_room_available($value) && empty($value['soleroom'])}-->
+			<div>
+			<!--{eval $bname=str_replace('"',"'",$value['name']);}-->
+			<a class="b_button bc_black" onclick="
+			window.location.href='roomcmd.php?command=newroom&para1='+$i;
+			$('loading').style.display='block'" style="margin:3px;width:85px">$bname</a>
+			</div>
+		<!--{/if}-->
+	<!--{/loop}-->
+</div>
+<!--{eval bubblebox_end();}-->

@@ -1,0 +1,76 @@
+{template header}
+<details style="margin:8px auto;max-width:760px;box-sizing:border-box;padding:7px 12px;border:1px solid #37556d;border-radius:7px;background:rgba(23,35,54,.92);color:#cfe5f7;font-size:12px;line-height:1.7;text-align:left;">
+ <summary style="cursor:pointer;color:#e3f2ff;font-weight:bold;">操作提示：探索、恢复、商店及离线风险</summary>
+ <div style="padding-top:6px;">
+  移动时除了换地点，也可能随机发现物品或遭遇角色；出生地点并不保证能反复探索。<br>
+  商店服务与所在地图相关，离开特定商店地点后入口可能消失，并非道具丢失。<br>
+  体力不足时可选择睡眠或使用背包补给；中毒、异常和受伤可能导致行动时掉血或影响战斗数值。<br>
+  离线不代表退出战场：角色可能仍被其他玩家或事件影响。不要在危险地点长期挂机。<br>
+  某些模式支持复活，退出房间前请确认是否仍需等待本局复活或结算。
+ </div>
+</details>
+<!--{if $gametype==15}-->
+<!--{eval $dts_money_record=defined('MOD_SKILL313') ? (int)\skillbase\skill_getvalue(313,'max_money',$sdata) : (int)$money;}-->
+<div class="dts-objective-panel" style="max-width:720px;margin:10px auto;padding:11px 14px;border:1px solid #8b742f;border-radius:7px;background:#2b2818;color:#fff3b4;line-height:1.7;text-align:left;">
+ <strong>伐木挑战进度</strong> · 当前金钱 <strong>$money</strong> 元 · 一禁前最高纪录 <strong>$dts_money_record</strong> 元 · 第一档目标 <strong>30,000</strong> 元<br>
+ 击败地图中的 NPC 后探索并拾取其尸体金钱；达到 30,000 元后使用「伐木解除钥匙」可立即结算。未使用钥匙时，经典模式在 3 禁、极限模式在 1 禁自动结算。
+</div>
+<!--{/if}-->
+<!--{if $gametype==13 || $gametype==16}-->
+<!--{eval $dts_items=array($itm1,$itm2,$itm3,$itm4,$itm5,$itm6);$dts_has_hairpin=in_array('黑色发卡',$dts_items);$dts_has_chaos=in_array('『C.H.A.O.S』',$dts_items);$dts_has_gameover=in_array('『G.A.M.E.O.V.E.R』',$dts_items);}-->
+<div class="dts-objective-panel" style="max-width:720px;margin:10px auto;padding:11px 14px;border:1px solid #446b79;border-radius:7px;background:#142a35;color:#dff8ff;line-height:1.7;text-align:left;">
+ <strong>幻境解离进度</strong> · 禁区轮次 <strong>$areanum</strong> · 歌魂 <strong>$ss / 233</strong><br>
+ 黑色发卡：<!--{if $dts_has_hairpin}--><span class="lime b">已取得</span><!--{else}--><span class="yellow b">未取得</span><!--{/if}-->　
+ C.H.A.O.S：<!--{if $dts_has_chaos}--><span class="lime b">已取得</span><!--{else}-->未取得<!--{/if}-->　
+ 最终道具：<!--{if $dts_has_gameover}--><span class="lime b">已取得，可使用结算</span><!--{else}-->未取得<!--{/if}--><br>
+ 路线：收集解离材料并合成「C.H.A.O.S」→ 保留黑色发卡、歌魂达到 233 → 使用 C.H.A.O.S 生成解离组件 → 合成并使用「G.A.M.E.O.V.E.R」。PVE 最晚 4 禁、试炼最晚 2 禁结束。
+</div>
+<!--{/if}-->
+<!--{if $groomtype==8}-->
+<div style="max-width:720px;margin:10px auto;padding:10px 14px;border:1px solid #3f5974;border-radius:7px;background:#17263c;color:#e9f4ff;text-align:center;line-height:1.7;">
+  <strong>荣耀模式</strong> · 可随时加入正在进行的房间；新加入者从当前战场进度开始，不会重置禁区或其他玩家。角色离线时可能仍留在战场。若要结束本次角色，请明确退出房间。
+  <button type="button" style="margin:4px 8px;padding:6px 12px;border:1px solid #6089a5;border-radius:6px;background:#27445b;color:#fff;cursor:pointer;"
+    onclick="if(window.confirm('离开荣耀房间可能失去当前角色和继续结算的机会，确定退出吗？')) room_quit();">退出荣耀房间</button>
+</div>
+<!--{/if}-->
+<!--{if $groomtype==13}-->
+<div style="max-width:720px;margin:10px auto;padding:9px 12px;border:1px solid #475875;border-radius:7px;background:#182637;color:#d7ecff;font-size:13px;line-height:1.7;text-align:center;">
+  <strong>蹲站模式</strong>：常驻休闲玩法；自动复活及禁区节奏与标准大逃杀不同，可能没有短时间内的自然胜负。想体验明确对局结束，请选择 SOLO、荣耀或极速等其他房间。
+</div>
+<!--{/if}-->
+<!--{if $groomtype==11 || $groomtype==6}-->
+<div style="max-width:720px;margin:10px auto;padding:9px 12px;border:1px solid #475875;border-radius:7px;background:#182637;color:#d7ecff;font-size:13px;line-height:1.7;text-align:center;">
+  <strong><!--{if $groomtype==11}-->试炼模式<!--{else}-->PVE 解离模式<!--{/if}--></strong>：目标并非普通 PVP 击败其他玩家，请根据房间的挑战等级和当前游戏提示推进。可打开 <a href="help.php#游戏流程" target="_blank" style="color:#8fe0ff;">玩法说明</a> 查询基础机制。
+</div>
+<!--{/if}-->
+<!--{if $groomtype==14 && $gamestate>=20 && $starttime>0}-->
+<div id="dts-quick-timer-bar" style="margin:8px auto;padding:10px 12px;max-width:800px;background:#15233a;border:1px solid #37627c;color:#fff;text-align:center;font-size:14px">
+  30分钟竞技 · 剩余 <strong id="dts-quick-remaining" style="color:#72e4ff;font-size:18px">30:00</strong>
+  <span style="font-size:12px;color:#c2d0db"> · 最后5分钟强制决战 · 到时按击杀、等级、生命判胜</span>
+</div>
+<script type="text/javascript">
+(function () {
+ var started = Number('$starttime');
+ var deadline = (started + 1800) * 1000;
+ var el = document.getElementById('dts-quick-remaining');
+ if (!el || !started || !Number.isFinite(deadline)) return;
+ function update() {
+  var seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+  el.textContent = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+  if (seconds <= 300) el.style.color = '#ff897a';
+ }
+ update();
+ setInterval(update, 1000);
+})();
+</script>
+<!--{/if}-->
+{template game_interface}
+{template footer}
+<!--{if CURSCRIPT=='game' && !defined('IN_REPLAY') && $gametype != 17 && $hp>0 && $state < 10}-->
+<!--{eval $rf_command = (1==$state||2==$state||3==$state) ? 'rest' : 'enter'}-->
+<script type="text/javascript">
+jQuery(document).ready(function(){
+  $('mode').value='$mode';$('command').value='$rf_command';postCmd('gamecmd','command.php');
+});
+</script>
+<!--{/if}-->

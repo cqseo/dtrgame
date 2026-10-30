@@ -4,6 +4,17 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-10-28",
   "workers_dev": true,
+  // The original's own presentation files, copied byte for byte by
+  // scripts/sync-original-assets.mjs. run_worker_first keeps the edge routing
+  // contract authoritative: the Worker decides what is refused before any
+  // file is served.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "none",
+    "not_found_handling": "none"
+  },
   "durable_objects": {
     "bindings": [
       { "name": "ROOMS", "class_name": "LegacyRoomDurableObject" },
