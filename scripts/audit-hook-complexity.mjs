@@ -9,6 +9,9 @@
  * order of work, and nothing in the repository measured it before.
  *
  * Classification is by what the body touches:
+ *   override  — an empty or constant body, which is how this codebase marks
+ *               a point other modules fill in; porting the base body alone
+ *               looks correct in isolation and is wrong in the game
  *   pure      — arguments only
  *   config    — also reads module configuration or constants
  *   state     — reads or writes globals the game carries between calls
@@ -78,8 +81,18 @@ const PROLOGUE = [
 
 const stripPrologue = body => PROLOGUE.reduce((text, pattern) => text.replace(pattern, ""), body);
 
+/**
+ * A body that only returns a constant is an override point. parse_itmk_desc
+ * returns '' in base/itemmain and the weapon modules fill it in, so against
+ * the running game it answers a description rather than an empty string.
+ * Counting these as "pure" made the cheapest-looking work the most
+ * misleading.
+ */
+const OVERRIDE = /^\{\s*(return\s*(''|""|0|null|NULL|false|true|array\(\)|\[\])?\s*;)?\s*\}$/i;
+
 function classify(rawBody) {
   const body = stripPrologue(rawBody);
+  if (OVERRIDE.test(body.replace(/\s+/g, " ").trim())) return "override";
   if (DATA.test(body)) return "data";
   if (DISPATCH.test(body)) return "dispatch";
   if (STATE.test(body)) return "state";
@@ -87,7 +100,7 @@ function classify(rawBody) {
   return "pure";
 }
 
-const byClass = { pure: [], config: [], state: [], data: [], dispatch: [] };
+const byClass = { pure: [], config: [], state: [], data: [], dispatch: [], override: [] };
 
 for (const file of phpFiles(modulesRoot)) {
   const source = readFileSync(file, "utf8");
