@@ -17,7 +17,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { compilePhpModuleFile } from "../src/legacy/module-compiler.ts";
+import { ENTRY_POINTS, closureFrom, readModuleTree } from "./lib/module-closure.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..");
@@ -29,79 +29,55 @@ const sourceRoot = resolve(
 );
 
 /**
- * The modules compiled so far, in the order the game needs them.
+ * What to compile: the closure of a list of entry points.
  *
- * This list grows as each module's functions are held to the original by
- * the parity suite. A module is added here only once its differential
- * passes, so the list is a record of what matches rather than of what has
- * been attempted.
+ * Entry points rather than a list of modules. Listing modules is how
+ * map_display went missing the moment the list was replaced by the tick's
+ * closure, because map.php does not run inside a tick. Naming what has to
+ * work and deriving the rest cannot drift that way.
+ *
+ * DTS_MODULES overrides it with an explicit comma-separated list, for
+ * trying one module without regenerating hundreds.
  */
-const MODULES = [
-  { module: "cooldown", file: "include/modules/base/cooldown/main.php" },
-  // The three behind map.php. get_all_plsno is declared by map and
-  // overridden by instance11, so both are needed: a bare call enters
-  // instance11, which falls through to map via $chprocess unless the room
-  // is game type 21.
-  { module: "map", file: "include/modules/core/map/main.php" },
-  { module: "map_display", file: "include/modules/base/map_display/main.php" },
-  { module: "instance11", file: "include/modules/extra/instance/instance11_observe/main.php" },
-  // sys declares its 40 functions across five files under one namespace,
-  // and holds the only implementations of load_gameinfo, save_gameinfo,
-  // process_lock and routine -- the whole game tick goes through them.
-  // noise and instance8 are the rest of the load_gameinfo / save_gameinfo
-  // chains: post_work_extra is sys -> noise -> instance8, and both
-  // gameinfo_audit and save_gameinfo_prepare_work are sys -> noise.
-  { module: "noise", file: "include/modules/base/noise/main.php" },
-  { module: "instance8", file: "include/modules/extra/instance/instance8_proud/main.php" },
-  // gameflow_base is the newest implementation of updategame, so a bare
-  // call to it enters here and walks back to map and then sys.
-  { module: "gameflow_base", file: "include/modules/core/gameflow/gameflow_base/main.php" },
-  // gamestateupdate is gameflow_base -> gameflow_antiafk -> gameflow_combo,
-  // so the tick enters at gameflow_combo and walks back.
-  { module: "gameflow_antiafk", file: "include/modules/core/gameflow/gameflow_antiafk/main.php" },
-  { module: "gameflow_combo", file: "include/modules/core/gameflow/gameflow_combo/main.php" },
-  {
-    module: "sys",
-    files: [
-      "include/modules/core/sys/gamectl.php",
-      "include/modules/core/sys/global.php",
-      "include/modules/core/sys/init.php",
-      "include/modules/core/sys/news.php"
-    ]
-  }
-];
+const tree = readModuleTree(sourceRoot);
+const MODULES = process.env.DTS_MODULES
+  ? process.env.DTS_MODULES.split(",").map(name => name.trim()).filter(Boolean)
+  : closureFrom(ENTRY_POINTS, tree).modules;
 
 /** Renders a value as a TypeScript literal, preserving undefined-vs-null. */
-function render(value, indent = 2) {
-  const pad = " ".repeat(indent);
-  const padInner = " ".repeat(indent + 2);
+/**
+ * Renders a value as a TypeScript literal.
+ *
+ * Deliberately not pretty-printed. These files are generated, never read
+ * as prose and never hand-edited, and the indentation is most of their
+ * size: it roughly doubles both the checked-in bytes and what the Worker
+ * has to carry. A value of undefined is dropped rather than emitted,
+ * because `undefined` and an absent key are not the same to the runtime.
+ */
+function render(value) {
   if (value === null) return "null";
-  if (Array.isArray(value)) {
-    if (value.length === 0) return "[]";
-    return `[\n${value.map(item => padInner + render(item, indent + 2)).join(",\n")}\n${pad}]`;
-  }
+  if (Array.isArray(value)) return `[${value.map(render).join(",")}]`;
   if (typeof value === "object") {
     const entries = Object.entries(value).filter(([, item]) => item !== undefined);
-    if (entries.length === 0) return "{}";
-    return `{\n${entries
-      .map(([key, item]) => `${padInner}${JSON.stringify(key)}: ${render(item, indent + 2)}`)
-      .join(",\n")}\n${pad}}`;
+    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${render(item)}`).join(",")}}`;
   }
   return JSON.stringify(value);
 }
 
-function generate({ module, file, files }) {
+const declaringFiles = tree.declaringFiles;
+
+function generate(module) {
   // A module is often more than one file: sys alone declares its 40
   // functions across gamectl.php, global.php, init.php and news.php, and
   // the loader includes them all under the one namespace.
-  const sources = files ?? [file];
-  const functions = sources.flatMap(path =>
-    compilePhpModuleFile(readFileSync(join(sourceRoot, path), "utf8")).filter(
-      fn => fn.namespace === module
-    )
-  );
+  const declared = declaringFiles.get(module) ?? [];
+  const sources = declared.map(entry => entry.relative);
+  const functions = declared.flatMap(entry => entry.functions);
   if (functions.length === 0) {
-    throw new Error(`No functions found for ${module} in ${sources.join(", ")}`);
+    throw new Error(
+      `No module declares the namespace ${module}. Check the name against ` +
+        "scripts/audit-tick-closure.mjs."
+    );
   }
 
   const seen = new Set();
@@ -131,15 +107,44 @@ function generate({ module, file, files }) {
   ];
 
   for (const fn of functions) {
-    lines.push(`  ${JSON.stringify(fn.name)}: ${render(fn, 2)},`);
+    lines.push(`  ${JSON.stringify(fn.name)}: ${render(fn)},`);
   }
   lines.push("};", "");
   return { path: resolve(repoRoot, `src/generated/legacy-compiled-${module}.ts`), text: lines.join("\n") };
 }
 
+/**
+ * The barrel the runtime loads.
+ *
+ * Generated as well, because the list runs to hundreds of modules and
+ * hand-maintaining that many imports is how one quietly goes missing.
+ */
+function barrel(modules) {
+  const constant = name => `LEGACY_COMPILED_${name.toUpperCase()}`;
+  return [
+    "// GENERATED by scripts/generate-compiled-modules.mjs. Do not edit by hand.",
+    "//",
+    `// The ${modules.length} modules compiled from the original's own source.`,
+    "",
+    ...modules.map(name => `import { ${constant(name)} } from "./legacy-compiled-${name}";`),
+    'import type { CompiledPhpFunction } from "../legacy/module-compiler";',
+    "",
+    "export const COMPILED_MODULE_TABLES: readonly Readonly<Record<string, CompiledPhpFunction>>[] = [",
+    ...modules.map(name => `  ${constant(name)},`),
+    "];",
+    "",
+    "export const COMPILED_MODULE_NAMES: readonly string[] = [",
+    ...modules.map(name => `  ${JSON.stringify(name)},`),
+    "];",
+    ""
+  ].join("\n");
+}
+
 let failed = false;
+const written = [];
 for (const entry of MODULES) {
   const { path, text } = generate(entry);
+  written.push(entry);
   if (check) {
     if (readFileSync(path, "utf8") !== text) {
       console.error(`${path} does not match the original; run npm run generate:compiled-modules`);
@@ -147,8 +152,20 @@ for (const entry of MODULES) {
     }
   } else {
     writeFileSync(path, text);
-    console.log(`wrote ${path}`);
   }
 }
+
+const barrelPath = resolve(repoRoot, "src/generated/legacy-compiled-index.ts");
+const barrelText = barrel([...written].sort());
+if (check) {
+  if (readFileSync(barrelPath, "utf8") !== barrelText) {
+    console.error(`${barrelPath} is stale; run npm run generate:compiled-modules`);
+    failed = true;
+  }
+} else {
+  writeFileSync(barrelPath, barrelText);
+  console.log(`wrote ${written.length} modules and the barrel`);
+}
+
 if (check && !failed) console.log("compiled modules match the original");
 if (failed) process.exit(1);
