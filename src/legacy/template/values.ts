@@ -82,6 +82,17 @@ export class PhpArray {
     return [...this.entries.entries()];
   }
 
+  /**
+   * Empties the array and restarts its append counter, which is what PHP's
+   * reindexing functions do. Deleting every key is not enough: the next
+   * append would continue from the old high-water mark, so sort() would
+   * renumber [a,b,c] as 3,4,5 instead of 0,1,2.
+   */
+  reset(): void {
+    this.entries.clear();
+    this.nextIndex = 0;
+  }
+
   clone(): PhpArray {
     const copy = new PhpArray();
     for (const [key, value] of this.entries) {

@@ -246,7 +246,8 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
   sort: ([value]) => {
     if (!(value instanceof PhpArray)) return false;
     const sorted = value.values().sort(compareValues);
-    for (const key of value.keys()) value.delete(key);
+    // PHP's sort() reindexes from zero, so the append counter resets too.
+    value.reset();
     for (const item of sorted) value.push(item);
     return true;
   },
