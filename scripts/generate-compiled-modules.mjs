@@ -37,7 +37,14 @@ const sourceRoot = resolve(
  * been attempted.
  */
 const MODULES = [
-  { module: "cooldown", file: "include/modules/base/cooldown/main.php" }
+  { module: "cooldown", file: "include/modules/base/cooldown/main.php" },
+  // The three behind map.php. get_all_plsno is declared by map and
+  // overridden by instance11, so both are needed: a bare call enters
+  // instance11, which falls through to map via $chprocess unless the room
+  // is game type 21.
+  { module: "map", file: "include/modules/core/map/main.php" },
+  { module: "map_display", file: "include/modules/base/map_display/main.php" },
+  { module: "instance11", file: "include/modules/extra/instance/instance11_observe/main.php" }
 ];
 
 /** Renders a value as a TypeScript literal, preserving undefined-vs-null. */

@@ -129,13 +129,31 @@ export class LegacyModuleRuntime {
     }
   }
 
-  has(name: string): boolean {
-    return this.#functions.has(name.replace(/^\\+/, "").toLowerCase());
+  /**
+   * Resolves a name the way PHP resolves one inside a namespace.
+   *
+   * A name written with a namespace means exactly that function. A bare
+   * name inside `namespace map` means `map\…` first and the global
+   * namespace second, which is how map/main.php:101 calls
+   * `get_current_area()` from inside `map`.
+   */
+  resolve(name: string, namespace?: string): string {
+    const written = name.replace(/^\\+/, "").toLowerCase();
+    if (written.includes("\\")) return written;
+    if (namespace) {
+      const scoped = qualify(namespace, written);
+      if (this.#functions.has(scoped) || this.chains.chain(written).length > 0) return scoped;
+    }
+    return written;
+  }
+
+  has(name: string, namespace?: string): boolean {
+    return this.#functions.has(this.resolve(name, namespace));
   }
 
   /** Which parameters of a function are declared `&$x`. */
-  referenceParameters(name: string): readonly boolean[] {
-    const fn = this.#functions.get(name.replace(/^\\+/, "").toLowerCase());
+  referenceParameters(name: string, namespace?: string): readonly boolean[] {
+    const fn = this.#functions.get(this.resolve(name, namespace));
     return fn ? fn.parameters.map(parameter => parameter.byReference) : [];
   }
 
@@ -143,8 +161,13 @@ export class LegacyModuleRuntime {
    * Calls a function by its qualified name, entering the chain where the
    * original's prologue would.
    */
-  call(name: string, args: readonly (PhpValue | PhpRef)[] = [], caller?: string): PhpValue {
-    const target = name.replace(/^\\+/, "").toLowerCase();
+  call(
+    name: string,
+    args: readonly (PhpValue | PhpRef)[] = [],
+    caller?: string,
+    namespace?: string
+  ): PhpValue {
+    const target = this.resolve(name, namespace);
 
     // __MODULE_NULLFUNCTION__ is what $chprocess holds when nothing was
     // overridden, and the original's version returns NULL.
@@ -186,10 +209,10 @@ export class LegacyModuleRuntime {
       variables: scope,
       globals: scope,
       constants: new Map([...(this.#options.constants ?? []), ["__MAGIC__", MAGIC]]),
-      functions: this.#hostFunctions(scope, qualified),
-      callQualified: (name, callArgs) => this.call(name, callArgs, qualified),
-      hasQualified: name => this.has(name),
-      referenceParameters: name => this.referenceParameters(name),
+      functions: this.hostFunctions(scope, qualified),
+      callQualified: (name, callArgs) => this.call(name, callArgs, qualified, fn.namespace),
+      hasQualified: name => this.has(name, fn.namespace),
+      referenceParameters: name => this.referenceParameters(name, fn.namespace),
       loadTemplate: this.#options.loadTemplate ?? (() => undefined)
     });
 
@@ -245,10 +268,14 @@ export class LegacyModuleRuntime {
   /**
    * The host functions a module body can reach.
    *
-   * import_module and get_var_in_module both need this call's scope, so
-   * they are built per call rather than shared.
+   * import_module and get_var_in_module both need the scope they are
+   * acting on, so they are built per scope rather than shared. A page
+   * template needs them too: map_display.htm opens with
+   * `eval(import_module('sys','map'))`, which brings the map's variables
+   * into the template's own scope, so the same implementations are used
+   * there rather than a second copy that could drift.
    */
-  #hostFunctions(scope: ModuleScope, qualified: string): Map<string, HostFunction> {
+  hostFunctions(scope: ModuleScope, qualified = ""): Map<string, HostFunction> {
     const functions = new Map<string, HostFunction>(this.#options.functions ?? []);
 
     // eval() in the original executes the code import_module() returned.

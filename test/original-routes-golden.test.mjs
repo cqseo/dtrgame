@@ -15,7 +15,7 @@ import { GOLDEN_ROUTES, normalizeGoldenBody } from "../scripts/golden-routes.mjs
  * MATCHING_ROUTES is a ratchet. Raise it only when a route genuinely starts
  * matching the original, never to make a run pass.
  */
-const MATCHING_ROUTES = 16;
+const MATCHING_ROUTES = 17;
 
 const dir = "test/fixtures/golden";
 const load = name => JSON.parse(readFileSync(`${dir}/${name}.json`, "utf8"));

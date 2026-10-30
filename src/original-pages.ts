@@ -9,6 +9,8 @@
 import { LEGACY_CONFIG } from "./generated/legacy-config";
 import { LEGACY_TEMPLATE_LANGUAGE } from "./generated/legacy-template-language";
 import { createOriginalFunctions } from "./legacy/original-functions";
+import { createLegacyModuleRuntime } from "./legacy/php/compiled-modules";
+import { ModuleScope } from "./legacy/php/module-store";
 import { compileTemplate } from "./legacy/template/compile";
 import { createTemplateContext, renderTemplate } from "./legacy/template/render";
 import { PhpArray, type PhpValue } from "./legacy/template/values";
@@ -55,13 +57,11 @@ export interface OriginalPageEntry {
  */
 export const ORIGINAL_PAGES: Readonly<Record<string, readonly OriginalPageEntry[]>> = {
   "/donate.php": [{ page: { kind: "template", template: "donate", curscript: "donate" } }],
-  // map.php is three lines — define CURSCRIPT, require common.inc.php,
-  // include template('map') — but the template calls
-  // \map_display\get_map_display_config(), which imports three modules'
-  // variables, reads them through get_var_in_module(), and calls
-  // \map\get_all_plsno(), which instance11_observe overrides for game type
-  // 21. So it needs the hook chain, not just the template engine, and it
-  // stays unported until that is real rather than approximated.
+  // map.php is three lines: define CURSCRIPT, require common.inc.php,
+  // include template('map'). It checks nothing about the visitor, so the
+  // same bytes go to everyone. Its template reaches into module code, which
+  // the compiled module runtime now serves.
+  "/map.php": [{ page: { kind: "template", template: "map", curscript: "map" } }],
   "/login.php": [{
     page: { kind: "template", template: "login_page", curscript: "login" },
     signedOutOnly: true
@@ -192,12 +192,32 @@ export function renderOriginalPage(page: OriginalPage, sources: ReadonlyMap<stri
   const compileOptions = { language: LEGACY_TEMPLATE_LANGUAGE };
 
   if (page.kind === "template") {
+    // A page template may call into module code -- map.htm calls
+    // \map_display\get_map_display_config() -- so the renderer is given
+    // the module runtime. It dispatches through the original's hook chains
+    // and refuses, rather than guessing, when the implementation the
+    // original would pick is not compiled yet.
+    const runtime = createLegacyModuleRuntime({ constants: pageConstants(page.curscript) });
+
+    // The page scope can take module imports: map_display.htm opens with
+    // `eval(import_module('sys','map'))`, which aliases those modules'
+    // variables into the template's own scope so it can read $plsinfo.
+    const scope = new ModuleScope();
+    for (const [name, value] of globals) scope.set(name, value);
+
     return renderTemplate(page.template, {
       ...createTemplateContext({ loadTemplate }),
-      functions: createOriginalFunctions(),
-      variables: globals,
-      globals,
+      // The runtime's import_module and eval come last: original-functions
+      // has placeholders that only check a module name, while these alias
+      // the module's variables into this scope, which is what the template
+      // is asking for.
+      functions: new Map([...createOriginalFunctions(), ...runtime.hostFunctions(scope)]),
+      variables: scope,
+      globals: scope,
       constants: pageConstants(page.curscript),
+      callQualified: (name, args) => runtime.call(name, args),
+      hasQualified: name => runtime.has(name),
+      referenceParameters: name => runtime.referenceParameters(name),
       compileOptions
     });
   }

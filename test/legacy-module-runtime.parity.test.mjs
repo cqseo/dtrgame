@@ -117,6 +117,29 @@ describe.skipIf(!hasOracle || !existsSync(moduleFile(COOLDOWN)))(
       expect(differences).toEqual([]);
     });
 
+    it("matches get_map_display_config, which needs all three mechanisms", () => {
+      // This is the function behind map.php, and it exercises the lot: it
+      // imports three modules at once, calls \map\get_all_plsno() — which
+      // instance11 overrides, so dispatch enters instance11 and falls
+      // through to map via $chprocess — and reads $xyinfo to build its
+      // result.
+      const expected = callOriginal(
+        [{ fn: "\\map_display\\get_map_display_config", args: [], globals: { ___LOCAL_SYS__VARS__gametype: 0 } }],
+        BOOTSTRAP
+      );
+      expect(expected[0].ok, expected[0].error ?? "").toBe(true);
+
+      const runtime = runtimeWith([
+        "include/modules/core/map/main.php",
+        "include/modules/base/map_display/main.php",
+        "include/modules/extra/instance/instance11_observe/main.php"
+      ]);
+      runtime.store.set("sys", "gametype", 0);
+
+      const actual = runtime.call("map_display\\get_map_display_config");
+      expect(plain(actual)).toEqual(expected[0].value);
+    });
+
     it("matches a getter that reads its configuration through import_module", () => {
       // get_search_coldtime has overrides too, so it is called at the base
       // implementation the way its own child would, which is what

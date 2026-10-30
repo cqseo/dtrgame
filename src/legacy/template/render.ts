@@ -434,7 +434,20 @@ class Renderer {
     }
   }
 
+  /**
+   * Calls a function in a value position.
+   *
+   * get_var_in_module() is declared `function &` in the original and hands
+   * back a binding. Used as a value — `$x = get_var_in_module(...)` — PHP
+   * reads through it, so the binding is resolved here and only
+   * bindReference() keeps it.
+   */
   private callFunction(name: string, args: readonly Expression[]): PhpValue {
+    const result = this.callFunctionRaw(name, args);
+    return result instanceof PhpRef ? result.slot.get() : result;
+  }
+
+  private callFunctionRaw(name: string, args: readonly Expression[]): PhpValue | PhpRef {
     const lowered = name.toLowerCase();
 
     // `template('x')` resolves a name; the include statement does the work.
@@ -512,6 +525,11 @@ class Renderer {
       expression.kind === "variableVariable"
     ) {
       return new PhpRef(this.reference(expression));
+    }
+    // A `function &` such as get_var_in_module() hands back a binding of
+    // its own, which must survive instead of being read through.
+    if (expression.kind === "call") {
+      return this.callFunctionRaw(expression.callee, expression.args);
     }
     return this.evaluate(expression);
   }

@@ -115,6 +115,11 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
     const rounded = scaled < 0 ? -Math.round(-scaled) : Math.round(scaled);
     return rounded / factor;
   },
+  // PHP's chr() works on bytes: it takes the argument modulo 256, and a
+  // negative value wraps up rather than down. map_display_y2coor() builds
+  // the map's column letters with it.
+  chr: ([value]) => String.fromCharCode(((Math.trunc(num(value)) % 256) + 256) % 256),
+  ord: ([value]) => str(value).charCodeAt(0) || 0,
   floor: ([value]) => Math.floor(num(value)),
   ceil: ([value]) => Math.ceil(num(value)),
   abs: ([value]) => Math.abs(num(value)),
@@ -251,6 +256,123 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
     for (const item of sorted) value.push(item);
     return true;
   },
+  /**
+   * The sorts that keep the key with the value.
+   *
+   * sort() renumbers; these four do not, so the array is rebuilt from the
+   * reordered pairs rather than pushed into.
+   */
+  ksort: ([value]) => sortInPlace(value, (a, b) => compareValues(a[0], b[0])),
+  krsort: ([value]) => sortInPlace(value, (a, b) => compareValues(b[0], a[0])),
+  asort: ([value]) => sortInPlace(value, (a, b) => compareValues(a[1], b[1])),
+  arsort: ([value]) => sortInPlace(value, (a, b) => compareValues(b[1], a[1])),
+
+  /**
+   * array_slice(). Without preserve_keys, PHP renumbers integer keys from
+   * zero but always keeps string keys, which is why this rebuilds rather
+   * than copying the pairs across.
+   */
+  array_slice: ([value, offset, length, preserveKeys]) => {
+    const source = arr(value);
+    const pairs = source.keys().map(key => [key, source.get(key)] as const);
+    const start = int(offset) < 0 ? Math.max(pairs.length + int(offset), 0) : int(offset);
+    const end =
+      length === undefined || length === null
+        ? pairs.length
+        : int(length) < 0
+          ? pairs.length + int(length)
+          : start + int(length);
+    const result = new PhpArray();
+    const keep = toBool(preserveKeys ?? false);
+    for (const [key, item] of pairs.slice(start, Math.max(end, start))) {
+      if (keep || typeof key === "string") result.set(key, item);
+      else result.push(item);
+    }
+    return result;
+  },
+  array_reverse: ([value, preserveKeys]) => {
+    const source = arr(value);
+    const result = new PhpArray();
+    const keep = toBool(preserveKeys ?? false);
+    for (const key of source.keys().reverse()) {
+      if (keep || typeof key === "string") result.set(key, source.get(key));
+      else result.push(source.get(key));
+    }
+    return result;
+  },
+  array_sum: ([value]) => arr(value).values().reduce<number>((total, item) => total + toNumber(item), 0),
+  array_fill: ([start, count, item]) => {
+    const result = new PhpArray();
+    for (let index = 0; index < int(count); index += 1) result.set(int(start) + index, item ?? null);
+    return result;
+  },
+  /** array_diff() compares as strings, which is what PHP documents. */
+  array_diff: ([first, ...rest]) => {
+    const source = arr(first);
+    const excluded = new Set(rest.flatMap(other => arr(other).values().map(item => str(item))));
+    const result = new PhpArray();
+    for (const key of source.keys()) {
+      const item = source.get(key);
+      if (!excluded.has(str(item))) result.set(key, item);
+    }
+    return result;
+  },
+  /** array_unique() keeps the first of each string-equal value and its key. */
+  array_unique: ([value]) => {
+    const source = arr(value);
+    const seen = new Set<string>();
+    const result = new PhpArray();
+    for (const key of source.keys()) {
+      const item = source.get(key);
+      const asText = str(item);
+      if (seen.has(asText)) continue;
+      seen.add(asText);
+      result.set(key, item);
+    }
+    return result;
+  },
+  str_repeat: ([value, times]) => str(value).repeat(Math.max(int(times), 0)),
+
+  /**
+   * The internal-pointer readers, which the original uses to peek at an
+   * array rather than to walk one.
+   */
+  end: ([value]) => {
+    const values = arr(value).values();
+    return values.length === 0 ? false : (values[values.length - 1] as PhpValue);
+  },
+  reset: ([value]) => {
+    const values = arr(value).values();
+    return values.length === 0 ? false : (values[0] as PhpValue);
+  },
+  current: ([value]) => {
+    const values = arr(value).values();
+    return values.length === 0 ? false : (values[0] as PhpValue);
+  },
+  key: ([value]) => {
+    const keys = arr(value).keys();
+    return keys.length === 0 ? null : (keys[0] as PhpValue);
+  },
+  /** array_shift() removes the first element and renumbers integer keys. */
+  array_shift: ([value]) => {
+    if (!(value instanceof PhpArray)) return null;
+    const keys = value.keys();
+    if (keys.length === 0) return null;
+    const first = keys[0] as string | number;
+    const removed = value.get(first);
+    const rest = keys.slice(1).map(key => [key, value.get(key)] as const);
+    value.reset();
+    for (const [key, item] of rest) {
+      if (typeof key === "string") value.set(key, item);
+      else value.push(item);
+    }
+    return removed;
+  },
+  array_push: ([value, ...items]) => {
+    if (!(value instanceof PhpArray)) return false;
+    for (const item of items) value.push(item);
+    return value.keys().length;
+  },
 
   // Time.
   time: () => Math.floor(Date.now() / 1000),
@@ -259,6 +381,25 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
   gmdate: ([format, timestamp]) =>
     formatDate(str(format), timestamp === undefined || timestamp === null ? Math.floor(Date.now() / 1000) : int(timestamp), true)
 };
+
+/**
+ * Reorders an array in place, keeping each key with its value.
+ *
+ * ksort, krsort, asort and arsort all differ only in the comparison, and
+ * none of them renumbers, so the array is cleared and refilled from the
+ * reordered pairs.
+ */
+function sortInPlace(
+  value: PhpValue | undefined,
+  compare: (left: readonly [string | number, PhpValue], right: readonly [string | number, PhpValue]) => number
+): boolean {
+  if (!(value instanceof PhpArray)) return false;
+  const pairs = value.keys().map(key => [key, value.get(key)] as const);
+  pairs.sort(compare);
+  value.reset();
+  for (const [key, item] of pairs) value.set(key, item);
+  return true;
+}
 
 function reduceExtreme(args: PhpValue[], direction: 1 | -1): PhpValue {
   const candidates = args.length === 1 && args[0] instanceof PhpArray ? (args[0] as PhpArray).values() : args;
