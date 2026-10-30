@@ -9,9 +9,12 @@ This ledger is generated against the captured Baota baseline. It prevents a part
 - Pending modules: **710**
 - Original hook implementations ported: **56 / 5,235 (1.07%)**, missing **5,179**
 - Player database fields captured: **124**
-- Original public routes reproduced byte for byte: **16 / 23 signed out**, **2 / 13 signed in**
+- Original public routes reproduced byte for byte: **17 / 23 signed out**, **3 / 13 signed in**
 - Original templates compiling to identical bytes: **845 / 845**
-- Automated TypeScript tests: **204**; **52** PHP-oracle assertions are environment-gated and run against the original PHP interpreter
+- Automated TypeScript tests: **204**; **57** PHP-oracle assertions are environment-gated and run against the original PHP interpreter
+- Module files parsed by the module compiler: **1,661 / 1,661**, finding **6,081** function declarations, which is the count PHP's own tokenizer reports
+- Module variables read out of the original rather than transcribed: **1,621** across **366** modules
+- Modules compiled from their own source and dispatched through the real hook chains: **4** (`cooldown`, `map`, `map_display`, `instance11`)
 
 Module counts and the partial list below are taken from `docs/legacy-module-migration.json`, which `npm run generate:migration` derives from the captured source. Earlier revisions of this page carried a hand-edited list that had drifted to 37 modules; the generator is the only authority.
 
@@ -31,7 +34,7 @@ Before this harness ran, the seven PHP-oracle assertions had always been reporte
 
 The PHP oracle compares pure functions. Whole responses are now compared too: an isolated instance of the captured source runs under PHP 8.2.35 behind a copy of the production nginx routing contract, against its own database, so it can be driven freely without touching the live site or live player data. `npm run capture:golden` records whole responses from it into `test/fixtures/golden/`, and `test/original-routes-golden.test.mjs` replays each one against the Worker.
 
-Current result: **16 of 23 captured routes match the original**, byte for byte.
+Current result: **17 of 23 captured routes match the original**, byte for byte.
 
 Reproduced so far:
 
@@ -42,7 +45,19 @@ Reproduced so far:
 - `roomcmd.php` and `roomupdate.php` signed out, including the original error-page scope and encoded update payload.
 - `game.php` and `command.php` signed out, including the original `gexit()` error-page bytes.
 
-The remaining 7 are `index.php`, `register.php`, `end.php`, `rank.php`, `help.php`, `map.php` and `itemhelp.php`. Each needs original module functions, player data, or both; they are not blocked on presentation. The figure is a ratchet; raise it only when a route genuinely starts matching.
+- `map.php`, signed out and signed in, which is the first page served from the original's own module code rather than from a template alone. Its template imports `sys` and `map`, calls `\map_display\get_map_display_config()`, and that calls `\map\get_all_plsno()`, which `instance11` overrides — so it exercises hook dispatch, the `$chprocess` chain, by-reference module imports and `get_var_in_module()` together.
+
+The remaining 6 are `index.php`, `register.php`, `end.php`, `rank.php`, `help.php` and `itemhelp.php`. `rank.php` and `help.php` are thin wrappers around `render_page()`, which curl-POSTs to the site's own `command.php`, so they arrive with that engine. `itemhelp.php` is a page script with real logic rather than a single template, and needs page scripts to be compiled the way modules now are. The figure is a ratchet; raise it only when a route genuinely starts matching.
+
+## The module runtime
+
+A module function is not a plain function in the original. It opens with `if (eval(__MAGIC__)) return $___RET_VALUE;`, reads its configuration through `eval(import_module(...))`, and calls the implementation it replaced through `$chprocess(...)`. `src/legacy/php/` implements all three, ported from `modules.func.php`:
+
+- **Dispatch** (`dispatch.ts`). `hook_register()` records both directions — who overrides me, who I override — and the prologue redirects a call to the newest implementation unless the caller is the one overriding it. So calling any implementation by name enters the chain at the newest, while `$chprocess()` walks one step older.
+- **Chains come from the manifest**, which holds all 5,235 implementations across the 735 enabled modules, not from whatever is compiled. When dispatch lands on a module with no compiled body the call raises `LegacyFunctionNotCompiled` naming it, rather than quietly running an older implementation. This is what lets the port be partial without being wrong.
+- **References are real** (`module-store.ts`). `eval(import_module('map'))` expands to `$plsinfo = &$___LOCAL_MAP__VARS__plsinfo;`, and `get_var_in_module()` returns `& $GLOBALS[...]`, so an imported name is an alias and a write reaches the module. The same slots carry by-reference parameters, which 3,509 of the original's parameters use.
+
+A reference inside an array literal — `array('itm' => &$itm0)` — is refused rather than silently copied, because `PhpArray` holds values and the binding would be lost. That shows up as a blocked function instead of a wrong one.
 
 ### What those pages are waiting on
 
