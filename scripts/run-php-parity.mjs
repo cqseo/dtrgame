@@ -51,9 +51,18 @@ console.log(`Suites: ${suites.length}`);
 
 // Remote interpreter round-trips exceed vitest's 5s default.
 const timeout = process.env.DTS_PARITY_TIMEOUT ?? "120000";
+// The suites share one interpreter over one SSH connection. Run in parallel
+// they contend for it and trip the oracle's own call timeout, which looks
+// like a parity failure and is not one, so the files are run one at a time.
 const run = spawnSync(
   process.execPath,
-  ["node_modules/vitest/vitest.mjs", "run", `--testTimeout=${timeout}`, ...suites],
+  [
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "--no-file-parallelism",
+    `--testTimeout=${timeout}`,
+    ...suites
+  ],
   { stdio: "inherit", env: { ...process.env, DTS_PHP_BIN: php, DTS_LEGACY_ROOT: legacyRoot } }
 );
 process.exit(run.status ?? 1);

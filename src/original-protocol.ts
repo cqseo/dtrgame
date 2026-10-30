@@ -21,12 +21,24 @@ function fromBase64(value: string): Uint8Array {
   const binary = atob(value);
   return Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
 }
+/**
+ * Byte 9 of a gzip member is the OS identifier. PHP's gzencode always writes
+ * 0x03 (Unix), while a zlib build writes whatever its platform is — 0x13 on
+ * the runtime this port uses. The payload after it is identical, but the
+ * original's responses are compared byte for byte, so the field is set to
+ * what PHP emits rather than left to the platform.
+ */
+const GZIP_OS_UNIX = 0x03;
+const GZIP_OS_OFFSET = 9;
+
 export async function legacyEncode(payload: unknown): Promise<string> {
   const json = JSON.stringify(payload);
   if (json === undefined) throw new TypeError("Legacy wire payload must be JSON-serializable");
   const input = new Blob([new TextEncoder().encode(json)]);
   const compressed = await new Response(input.stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer();
-  return toBase64(new Uint8Array(compressed));
+  const bytes = new Uint8Array(compressed);
+  if (bytes.length > GZIP_OS_OFFSET) bytes[GZIP_OS_OFFSET] = GZIP_OS_UNIX;
+  return toBase64(bytes);
 }
 export async function legacyDecode<T = unknown>(value: string): Promise<T> {
   if (!value) return [] as T;
