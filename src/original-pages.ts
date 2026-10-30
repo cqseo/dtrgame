@@ -42,30 +42,44 @@ export interface OriginalPageEntry {
    * rather than answered with a page the original would not have returned.
    */
   readonly signedOutOnly?: boolean;
+  /** The original only takes this path for a signed-in visitor. */
+  readonly signedInOnly?: boolean;
   /** The original branches on query parameters this port does not handle. */
   readonly noQueryOnly?: boolean;
 }
 
-export const ORIGINAL_PAGES: Readonly<Record<string, OriginalPageEntry>> = {
-  "/donate.php": { page: { kind: "template", template: "donate", curscript: "donate" } },
-  "/login.php": {
+/**
+ * Several paths answer differently depending on whether the visitor is
+ * signed in, so a path maps to the branches the original takes and the first
+ * whose conditions hold is used.
+ */
+export const ORIGINAL_PAGES: Readonly<Record<string, readonly OriginalPageEntry[]>> = {
+  "/donate.php": [{ page: { kind: "template", template: "donate", curscript: "donate" } }],
+  "/login.php": [{
     page: { kind: "template", template: "login_page", curscript: "login" },
     signedOutOnly: true
-  },
+  }],
+  // register.php refuses a visitor who already holds credentials, before it
+  // builds its form; the signed-out branch is still unported.
+  "/register.php": [{
+    page: { kind: "error", errorKey: "logged_in", curscript: "register" },
+    signedInOnly: true,
+    noQueryOnly: true
+  }],
   // cardbook.php and kujilist.php reach udata_check(), which gexit()s with
   // $_ERROR['no_login'] before any of their own content renders.
-  "/cardbook.php": {
+  "/cardbook.php": [{
     page: { kind: "error", errorKey: "no_login", curscript: "cardbook" },
     signedOutOnly: true,
     noQueryOnly: true
-  },
-  "/kujilist.php": {
+  }],
+  "/kujilist.php": [{
     page: { kind: "error", errorKey: "no_login", curscript: "kujilist" },
     signedOutOnly: true,
     noQueryOnly: true
-  },
+  }],
   // chat.php exits before loading anything when there is no signed-in user.
-  "/chat.php": { page: { kind: "literal", body: "Not in game." }, signedOutOnly: true, noQueryOnly: true }
+  "/chat.php": [{ page: { kind: "literal", body: "Not in game." }, signedOutOnly: true, noQueryOnly: true }]
 };
 
 /** Mirrors the `empty($cuser)` guard these pages share. */
@@ -79,11 +93,16 @@ export function selectOriginalPage(
   url: URL,
   request: Request
 ): OriginalPage | undefined {
-  const entry = ORIGINAL_PAGES[pathname];
-  if (!entry) return undefined;
-  if (entry.signedOutOnly && !isSignedOutRequest(request)) return undefined;
-  if (entry.noQueryOnly && url.search !== "") return undefined;
-  return entry.page;
+  const entries = ORIGINAL_PAGES[pathname];
+  if (!entries) return undefined;
+  const signedOut = isSignedOutRequest(request);
+  for (const entry of entries) {
+    if (entry.signedOutOnly && !signedOut) continue;
+    if (entry.signedInOnly && signedOut) continue;
+    if (entry.noQueryOnly && url.search !== "") continue;
+    return entry.page;
+  }
+  return undefined;
 }
 
 /** Literal `include template('x')` names in compiled output. */
