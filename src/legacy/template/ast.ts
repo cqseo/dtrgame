@@ -34,6 +34,7 @@ export type Statement =
     }
   | { kind: "include"; template: Expression }
   | { kind: "exit"; value: Expression | null }
+  | { kind: "return"; value: Expression | null }
   | { kind: "break"; levels: number }
   | { kind: "continue"; levels: number }
   | { kind: "unset"; targets: Expression[] }

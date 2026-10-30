@@ -66,6 +66,9 @@ class BreakSignal {
 class ContinueSignal {
   constructor(readonly levels: number) {}
 }
+class ReturnSignal {
+  constructor(readonly value: PhpValue) {}
+}
 
 /** A slot that can be read and written, used for assignment targets. */
 interface Reference {
@@ -98,6 +101,29 @@ export function renderCompiled(compiled: string, context: TemplateContext): stri
   const renderer = new Renderer(context);
   renderer.run(parseTemplateProgram(compiled));
   return renderer.output;
+}
+
+/** Executes one precompiled PHP-subset function body without runtime codegen. */
+export function executeCompiledFunctionBody(compiled: string, context: TemplateContext): {
+  value: PhpValue;
+  output: string;
+} {
+  return executeCompiledFunctionProgram(parseTemplateProgram(compiled), context);
+}
+
+/** Executes a checked-in build-time AST; this is the Worker runtime path. */
+export function executeCompiledFunctionProgram(
+  program: readonly Statement[],
+  context: TemplateContext
+): { value: PhpValue; output: string } {
+  const renderer = new Renderer(context);
+  try {
+    renderer.run([...program]);
+    return { value: null, output: renderer.output };
+  } catch (signal) {
+    if (signal instanceof ReturnSignal) return { value: signal.value, output: renderer.output };
+    throw signal;
+  }
 }
 
 class Renderer {
@@ -159,6 +185,8 @@ class Renderer {
       case "exit":
         if (statement.value) this.output += toStringValue(this.evaluate(statement.value));
         throw new TemplateExit(this.output);
+      case "return":
+        throw new ReturnSignal(statement.value ? this.evaluate(statement.value) : null);
       case "break":
         throw new BreakSignal(statement.levels);
       case "continue":

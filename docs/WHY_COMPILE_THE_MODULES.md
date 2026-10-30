@@ -91,3 +91,18 @@ out of 6,081.
 
 Non-goals, unchanged: Stripe, login optimisation and distribution stay
 untouched until the game itself passes.
+
+## Current implementation checkpoint
+
+The first vertical proof is complete for three functions in the real
+`base/cooldown` module. The compiler extracts function boundaries without
+being confused by braces in strings/comments, records reference parameters,
+and reuses the PHP-subset parser for the hook guard, module import and return.
+The Worker executes checked-in AST rather than parsing PHP or generating code
+at runtime. `get_move_coldtime`, `get_search_coldtime` and
+`get_itemuse_coldtime` now use that path in the actual command kernel, and
+the PHP 8.2.35 oracle agrees on both return values and global side effects.
+
+The proof deliberately stops before claiming general coverage. Reference
+write-back, loops, arbitrary nested calls, the database host and the other
+6,078 declarations remain outstanding.

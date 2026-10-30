@@ -114,6 +114,7 @@ export class Parser {
         case "require_once": return this.parseInclude();
         case "exit":
         case "die": return this.parseExit();
+        case "return": return this.parseReturn();
         case "break": return this.parseBreakContinue("break");
         case "continue": return this.parseBreakContinue("continue");
         // Templates render in the global scope, so `global $x;` imports
@@ -233,6 +234,15 @@ export class Parser {
     }
     this.eat("punct", ";");
     return { kind: "exit", value };
+  }
+
+  private parseReturn(): Statement {
+    this.next();
+    const value = this.at("punct", ";") || this.at("punct", "}")
+      ? null
+      : this.parseExpression();
+    this.eat("punct", ";");
+    return { kind: "return", value };
   }
 
   private parseBreakContinue(kind: "break" | "continue"): Statement {
