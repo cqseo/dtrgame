@@ -62,12 +62,42 @@ export const GOLDEN_ROUTES = [
 ];
 
 /**
+ * The pages that only exist behind an account.
+ *
+ * These are what the remaining work has to reproduce, and none of them can
+ * be captured with a plain GET, so they are driven through a signed-in
+ * session against the isolated instance.
+ */
+export const SIGNED_IN_ROUTES = [
+  { name: "in-index", path: "/index.php", expectStatus: 200 },
+  // Signed in but not in a match, game.php redirects to valid.php and
+  // end.php to index.php; both are the original answering, not a fault.
+  { name: "in-game", path: "/game.php", expectStatus: 302 },
+  { name: "in-rank", path: "/rank.php", expectStatus: 200 },
+  { name: "in-help", path: "/help.php", expectStatus: 200 },
+  { name: "in-end", path: "/end.php", expectStatus: 302 },
+  { name: "in-map", path: "/map.php", expectStatus: 200 },
+  { name: "in-itemhelp", path: "/itemhelp.php", expectStatus: 200 },
+  { name: "in-cardbook", path: "/cardbook.php", expectStatus: 200 },
+  { name: "in-kujilist", path: "/kujilist.php", expectStatus: 200 },
+  { name: "in-chat", path: "/chat.php", expectStatus: 200 },
+  // Signed in, register.php refuses with $_ERROR['logged_in'].
+  { name: "in-register", path: "/register.php", expectStatus: 200 },
+  { name: "in-roomcmd", path: "/roomcmd.php", expectStatus: 200 },
+  { name: "in-roomupdate", path: "/roomupdate.php", expectStatus: 200 }
+];
+
+/**
  * Removes only what cannot be reproduced run to run, so a diff means a real
  * behavioural difference. Everything else, including every Chinese label and
  * every element id, is compared verbatim.
+ *
+ * `account` masks the capture account's name, which appears throughout a
+ * signed-in page and would otherwise bake one throwaway identity into the
+ * fixtures.
  */
-export function normalizeGoldenBody(body) {
-  return body
+export function normalizeGoldenBody(body, account) {
+  const normalized = body
     // Per-request anti-forgery token.
     .replace(/(name=["']formhash["'][^>]*value=["'])[0-9a-f]+/gi, "$1<FORMHASH>")
     .replace(/formhash=[0-9a-f]+/gi, "formhash=<FORMHASH>")
@@ -76,4 +106,5 @@ export function normalizeGoldenBody(body) {
     .replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/g, "<DATETIME>")
     // Session identifiers echoed into markup.
     .replace(/(sid=)[0-9a-zA-Z]{6,}/g, "$1<SID>");
+  return account ? normalized.split(account).join("<ACCOUNT>") : normalized;
 }

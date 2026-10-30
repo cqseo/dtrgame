@@ -1,0 +1,16 @@
+{
+  "name": "in-end",
+  "request": {
+    "method": "GET",
+    "path": "/end.php",
+    "body": null
+  },
+  "signedIn": true,
+  "status": 302,
+  "headers": {
+    "content-type": "text/html; charset=UTF-8",
+    "location": "index.php"
+  },
+  "bodyBytes": 0,
+  "body": ""
+}

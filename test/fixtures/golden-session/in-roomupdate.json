@@ -1,0 +1,15 @@
+{
+  "name": "in-roomupdate",
+  "request": {
+    "method": "GET",
+    "path": "/roomupdate.php",
+    "body": null
+  },
+  "signedIn": true,
+  "status": 200,
+  "headers": {
+    "content-type": "text/html; charset=UTF-8"
+  },
+  "bodyBytes": 52,
+  "body": "H4sIAAAAAAAAA6tWKi3KUbJSysxLSa3QK8goUKoFAI4ONz8TAAAA"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "in-game",
+  "request": {
+    "method": "GET",
+    "path": "/game.php",
+    "body": null
+  },
+  "signedIn": true,
+  "status": 302,
+  "headers": {
+    "content-type": "text/html; charset=UTF-8",
+    "location": "valid.php"
+  },
+  "bodyBytes": 0,
+  "body": ""
+}

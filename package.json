@@ -23,6 +23,7 @@
     "golden:up": "tools/golden-tunnel up",
     "golden:down": "tools/golden-tunnel down",
     "capture:golden": "node scripts/capture-golden.mjs",
+    "capture:golden-session": "node scripts/capture-golden-session.mjs",
     "generate:migration": "node scripts/generate-legacy-module-migration.mjs ../legacy-dts docs/legacy-module-migration.json",
     "verify": "npm run check && npm test && npm run build",
     "deploy": "wrangler deploy"

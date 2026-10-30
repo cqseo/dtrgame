@@ -1,0 +1,15 @@
+{
+  "name": "in-chat",
+  "request": {
+    "method": "GET",
+    "path": "/chat.php",
+    "body": null
+  },
+  "signedIn": true,
+  "status": 200,
+  "headers": {
+    "content-type": "text/html; charset=UTF-8"
+  },
+  "bodyBytes": 136,
+  "body": "H4sIAAAAAAAAAy2LwQqAIBAF/+WdPRTRxV+JiCWXElYPutZB/PdKus0wTIVQ1t072FhEDEI+YJfVwGnespIybMVBgX8ZDCgxxRJgZ4ObSU9OnUn8xT2M7/+FLlNrDwincQtnAAAA"
+}

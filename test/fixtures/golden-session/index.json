@@ -1,0 +1,84 @@
+{
+  "account": "paritybot",
+  "capturedRoutes": 13,
+  "routes": [
+    {
+      "name": "in-index",
+      "path": "/index.php",
+      "status": 200,
+      "bytes": 14187
+    },
+    {
+      "name": "in-game",
+      "path": "/game.php",
+      "status": 302,
+      "bytes": 0
+    },
+    {
+      "name": "in-rank",
+      "path": "/rank.php",
+      "status": 200,
+      "bytes": 24059
+    },
+    {
+      "name": "in-help",
+      "path": "/help.php",
+      "status": 200,
+      "bytes": 1260885
+    },
+    {
+      "name": "in-end",
+      "path": "/end.php",
+      "status": 302,
+      "bytes": 0
+    },
+    {
+      "name": "in-map",
+      "path": "/map.php",
+      "status": 200,
+      "bytes": 16796
+    },
+    {
+      "name": "in-itemhelp",
+      "path": "/itemhelp.php",
+      "status": 200,
+      "bytes": 1133377
+    },
+    {
+      "name": "in-cardbook",
+      "path": "/cardbook.php",
+      "status": 200,
+      "bytes": 7834
+    },
+    {
+      "name": "in-kujilist",
+      "path": "/kujilist.php",
+      "status": 200,
+      "bytes": 8699
+    },
+    {
+      "name": "in-chat",
+      "path": "/chat.php",
+      "status": 200,
+      "bytes": 136
+    },
+    {
+      "name": "in-register",
+      "path": "/register.php",
+      "status": 200,
+      "bytes": 6155
+    },
+    {
+      "name": "in-roomcmd",
+      "path": "/roomcmd.php",
+      "status": 200,
+      "bytes": 6173
+    },
+    {
+      "name": "in-roomupdate",
+      "path": "/roomupdate.php",
+      "status": 200,
+      "bytes": 52
+    }
+  ]
+}
