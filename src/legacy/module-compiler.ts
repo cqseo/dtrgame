@@ -6,6 +6,7 @@ export interface CompiledPhpParameter {
   readonly byReference: boolean;
   readonly variadic: boolean;
   readonly defaultSource?: string;
+  readonly defaultValue?: string | number | boolean | null;
 }
 
 export interface CompiledPhpFunction {
@@ -19,6 +20,17 @@ export interface CompiledPhpFunction {
 
 function escaped(name: string): string {
   return name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function literalDefault(source: string): string | number | boolean | null | undefined {
+  const trimmed = source.trim();
+  if (/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(trimmed)) return Number(trimmed);
+  if (/^true$/i.test(trimmed)) return true;
+  if (/^false$/i.test(trimmed)) return false;
+  if (/^null$/i.test(trimmed)) return null;
+  const quoted = /^(['"])([\s\S]*)\1$/.exec(trimmed);
+  if (quoted) return quoted[2]!.replace(/\\(['"\\])/g, "$1");
+  return undefined;
 }
 
 /**
@@ -78,11 +90,14 @@ export function compilePhpModuleFunction(
     if (!trimmed) return [];
     const match = /^(?:[^$]*?)(\.\.\.)?\s*(&)?\s*\$([A-Za-z_][A-Za-z0-9_]*)(?:\s*=\s*([\s\S]*))?$/.exec(trimmed);
     if (!match) throw new SyntaxError(`Unsupported parameter ${JSON.stringify(trimmed)} in ${functionName}.`);
+    const defaultSource = match[4]?.trim();
+    const defaultValue = defaultSource === undefined ? undefined : literalDefault(defaultSource);
     return [{
       name: match[3]!,
       byReference: match[2] === "&",
       variadic: match[1] === "...",
-      ...(match[4] === undefined ? {} : { defaultSource: match[4].trim() })
+      ...(defaultSource === undefined ? {} : { defaultSource }),
+      ...(defaultValue === undefined ? {} : { defaultValue })
     }];
   });
   const bodySource = source.slice(open + 1, index - 1);

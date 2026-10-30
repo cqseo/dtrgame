@@ -118,7 +118,7 @@ export function executeCompiledFunctionProgram(
 ): { value: PhpValue; output: string } {
   const renderer = new Renderer(context);
   try {
-    renderer.run([...program]);
+    renderer.run(program);
     return { value: null, output: renderer.output };
   } catch (signal) {
     if (signal instanceof ReturnSignal) return { value: signal.value, output: renderer.output };
@@ -143,7 +143,7 @@ class Renderer {
     this.run(program);
   }
 
-  run(statements: Statement[]): void {
+  run(statements: readonly Statement[]): void {
     for (const statement of statements) this.execute(statement);
   }
 
@@ -298,7 +298,7 @@ class Renderer {
     }
   }
 
-  private callFunction(name: string, args: Expression[]): PhpValue {
+  private callFunction(name: string, args: readonly Expression[]): PhpValue {
     const lowered = name.toLowerCase();
 
     // `template('x')` resolves a name; the include statement does the work.

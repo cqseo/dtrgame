@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { compilePhpModuleFunction } from "../src/legacy/module-compiler";
 import { LEGACY_COMPILED_COOLDOWN } from "../src/generated/legacy-compiled-cooldown";
-import { executeCompiledModuleFunction } from "../src/legacy/compiled-module-runtime";
+import {
+  executeCompiledModuleFunction, executeCompiledModuleFunctionWithState
+} from "../src/legacy/compiled-module-runtime";
 import { executeCompiledFunctionBody, createTemplateContext } from "../src/legacy/template/render";
 import type { HostFunction } from "../src/legacy/template/builtins";
 
@@ -67,9 +69,13 @@ describe("build-time PHP module compiler", () => {
     const move = compilePhpModuleFunction(source, "cooldown", "get_move_coldtime");
     const search = compilePhpModuleFunction(source, "cooldown", "get_search_coldtime");
     const item = compilePhpModuleFunction(source, "cooldown", "get_itemuse_coldtime");
+    const set = compilePhpModuleFunction(source, "cooldown", "set_coldtime");
     expect(move.parameters[0]).toMatchObject({ name: "dest", byReference: true });
     expect(search.parameters).toEqual([]);
     expect(item.parameters[0]).toMatchObject({ name: "item", byReference: true });
+    expect(set.parameters[1]).toEqual({
+      name: "forced", byReference: false, variadic: false, defaultSource: "0", defaultValue: 0
+    });
     expect(execute(move.bodySource, new Map([["dest", 3], ["movecoldtime", 651]])).value).toBe(651);
     expect(execute(search.bodySource, new Map([["searchcoldtime", 652]])).value).toBe(652);
     expect(execute(item.bodySource, new Map<string, number | string>([
@@ -78,11 +84,22 @@ describe("build-time PHP module compiler", () => {
     expect(move.program).toEqual(LEGACY_COMPILED_COOLDOWN.get_move_coldtime.program);
     expect(search.program).toEqual(LEGACY_COMPILED_COOLDOWN.get_search_coldtime.program);
     expect(item.program).toEqual(LEGACY_COMPILED_COOLDOWN.get_itemuse_coldtime.program);
+    expect(set.program).toEqual(LEGACY_COMPILED_COOLDOWN.set_coldtime.program);
   });
 
   it("runs the checked-in AST from original generated module variables", () => {
     expect(executeCompiledModuleFunction(LEGACY_COMPILED_COOLDOWN.get_move_coldtime, [3])).toBe(650);
     expect(executeCompiledModuleFunction(LEGACY_COMPILED_COOLDOWN.get_search_coldtime)).toBe(650);
     expect(executeCompiledModuleFunction(LEGACY_COMPILED_COOLDOWN.get_itemuse_coldtime, ["面包"])).toBe(250);
+    const raised = executeCompiledModuleFunctionWithState(
+      LEGACY_COMPILED_COOLDOWN.set_coldtime, [650], new Map([["cmdcdtime", 200]])
+    );
+    expect(raised.value).toBe(650);
+    expect(raised.variables.get("cmdcdtime")).toBe(650);
+    const unchanged = executeCompiledModuleFunctionWithState(
+      LEGACY_COMPILED_COOLDOWN.set_coldtime, [100], new Map([["cmdcdtime", 200]])
+    );
+    expect(unchanged.value).toBe(200);
+    expect(unchanged.variables.get("cmdcdtime")).toBe(200);
   });
 });

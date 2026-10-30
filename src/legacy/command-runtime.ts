@@ -1,7 +1,9 @@
 import { toNumber } from "./template/values";
 import { LEGACY_MAP_CONFIG } from "./map";
 import { LEGACY_COMPILED_COOLDOWN } from "../generated/legacy-compiled-cooldown";
-import { executeCompiledModuleFunction } from "./compiled-module-runtime";
+import {
+  executeCompiledModuleFunction, executeCompiledModuleFunctionWithState
+} from "./compiled-module-runtime";
 import { runLegacyCraftAction, legacySlotsFromMixMask, type LegacyCraftActionResult } from "./crafting-action";
 import { checkLegacyMove, checkLegacySearch } from "./explore";
 import { calculateLegacyMeetCharacterRate } from "./explore";
@@ -379,10 +381,14 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
   kernel.register("get_search_coldtime", "cooldown", () =>
     toNumber(executeCompiledModuleFunction(LEGACY_COMPILED_COOLDOWN.get_search_coldtime))
   );
-  kernel.register("set_coldtime", "cooldown", ({ session }, cooldown) => {
-    const value = Number(cooldown);
-    if (session.state.commandCooldown < value) session.state.commandCooldown = value;
-    return session.state.commandCooldown;
+  kernel.register("set_coldtime", "cooldown", ({ session }, cooldown, forced) => {
+    const executed = executeCompiledModuleFunctionWithState(
+      LEGACY_COMPILED_COOLDOWN.set_coldtime,
+      forced === undefined ? [cooldown] : [cooldown, forced],
+      new Map([["cmdcdtime", session.state.commandCooldown]])
+    );
+    session.state.commandCooldown = toNumber(executed.variables.get("cmdcdtime") ?? 0);
+    return toNumber(executed.value);
   });
   kernel.register("check_in_coldtime", "cooldown", ({ session }) => {
     const state = session.state;
