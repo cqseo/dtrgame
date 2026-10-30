@@ -100,6 +100,30 @@ export function isSignedOutRequest(request: Request): boolean {
   return !/(?:^|;\s*)[A-Za-z0-9_]*user=[^;]/.test(cookies);
 }
 
+/** The credentials a request carries, under the table prefix the site uses. */
+export interface OriginalVisitor {
+  readonly user?: string | undefined;
+  readonly pass?: string | undefined;
+}
+
+/**
+ * Reads $cuser and $cpass the way include/modules/core/sys/init.php does.
+ *
+ * It assigns them straight from the request — `$cuser = ${$gtablepre.'user'}`
+ * — without checking them, and header.htm then branches on
+ * `isset($cuser) && isset($cpass)`. So the header shows the signed-in
+ * links for any request carrying both cookies, and this reads them the
+ * same way rather than deciding for itself who is signed in.
+ */
+export function readOriginalVisitor(request: Request): OriginalVisitor {
+  const cookies = request.headers.get("cookie") ?? "";
+  const read = (suffix: string): string | undefined => {
+    const found = new RegExp(`(?:^|;\\s*)[A-Za-z0-9_]*${suffix}=([^;]*)`).exec(cookies);
+    return found ? decodeURIComponent(found[1] as string) : undefined;
+  };
+  return { user: read("user"), pass: read("pass") };
+}
+
 export function selectOriginalPage(
   pathname: string,
   url: URL,
@@ -184,7 +208,11 @@ export function originalErrorMessage(key: string): string {
   return errors?.[key] ?? "";
 }
 
-export function renderOriginalPage(page: OriginalPage, sources: ReadonlyMap<string, string>): string {
+export function renderOriginalPage(
+  page: OriginalPage,
+  sources: ReadonlyMap<string, string>,
+  visitor: OriginalVisitor = {}
+): string {
   if (page.kind === "literal") return page.body;
 
   const globals = configGlobals();
@@ -204,6 +232,11 @@ export function renderOriginalPage(page: OriginalPage, sources: ReadonlyMap<stri
     // variables into the template's own scope so it can read $plsinfo.
     const scope = new ModuleScope();
     for (const [name, value] of globals) scope.set(name, value);
+    // sys/init.php sets these from the request, and header.htm tests only
+    // that both are set, so an absent cookie must leave the name unset
+    // rather than set to an empty string.
+    if (visitor.user !== undefined) scope.set("cuser", visitor.user);
+    if (visitor.pass !== undefined) scope.set("cpass", visitor.pass);
 
     return renderTemplate(page.template, {
       ...createTemplateContext({ loadTemplate }),

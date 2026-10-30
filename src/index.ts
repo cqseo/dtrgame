@@ -22,6 +22,7 @@ import {
   originalPageHeaders,
   renderOriginalError,
   renderOriginalPage,
+  readOriginalVisitor,
   selectOriginalPage
 } from "./original-pages";
 import { applyOriginalRouting } from "./original-routing";
@@ -177,7 +178,7 @@ export default {
             return response.status === 200 ? await response.text() : undefined;
           })
         : new Map<string, string>();
-      return new Response(renderOriginalPage(page, sources), {
+      return new Response(renderOriginalPage(page, sources, readOriginalVisitor(request)), {
         status: 200,
         headers: originalPageHeaders()
       });
