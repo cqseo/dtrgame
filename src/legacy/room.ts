@@ -156,6 +156,10 @@ function positionOf(room: LegacyWaitingRoom, user: string): number {
   return room.player.findIndex((slot, index) => index < limit && !slot.forbidden && slot.name === user);
 }
 
+export function legacyRoomPosition(room: LegacyWaitingRoom, username: string): number {
+  return positionOf(room, username);
+}
+
 function leaderAt(room: LegacyWaitingRoom, position: number): number {
   return getLegacyRoomType(room.roomtype)["leader-position"][position] ?? position;
 }

@@ -18,17 +18,19 @@ import {
   entryTemplate,
   loadTemplateTree,
   originalPageHeaders,
+  renderOriginalError,
   renderOriginalPage,
   selectOriginalPage
 } from "./original-pages";
 import { applyOriginalRouting } from "./original-routing";
 import { handleLegacyLogin } from "./runtime/http-auth";
-import { handleLegacyRoomCommand } from "./runtime/http-room";
+import { handleLegacyRoomCommand, handleLegacyRoomUpdate } from "./runtime/http-room";
 import { LegacyLobbyService } from "./runtime/lobby-service";
 import { LegacyRoomService } from "./runtime/room-service";
 import {
   createSupabaseRuntime, SupabaseLegacyAccounts, SupabaseLegacyLobby, SupabaseLegacyRooms
 } from "./runtime/supabase";
+import { legacyCommandResponse } from "./runtime/command";
 export { applyOriginalRouting } from "./original-routing";
 export { LegacyRoomDurableObject } from "./runtime/room-durable-object";
 export { LegacyGameDurableObject } from "./runtime/game-durable-object";
@@ -76,6 +78,18 @@ export default {
       const response = await handleLegacyLogin(request, new SupabaseLegacyAccounts(rest), env.ASSETS);
       if (response) return response;
     }
+    if (url.pathname === "/roomcmd.php" && request.method === "GET" && url.search === "") {
+      const sources = await loadTemplateTree("error", async path => {
+        const response = await env.ASSETS.fetch(new Request(new URL(path, url.origin)));
+        return response.status === 200 ? response.text() : undefined;
+      });
+      return new Response(renderOriginalError("你不在房间内，请先进入房间", "game", sources), {
+        status: 200, headers: originalPageHeaders()
+      });
+    }
+    if (url.pathname === "/roomupdate.php" && !(request.headers.get("cookie") ?? "").includes("bra_user=")) {
+      return legacyCommandResponse({ url: "error.php", errormsg: null });
+    }
     const hasPostedRoomCommand = request.method === "POST" &&
       new URLSearchParams(await request.clone().text()).has("command");
     if (url.pathname === "/roomcmd.php" && (hasPostedRoomCommand || url.searchParams.has("command"))) {
@@ -88,6 +102,16 @@ export default {
         new LegacyLobbyService(env.ROOMS, accounts, new SupabaseLegacyLobby(rest), rooms),
         new LegacyRoomService(env.ROOMS, accounts, rooms),
         env.ASSETS
+      );
+      if (response) return response;
+    }
+    if (url.pathname === "/roomupdate.php") {
+      const rest = createSupabaseRuntime(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
+      if (!rest) return text("房间服务尚未配置。", 503);
+      const accounts = new SupabaseLegacyAccounts(rest);
+      const rooms = new SupabaseLegacyRooms(rest);
+      const response = await handleLegacyRoomUpdate(
+        request, new LegacyRoomService(env.ROOMS, accounts, rooms), env.ASSETS
       );
       if (response) return response;
     }

@@ -9,9 +9,9 @@ This ledger is generated against the captured Baota baseline. It prevents a part
 - Pending modules: **710**
 - Original hook implementations ported: **56 / 5,235 (1.07%)**, missing **5,179**
 - Player database fields captured: **124**
-- Original public routes reproduced byte for byte: **12 / 23 captured**
+- Original public routes reproduced byte for byte: **14 / 23 captured**
 - Original templates compiling to identical bytes: **845 / 845**
-- Automated TypeScript tests: **175** plus **11** PHP-oracle assertions that execute and pass against the original interpreter
+- Automated TypeScript tests: **177** plus **11** PHP-oracle assertions that execute and pass against the original interpreter
 
 Module counts and the partial list below are taken from `docs/legacy-module-migration.json`, which `npm run generate:migration` derives from the captured source. Earlier revisions of this page carried a hand-edited list that had drifted to 37 modules; the generator is the only authority.
 
@@ -31,7 +31,7 @@ Before this harness ran, the seven PHP-oracle assertions had always been reporte
 
 The PHP oracle compares pure functions. Whole responses are now compared too: an isolated instance of the captured source runs under PHP 8.2.35 behind a copy of the production nginx routing contract, against its own database, so it can be driven freely without touching the live site or live player data. `npm run capture:golden` records whole responses from it into `test/fixtures/golden/`, and `test/original-routes-golden.test.mjs` replays each one against the Worker.
 
-Current result: **12 of 23 captured routes match the original**, byte for byte.
+Current result: **14 of 23 captured routes match the original**, byte for byte.
 
 Reproduced so far:
 
@@ -39,8 +39,9 @@ Reproduced so far:
 - The two client scripts the original's pages load, served from the asset bundle.
 - `donate.php` and `login.php`, which the original answers with a single template render.
 - `cardbook.php`, `kujilist.php` and `chat.php` signed out, where the original refuses before any of its own content runs.
+- `roomcmd.php` and `roomupdate.php` signed out, including the original error-page scope and encoded update payload.
 
-The remaining 11 are `index.php`, `register.php`, `game.php`, `end.php`, `rank.php`, `help.php`, `map.php`, `itemhelp.php`, `roomcmd.php`, `roomupdate.php` and `command.php`. Each needs original module functions, player data, or both; they are not blocked on presentation. The figure is a ratchet; raise it only when a route genuinely starts matching.
+The remaining 9 are `index.php`, `register.php`, `game.php`, `end.php`, `rank.php`, `help.php`, `map.php`, `itemhelp.php` and `command.php`. Each needs original module functions, player data, or both; they are not blocked on presentation. The figure is a ratchet; raise it only when a route genuinely starts matching.
 
 ### What those pages are waiting on
 

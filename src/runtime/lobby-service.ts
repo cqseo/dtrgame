@@ -34,7 +34,7 @@ export class LegacyLobbyService {
       const roomId = await this.lobby.createRoom(account.username, draft);
       const record = { ...draft, roomId };
       const stub = this.namespace.get(this.namespace.idFromName(String(roomId)));
-      const response = await stub.fetch("https://room.internal/hydrate", {
+      const response = await stub.fetch("https://room.internal/replace", {
         method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(record)
       });
       return { ok: true, username: account.username, roomId, record: await objectRecord(response) };

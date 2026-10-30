@@ -10,7 +10,7 @@ class LobbyStub {
   record = createLegacyRoomRecord(4, 0, "房主", 10);
   async fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const path = new URL(String(input)).pathname;
-    if (path === "/hydrate") {
+    if (path === "/hydrate" || path === "/replace") {
       this.record = JSON.parse(String(init?.body));
       return Response.json(this.record, { status: 201 });
     }

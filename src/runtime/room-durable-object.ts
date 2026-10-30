@@ -76,6 +76,17 @@ export class LegacyRoomDurableObject {
         await this.ctx.storage.put("record", this.#record);
         return json(this.#record, 201);
       }
+      if (request.method === "POST" && url.pathname === "/replace") {
+        return this.#exclusive(async () => {
+          const body = await request.json<LegacyRoomRecord>();
+          if (!Number.isSafeInteger(body.roomId) || body.roomId < 1 || !body.room || body.room.roomtype !== body.groomtype) {
+            return json({ error: "Invalid persisted room." }, 400);
+          }
+          this.#record = structuredClone(body);
+          await this.ctx.storage.put("record", this.#record);
+          return json(this.#record, 201);
+        });
+      }
       if (request.method === "POST" && url.pathname === "/enter") {
         return this.#exclusive(async () => {
           if (!this.#record) return json({ error: "房间数据记录不存在。" }, 404);
