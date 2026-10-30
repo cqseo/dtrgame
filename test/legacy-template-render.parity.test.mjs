@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -21,6 +22,14 @@ const packDir = process.env.DTS_LOCAL_TEMPLATES ?? "../legacy-dts/templates/defa
 
 /** Raise only when more templates genuinely render identically. */
 const RENDERING_IDENTICALLY = 64;
+
+/**
+ * PHP hashes the bytes it produced, so this hashes the same bytes. The
+ * renderer returns a decoded string and the templates are UTF-8, so the
+ * string is encoded back to UTF-8 before hashing; any other encoding would
+ * disagree with PHP on every page containing Chinese text.
+ */
+const sha256 = text => createHash("sha256").update(Buffer.from(text, "utf8")).digest("hex");
 
 const oracle = cases => {
   try {
@@ -67,7 +76,12 @@ describe.skipIf(!php)("template rendering against the original", () => {
   };
 
   it("renders identically wherever the original itself renders", () => {
-    const expected = oracle(names.map(template => ({ action: "render", template, vars: {} })));
+    // Digests rather than bodies. The whole pack rendered is 2.8MB and the
+    // link to the PHP host runs at about 14KB/s, so pulling the bytes back
+    // cannot finish inside any sensible timeout. Equality is all this needs,
+    // and the few that differ are fetched in full below so the failure
+    // message still shows the actual difference.
+    const expected = oracle(names.map(template => ({ action: "render", template, vars: {}, digest: true })));
 
     const identical = [];
     const differing = [];
@@ -92,9 +106,29 @@ describe.skipIf(!php)("template rendering against the original", () => {
         else blockedOnModules.push(`${name}: ${error.message}`);
         return;
       }
-      if (actual === reference.output) identical.push(name);
+      if (sha256(actual) === reference.sha256) identical.push(name);
       else differing.push(name);
     });
+
+    // Only now, and only for the ones that disagree, is it worth the bytes.
+    if (differing.length > 0) {
+      const bodies = oracle(differing.slice(0, 5).map(template => ({ action: "render", template, vars: {} })));
+      differing.slice(0, 5).forEach((name, index) => {
+        const theirs = bodies[index]?.output ?? "";
+        const ours = renderTemplate(name, {
+          ...createTemplateContext({ loadTemplate }),
+          constants: baseConstants(),
+          compileOptions: { language: languageMap() }
+        });
+        let at = 0;
+        while (at < ours.length && at < theirs.length && ours[at] === theirs[at]) at += 1;
+        console.log(
+          `  ${name} first differs at byte ${at}:\n` +
+            `    original: ${JSON.stringify(theirs.slice(at, at + 80))}\n` +
+            `    port:     ${JSON.stringify(ours.slice(at, at + 80))}`
+        );
+      });
+    }
 
     console.log(
       `template rendering: ${identical.length} identical, ${differing.length} differing, ` +

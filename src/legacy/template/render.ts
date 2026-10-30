@@ -372,6 +372,25 @@ class Renderer {
       }
       case "property":
         return null;
+      // These three exist for module code, which the module interpreter
+      // runs. Reaching one here means a template or a module function
+      // needs behaviour this renderer does not have, and guessing a value
+      // would be a silent behaviour change, so it says so instead.
+      case "methodCall":
+        throw new TemplateError(
+          `Method call ->${expression.name}() is not available here. Only the database ` +
+            `object has methods in the original, and it is not bound in this context.`
+        );
+      case "dynamicCall":
+        throw new TemplateError(
+          "A dynamic call such as $chprocess() needs the hook chain, which this context " +
+            "does not provide."
+        );
+      case "reference":
+        throw new TemplateError(
+          "A reference (&$x) cannot be taken in this context; it needs the module " +
+            "interpreter's variable slots."
+        );
       case "call":
         return this.callFunction(expression.callee, expression.args);
       case "isset":

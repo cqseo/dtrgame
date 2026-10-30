@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -17,6 +18,14 @@ import { compileTemplate } from "../src/legacy/template/compile";
 const php = process.env.DTS_PHP_BIN;
 const root = process.env.DTS_TEMPLATE_ROOT ?? "/opt/dts-sandbox/parity/instance";
 const localTemplates = process.env.DTS_LOCAL_TEMPLATES ?? "../legacy-dts/templates/default";
+
+/**
+ * PHP hashes the bytes it wrote, so this hashes the same bytes. Comparing
+ * digests rather than shipping all 845 compiled templates back keeps this
+ * suite usable: the link to the PHP host runs at roughly 14KB/s, and the
+ * bodies do not fit inside any sensible timeout.
+ */
+const sha256 = text => createHash("sha256").update(Buffer.from(text, "utf8")).digest("hex");
 
 const oracle = cases => {
   try {
@@ -81,7 +90,7 @@ describe.skipIf(!php)("template compiler against the original compiler", () => {
 
     for (let start = 0; start < names.length; start += batchSize) {
       const batch = names.slice(start, start + batchSize);
-      const expected = oracle(batch.map(template => ({ action: "compile", template })));
+      const expected = oracle(batch.map(template => ({ action: "compile", template, digest: true })));
 
       batch.forEach((name, index) => {
         const reference = expected[index];
@@ -92,7 +101,7 @@ describe.skipIf(!php)("template compiler against the original compiler", () => {
         const source = readFileSync(join(localTemplates, `${name}.htm`), "utf8");
         const actual = compileTemplate(source, { language: languageMap() });
         compared += 1;
-        if (actual !== reference.compiled) mismatched.push(name);
+        if (sha256(actual) !== reference.sha256) mismatched.push(name);
       });
     }
 
@@ -112,7 +121,7 @@ describe.skipIf(!php)("template compiler against the original compiler", () => {
 
     for (let start = 0; start < templates.length; start += batchSize) {
       const batch = templates.slice(start, start + batchSize);
-      const expected = oracle(batch.map(entry => ({ action: "compile", template: entry.reference })));
+      const expected = oracle(batch.map(entry => ({ action: "compile", template: entry.reference, digest: true })));
 
       batch.forEach((entry, index) => {
         const reference = expected[index];
@@ -122,7 +131,7 @@ describe.skipIf(!php)("template compiler against the original compiler", () => {
         }
         const actual = compileTemplate(readFileSync(entry.local, "utf8"), { language: languageMap() });
         compared += 1;
-        if (actual !== reference.compiled) mismatched.push(entry.reference);
+        if (sha256(actual) !== reference.sha256) mismatched.push(entry.reference);
       });
     }
 

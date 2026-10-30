@@ -57,7 +57,7 @@ function dts_template_file($name, $root) {
     return $name . '.htm';
 }
 
-function dts_compile($name, $root, $scratch) {
+function dts_compile($name, $root, $scratch, $digest = false) {
     $source = dts_template_file($name, $root);
     if (!is_file($source)) {
         return ['ok' => false, 'error' => "template not found: $name"];
@@ -65,10 +65,18 @@ function dts_compile($name, $root, $scratch) {
     $object = $scratch . '/' . md5($name) . '.tpl.php';
     try {
         parse_template($source, $object, 1, './templates/default', 1);
-        return ['ok' => true, 'compiled' => file_get_contents($object)];
+        $compiled = file_get_contents($object);
     } catch (\Throwable $error) {
         return ['ok' => false, 'error' => $error->getMessage()];
     }
+
+    // As with rendering: the caller usually only needs to know whether its
+    // own output matches, and all 845 compiled templates do not fit through
+    // this link inside a sensible timeout.
+    if ($digest) {
+        return ['ok' => true, 'sha256' => hash('sha256', $compiled), 'length' => strlen($compiled)];
+    }
+    return ['ok' => true, 'compiled' => $compiled];
 }
 
 function dts_render($case) {
@@ -79,11 +87,25 @@ function dts_render($case) {
     ob_start();
     try {
         include template($case['template']);
-        return ['ok' => true, 'output' => ob_get_clean()];
+        $output = ob_get_clean();
     } catch (\Throwable $error) {
         ob_end_clean();
         return ['ok' => false, 'error' => $error->getMessage()];
     }
+
+    // The link to this host carries about 14KB/s, and the full pack of
+    // rendered templates is 2.8MB, which does not finish inside any sensible
+    // timeout. A caller that only needs to know whether its own output
+    // matches asks for the digest, and re-requests the bytes for the few
+    // that differ.
+    if (!empty($case['digest'])) {
+        return [
+            'ok' => true,
+            'sha256' => hash('sha256', $output),
+            'length' => strlen($output)
+        ];
+    }
+    return ['ok' => true, 'output' => $output];
 }
 
 /**
@@ -142,7 +164,7 @@ foreach ($input['cases'] as $case) {
             $results[] = dts_config($root);
             break;
         case 'compile':
-            $results[] = dts_compile($case['template'], $root, $scratch);
+            $results[] = dts_compile($case['template'], $root, $scratch, !empty($case['digest']));
             break;
         case 'language':
             $results[] = dts_language($root);

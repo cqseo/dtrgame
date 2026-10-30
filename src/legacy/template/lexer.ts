@@ -28,7 +28,9 @@ export interface Token {
 }
 
 const OPERATORS = [
+  "<<=", ">>=",
   "===", "!==", "<=>", "**=", "...", "??=",
+  "|=", "&=", "^=",
   "==", "!=", "<>", "<=", ">=", "&&", "||", "->", "=>", "++", "--", "+=", "-=",
   "*=", "/=", ".=", "%=", "??", "::", "**", "<<", ">>",
   "+", "-", "*", "/", "%", "=", "<", ">", "!", ".", "?", ":", "&", "|", "^", "~", "@", "$"
@@ -123,6 +125,40 @@ export function tokenize(source: string): Token[] {
       push({ kind: "variable", value: source.slice(index + 1, end), position: index });
       index = end;
       continue;
+    }
+
+    // Heredoc and nowdoc. Three of each appear in the original; the
+    // __MAGIC__ hook prologue is itself defined as a nowdoc, so a lexer that
+    // mistook `<<<` for two shifts would misread the kernel.
+    if (char === "<" && at(index + 1) === "<" && at(index + 2) === "<") {
+      const opener = /^<<<[ \t]*(?:'([A-Za-z_]\w*)'|"([A-Za-z_]\w*)"|([A-Za-z_]\w*))\r?\n/.exec(
+        source.slice(index)
+      );
+      if (opener) {
+        const label = opener[1] ?? opener[2] ?? opener[3] ?? "";
+        // A nowdoc ('LABEL') does not interpolate; a heredoc does.
+        const interpolated = opener[1] === undefined;
+        const bodyStart = index + opener[0].length;
+        // The closing label sits at the start of a line, optionally indented
+        // since PHP 7.3, and is followed by a non-word character.
+        const closer = new RegExp(`^[ \\t]*${label}(?![\\w])`, "m");
+        const rest = source.slice(bodyStart);
+        const found = closer.exec(rest);
+        if (found && found.index !== undefined) {
+          let raw = rest.slice(0, found.index);
+          // The newline before the closing label is not part of the value.
+          raw = raw.replace(/\r?\n$/, "");
+          push({
+            kind: "string",
+            value: raw,
+            literal: interpolated ? decodeDoubleQuoted(raw) : raw,
+            interpolated,
+            position: index
+          });
+          index = bodyStart + found.index + found[0].length;
+          continue;
+        }
+      }
     }
 
     if (char === "'" || char === '"') {

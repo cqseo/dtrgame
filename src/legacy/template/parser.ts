@@ -26,40 +26,45 @@ const BINARY_PRECEDENCE: Record<string, number> = {
 
 const RIGHT_ASSOCIATIVE = new Set(["**", "??"]);
 
-const ASSIGN_OPERATORS = new Set(["=", "+=", "-=", "*=", "/=", ".=", "%=", "**=", "??="]);
+const ASSIGN_OPERATORS = new Set([
+  "=", "+=", "-=", "*=", "/=", ".=", "%=", "**=", "??=",
+  // The bitwise compound assignments. The modules use |= to build the
+  // crafting slot mask, among others.
+  "|=", "&=", "^=", "<<=", ">>="
+]);
 
 const CASTS = new Set(["int", "integer", "float", "double", "string", "bool", "boolean", "array"]);
 
 export class Parser {
-  private readonly tokens: Token[];
-  private position = 0;
+  protected readonly tokens: Token[];
+  protected position = 0;
 
   constructor(source: string) {
     this.tokens = tokenize(source);
   }
 
-  private peek(offset = 0): Token {
+  protected peek(offset = 0): Token {
     return this.tokens[Math.min(this.position + offset, this.tokens.length - 1)] as Token;
   }
 
-  private next(): Token {
+  protected next(): Token {
     return this.tokens[this.position++] as Token;
   }
 
-  private at(kind: Token["kind"], value?: string): boolean {
+  protected at(kind: Token["kind"], value?: string): boolean {
     const token = this.peek();
     if (token.kind !== kind) return false;
     if (value === undefined) return true;
     return kind === "name" ? token.value.toLowerCase() === value : token.value === value;
   }
 
-  private eat(kind: Token["kind"], value?: string): boolean {
+  protected eat(kind: Token["kind"], value?: string): boolean {
     if (!this.at(kind, value)) return false;
     this.position += 1;
     return true;
   }
 
-  private expect(kind: Token["kind"], value?: string): Token {
+  protected expect(kind: Token["kind"], value?: string): Token {
     if (!this.at(kind, value)) {
       const token = this.peek();
       throw new SyntaxError(
@@ -75,7 +80,7 @@ export class Parser {
     return body;
   }
 
-  private parseBlockOrStatement(): Statement[] {
+  protected parseBlockOrStatement(): Statement[] {
     if (this.eat("punct", "{")) {
       const body: Statement[] = [];
       while (!this.at("punct", "}") && !this.at("eof")) body.push(this.parseStatement());
@@ -85,7 +90,7 @@ export class Parser {
     return [this.parseStatement()];
   }
 
-  private parseStatement(): Statement {
+  protected parseStatement(): Statement {
     const token = this.peek();
 
     if (token.kind === "inlineHtml") {
@@ -131,7 +136,7 @@ export class Parser {
     return { kind: "expression", expression };
   }
 
-  private parseGlobal(): Statement {
+  protected parseGlobal(): Statement {
     this.next();
     do {
       if (this.at("punct", ";")) break;
@@ -141,7 +146,7 @@ export class Parser {
     return { kind: "block", body: [] };
   }
 
-  private parseUnset(): Statement {
+  protected parseUnset(): Statement {
     this.next();
     const targets: Expression[] = [];
     this.expect("punct", "(");
@@ -154,7 +159,7 @@ export class Parser {
     return { kind: "unset", targets };
   }
 
-  private parseEcho(): Statement {
+  protected parseEcho(): Statement {
     this.next();
     const values = [this.parseExpression()];
     while (this.eat("punct", ",")) values.push(this.parseExpression());
@@ -162,7 +167,7 @@ export class Parser {
     return { kind: "echo", values };
   }
 
-  private parseIf(): Statement {
+  protected parseIf(): Statement {
     this.expect("name", "if");
     this.expect("punct", "(");
     const condition = this.parseExpression();
@@ -197,7 +202,7 @@ export class Parser {
     return { kind: "if", branches, otherwise };
   }
 
-  private parseForeach(): Statement {
+  protected parseForeach(): Statement {
     this.expect("name", "foreach");
     this.expect("punct", "(");
     const subject = this.parseExpression();
@@ -218,14 +223,14 @@ export class Parser {
     return { kind: "foreach", subject, keyVariable, valueVariable, byReference, body: this.parseBlockOrStatement() };
   }
 
-  private parseInclude(): Statement {
+  protected parseInclude(): Statement {
     this.next();
     const template = this.parseExpression();
     this.eat("punct", ";");
     return { kind: "include", template };
   }
 
-  private parseExit(): Statement {
+  protected parseExit(): Statement {
     this.next();
     let value: Expression | null = null;
     if (this.eat("punct", "(")) {
@@ -236,7 +241,7 @@ export class Parser {
     return { kind: "exit", value };
   }
 
-  private parseReturn(): Statement {
+  protected parseReturn(): Statement {
     this.next();
     const value = this.at("punct", ";") || this.at("punct", "}")
       ? null
@@ -245,7 +250,7 @@ export class Parser {
     return { kind: "return", value };
   }
 
-  private parseBreakContinue(kind: "break" | "continue"): Statement {
+  protected parseBreakContinue(kind: "break" | "continue"): Statement {
     this.next();
     let levels = 1;
     if (this.peek().kind === "number") levels = Number(this.next().literal);
@@ -257,11 +262,22 @@ export class Parser {
     return this.parseAssignment();
   }
 
-  private parseAssignment(): Expression {
+  protected parseAssignment(): Expression {
     const left = this.parseTernary();
     const token = this.peek();
     if (token.kind === "operator" && ASSIGN_OPERATORS.has(token.value)) {
       this.next();
+      // `$itm = &$theitem['itm']` binds a reference rather than copying.
+      // The modules use it to alias into the item they are acting on, so
+      // writes through the alias have to reach the original array.
+      if (token.value === "=" && this.eat("operator", "&")) {
+        return {
+          kind: "assign",
+          operator: "=",
+          target: left,
+          value: { kind: "reference", target: this.parseAssignment() }
+        };
+      }
       // Assignment is right-associative.
       const value = this.parseAssignment();
       return { kind: "assign", operator: token.value, target: left, value };
@@ -269,7 +285,7 @@ export class Parser {
     return left;
   }
 
-  private parseTernary(): Expression {
+  protected parseTernary(): Expression {
     let condition = this.parseBinary(0);
     while (this.at("operator", "?")) {
       this.next();
@@ -286,7 +302,7 @@ export class Parser {
     return condition;
   }
 
-  private binaryOperator(): string | null {
+  protected binaryOperator(): string | null {
     const token = this.peek();
     if (token.kind === "operator" && BINARY_PRECEDENCE[token.value] !== undefined) return token.value;
     if (token.kind === "name") {
@@ -298,7 +314,7 @@ export class Parser {
     return null;
   }
 
-  private parseBinary(minimumPrecedence: number): Expression {
+  protected parseBinary(minimumPrecedence: number): Expression {
     let left = this.parseUnary();
     for (;;) {
       const operator = this.binaryOperator();
@@ -313,7 +329,7 @@ export class Parser {
     return left;
   }
 
-  private parseUnary(): Expression {
+  protected parseUnary(): Expression {
     const token = this.peek();
 
     if (token.kind === "operator" && (token.value === "!" || token.value === "-" || token.value === "+" || token.value === "~" || token.value === "@")) {
@@ -340,7 +356,7 @@ export class Parser {
     return this.parsePostfix(this.parsePrimary());
   }
 
-  private parsePostfix(target: Expression): Expression {
+  protected parsePostfix(target: Expression): Expression {
     let current = target;
     for (;;) {
       if (this.at("punct", "[")) {
@@ -356,7 +372,20 @@ export class Parser {
       }
       if (this.at("operator", "->")) {
         this.next();
-        current = { kind: "property", target: current, name: this.expect("name").value };
+        const name = this.expect("name").value;
+        // Every `->` in the original's module tree is on the database
+        // object, and the eleven names it uses are all methods. A bare
+        // property read is still parsed, because templates read properties.
+        current = this.at("punct", "(")
+          ? { kind: "methodCall", target: current, name, args: this.parseArguments() }
+          : { kind: "property", target: current, name };
+        continue;
+      }
+      // A call on something that is not a bare name: `$chprocess(...)`, which
+      // is how a module calls the implementation it overrode, and the single
+      // most common construct in the module tree after the hook prologue.
+      if (this.at("punct", "(") && current.kind !== "call" && current.kind !== "literal") {
+        current = { kind: "dynamicCall", callee: current, args: this.parseArguments() };
         continue;
       }
       const token = this.peek();
@@ -369,12 +398,18 @@ export class Parser {
     }
   }
 
-  private parseArguments(): Expression[] {
+  protected parseArguments(): Expression[] {
     this.expect("punct", "(");
     const args: Expression[] = [];
     if (!this.at("punct", ")")) {
       do {
         if (this.at("punct", ")")) break;
+        // Argument unpacking, `f(...$args)`. The module tree uses it once,
+        // in skill729's array_merge.
+        if (this.eat("operator", "...")) {
+          args.push({ kind: "call", callee: "__spread", args: [this.parseExpression()] });
+          continue;
+        }
         args.push(this.parseExpression());
       } while (this.eat("punct", ","));
     }
@@ -382,7 +417,15 @@ export class Parser {
     return args;
   }
 
-  private parsePrimary(): Expression {
+  protected parsePrimary(): Expression {
+    // `&$x` as an operand: the modules build `array('itm' => &$itm0, …)` so
+    // the entries alias the caller's variables, and `foreach (array(&$pa,
+    // &$pd) as &$pl)` to act on both combatants in turn.
+    if (this.at("operator", "&")) {
+      this.next();
+      return { kind: "reference", target: this.parseUnary() };
+    }
+
     const token = this.next();
 
     if (token.kind === "variable") return { kind: "variable", name: token.value };
@@ -454,7 +497,7 @@ export class Parser {
     );
   }
 
-  private parseArrayEntries(closing: string): Expression {
+  protected parseArrayEntries(closing: string): Expression {
     const entries: { key: Expression | null; value: Expression }[] = [];
     while (!this.at("punct", closing) && !this.at("eof")) {
       const first = this.parseExpression();
@@ -474,7 +517,10 @@ export class Parser {
  */
 export function parseInterpolated(decoded: string): Expression {
   const parts: Expression[] = [];
-  const pattern = /\{\$[^}]+\}|\$[A-Za-z_\u0080-￿][A-Za-z0-9_\u0080-￿]*(?:\[[^\]]*\])?/g;
+  // `{$…}` is matched by balancing braces rather than by stopping at the
+  // first `}`: the modules write `{${'itm'.$itmn}}`, where a non-balancing
+  // match would cut the expression in half.
+  const pattern = /\{\$|\$[A-Za-z_\u0080-￿][A-Za-z0-9_\u0080-￿]*(?:\[[^\]]*\])?/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -482,13 +528,36 @@ export function parseInterpolated(decoded: string): Expression {
     if (match.index > lastIndex) {
       parts.push({ kind: "literal", value: decoded.slice(lastIndex, match.index) });
     }
-    const raw = match[0].startsWith("{") ? match[0].slice(1, -1) : match[0];
-    // Bare $name[key] inside a string treats an unquoted key as a string.
-    const normalized = match[0].startsWith("{")
-      ? raw
-      : raw.replace(/\[([A-Za-z_\u0080-￿][A-Za-z0-9_\u0080-￿]*)\]$/, "['$1']");
-    parts.push(new Parser(`<?php ${normalized};`).parseExpression());
-    lastIndex = match.index + match[0].length;
+
+    let normalized: string;
+    let end: number;
+    if (match[0] === "{$") {
+      let depth = 1;
+      let scan = match.index + 1;
+      while (scan < decoded.length && depth > 0) {
+        scan += 1;
+        if (decoded[scan] === "{") depth += 1;
+        else if (decoded[scan] === "}") depth -= 1;
+      }
+      normalized = decoded.slice(match.index + 1, scan);
+      end = scan + 1;
+    } else {
+      // Bare $name[key] inside a string treats an unquoted key as a string.
+      normalized = match[0].replace(/\[([A-Za-z_\u0080-￿][A-Za-z0-9_\u0080-￿]*)\]$/, "['$1']");
+      end = match.index + match[0].length;
+    }
+
+    try {
+      parts.push(new Parser(`<?php ${normalized};`).parseExpression());
+    } catch (error) {
+      // The sub-parser's offsets mean nothing to a caller looking at a
+      // module file, so say which interpolation failed.
+      throw new SyntaxError(
+        `Cannot parse interpolated ${JSON.stringify(normalized)}: ${(error as Error).message}`
+      );
+    }
+    lastIndex = end;
+    pattern.lastIndex = end;
   }
 
   if (lastIndex < decoded.length) {

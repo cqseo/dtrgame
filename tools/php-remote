@@ -32,7 +32,11 @@ REMOTE_PHP="${DTS_REMOTE_PHP:-php}"
 REMOTE_DIR="${DTS_REMOTE_DIR:-/opt/dts-sandbox/parity}"
 
 SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
-SSH_OPTS="$SSH_OPTS -o ControlMaster=auto -o ControlPath=$HOME/.ssh/cm-dts-%r@%h:%p -o ControlPersist=120"
+SSH_OPTS="$SSH_OPTS -o ControlMaster=auto -o ControlPath=$HOME/.ssh/cm-dts-%r@%h:%p -o ControlPersist=600"
+# The link to the host runs at about 190ms with noticeable packet loss, so the
+# cost of this bridge is round trips rather than compute. ServerAliveInterval
+# keeps the multiplexed master from being torn down mid-suite.
+SSH_OPTS="$SSH_OPTS -o ServerAliveInterval=15 -o ServerAliveCountMax=8 -o Compression=yes"
 
 # Split argv into leading php flags and the local script path plus its args.
 flags=""
@@ -56,8 +60,20 @@ fi
 
 remote_script="$REMOTE_DIR/scripts/$(basename "$script")"
 
-# Ship the script first, then run it with stdin forwarded untouched.
-# shellcheck disable=SC2086
-ssh $SSH_OPTS "$DTS_SSH_HOST" "mkdir -p $REMOTE_DIR/scripts && cat > $remote_script" < "$script"
+# Ship the script only when it has changed. A parity suite calls this bridge
+# once per case, and uploading an unchanged script every time doubled the
+# round trips on a link that is mostly latency. The stamp records what was
+# last sent, per host and script, so a changed script is still always sent.
+stamp_dir="$here/.php-remote-stamps"
+stamp="$stamp_dir/$(printf '%s' "$DTS_SSH_HOST$remote_script" | shasum | cut -d' ' -f1)"
+digest="$(shasum "$script" | cut -d' ' -f1)"
+
+if [ ! -f "$stamp" ] || [ "$(cat "$stamp" 2>/dev/null)" != "$digest" ]; then
+  mkdir -p "$stamp_dir"
+  # shellcheck disable=SC2086
+  ssh $SSH_OPTS "$DTS_SSH_HOST" "mkdir -p $REMOTE_DIR/scripts && cat > $remote_script" < "$script"
+  printf '%s' "$digest" > "$stamp"
+fi
+
 # shellcheck disable=SC2086
 exec ssh $SSH_OPTS "$DTS_SSH_HOST" "cd $REMOTE_DIR && $REMOTE_PHP$flags $remote_script$script_args"
