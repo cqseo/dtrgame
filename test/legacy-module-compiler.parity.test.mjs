@@ -3,12 +3,17 @@ import { describe, expect, it } from "vitest";
 import { callOriginal, hasOracle } from "./support/php-oracle.mjs";
 import { compilePhpModuleFunction } from "../src/legacy/module-compiler";
 import { executeCompiledModuleFunctionWithState } from "../src/legacy/compiled-module-runtime";
-import { createTemplateContext, executeCompiledFunctionBody } from "../src/legacy/template/render";
+import { createTemplateContext, executeCompiledFunctionProgram } from "../src/legacy/template/render";
 
 const SOURCE = "../legacy-dts/include/modules/base/cooldown/main.php";
 
-function execute(bodySource, variables) {
-  return executeCompiledFunctionBody(`<?php ${bodySource}`, createTemplateContext({
+/**
+ * Runs the compiled AST, which is what the Worker executes. The compiler no
+ * longer keeps the source text, so there is nothing to re-parse and nothing
+ * that could pass here while the executed AST differed.
+ */
+function execute(program, variables) {
+  return executeCompiledFunctionProgram(program, createTemplateContext({
     variables,
     globals: variables,
     constants: new Map([["__MAGIC__", false]]),
@@ -41,7 +46,7 @@ describe.skipIf(!hasOracle || !existsSync(SOURCE))("compiled module functions ag
       compiled.parameters.forEach((parameter, parameterIndex) => {
         variables.set(parameter.name, args[parameterIndex] ?? null);
       });
-      expect(execute(compiled.bodySource, variables), String(name)).toBe(expected[index].value);
+      expect(execute(compiled.program, variables), String(name)).toBe(expected[index].value);
       expect(expected[index].globals[`___LOCAL_COOLDOWN__VARS__${variable}`]).toBe(value);
     });
   });

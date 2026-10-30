@@ -1,111 +1,77 @@
-import type { Statement } from "./template/ast";
-import { parseTemplateProgram } from "./template/parser";
+/**
+ * Turns the original's module source into the ASTs the runtime executes.
+ *
+ * Functions are located by parsing the file, not by searching it. A regular
+ * expression cannot read a parameter list containing a parenthesis — the
+ * original writes `= array()` and `= foo()` — and cannot tell a declaration
+ * from the same text inside a string or a comment. ModuleParser reads all
+ * 1,661 module files and finds exactly the 6,081 declarations PHP's own
+ * tokenizer counts; see docs/WHY_COMPILE_THE_MODULES.md.
+ *
+ * Parsing happens at build time. The ASTs are checked in, so the Worker
+ * never performs runtime code generation.
+ */
+import type { Expression, Statement } from "./template/ast";
+import { collectDeclaredFunctions } from "./php/parser";
 
 export interface CompiledPhpParameter {
   readonly name: string;
   readonly byReference: boolean;
   readonly variadic: boolean;
-  readonly defaultSource?: string;
-  readonly defaultValue?: string | number | boolean | null;
+  /**
+   * The default as an expression rather than a literal, because the
+   * original's defaults include `array()` and named constants, which have
+   * no literal form.
+   */
+  readonly defaultValue: Expression | null;
 }
 
 export interface CompiledPhpFunction {
   readonly namespace: string;
   readonly name: string;
   readonly parameters: readonly CompiledPhpParameter[];
-  /** Source is retained only for deterministic checked-in generation/audit. */
-  readonly bodySource: string;
   readonly program: readonly Statement[];
 }
 
-function escaped(name: string): string {
-  return name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function literalDefault(source: string): string | number | boolean | null | undefined {
-  const trimmed = source.trim();
-  if (/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(trimmed)) return Number(trimmed);
-  if (/^true$/i.test(trimmed)) return true;
-  if (/^false$/i.test(trimmed)) return false;
-  if (/^null$/i.test(trimmed)) return null;
-  const quoted = /^(['"])([\s\S]*)\1$/.exec(trimmed);
-  if (quoted) return quoted[2]!.replace(/\\(['"\\])/g, "$1");
-  return undefined;
+/** Compiles every function a module file declares, in source order. */
+export function compilePhpModuleFile(source: string): CompiledPhpFunction[] {
+  return collectDeclaredFunctions(source).map(declared => ({
+    namespace: declared.namespace,
+    name: declared.name,
+    parameters: declared.parameters.map(parameter => ({
+      name: parameter.name,
+      byReference: parameter.byReference,
+      variadic: parameter.variadic,
+      defaultValue: parameter.defaultValue
+    })),
+    program: declared.body
+  }));
 }
 
 /**
- * Finds a named function while respecting comments and quoted strings when
- * matching its closing brace. PHP's tokenizer census proves the module tree
- * has no closures, so named declarations are the only function form here.
+ * Compiles one named function out of a module file.
+ *
+ * The namespace is checked rather than assumed: a file can declare more than
+ * one namespace, and silently compiling the wrong module's function would be
+ * a behaviour change no test would catch.
  */
 export function compilePhpModuleFunction(
   source: string,
   namespace: string,
   functionName: string
 ): CompiledPhpFunction {
-  const declaration = new RegExp(
-    `function\\s+&?\\s*${escaped(functionName)}\\s*\\(([^)]*)\\)\\s*\\{`,
-    "m"
-  ).exec(source);
-  if (!declaration || declaration.index === undefined) {
-    throw new SyntaxError(`Function ${namespace}\\\\${functionName} was not found.`);
+  const declared = compilePhpModuleFile(source).filter(
+    candidate => candidate.name === functionName
+  );
+  if (declared.length === 0) {
+    throw new SyntaxError(`Function ${namespace}\\${functionName} was not found.`);
   }
-  const open = declaration.index + declaration[0].lastIndexOf("{");
-  let depth = 1;
-  let index = open + 1;
-  let quote = "";
-  let lineComment = false;
-  let blockComment = false;
-  while (index < source.length && depth > 0) {
-    const char = source[index]!;
-    const next = source[index + 1] ?? "";
-    if (lineComment) {
-      if (char === "\n" || char === "\r") lineComment = false;
-      index += 1;
-      continue;
-    }
-    if (blockComment) {
-      if (char === "*" && next === "/") { blockComment = false; index += 2; }
-      else index += 1;
-      continue;
-    }
-    if (quote) {
-      if (char === "\\") { index += 2; continue; }
-      if (char === quote) quote = "";
-      index += 1;
-      continue;
-    }
-    if (char === "/" && next === "/") { lineComment = true; index += 2; continue; }
-    if (char === "#") { lineComment = true; index += 1; continue; }
-    if (char === "/" && next === "*") { blockComment = true; index += 2; continue; }
-    if (char === "'" || char === '"') { quote = char; index += 1; continue; }
-    if (char === "{") depth += 1;
-    else if (char === "}") depth -= 1;
-    index += 1;
+  const matching = declared.find(candidate => candidate.namespace === namespace);
+  if (!matching) {
+    throw new SyntaxError(
+      `Function ${functionName} exists but in namespace ` +
+        `${declared.map(candidate => candidate.namespace).join(", ")}, not ${namespace}.`
+    );
   }
-  if (depth !== 0) throw new SyntaxError(`Function ${namespace}\\\\${functionName} has an unclosed body.`);
-
-  const parameters = (declaration[1] ?? "").split(",").flatMap(raw => {
-    const trimmed = raw.trim();
-    if (!trimmed) return [];
-    const match = /^(?:[^$]*?)(\.\.\.)?\s*(&)?\s*\$([A-Za-z_][A-Za-z0-9_]*)(?:\s*=\s*([\s\S]*))?$/.exec(trimmed);
-    if (!match) throw new SyntaxError(`Unsupported parameter ${JSON.stringify(trimmed)} in ${functionName}.`);
-    const defaultSource = match[4]?.trim();
-    const defaultValue = defaultSource === undefined ? undefined : literalDefault(defaultSource);
-    return [{
-      name: match[3]!,
-      byReference: match[2] === "&",
-      variadic: match[1] === "...",
-      ...(defaultSource === undefined ? {} : { defaultSource }),
-      ...(defaultValue === undefined ? {} : { defaultValue })
-    }];
-  });
-  const bodySource = source.slice(open + 1, index - 1);
-  return {
-    namespace,
-    name: functionName,
-    parameters,
-    bodySource,
-    program: parseTemplateProgram(`<?php ${bodySource}`)
-  };
+  return matching;
 }

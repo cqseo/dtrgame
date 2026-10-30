@@ -191,6 +191,125 @@ class Renderer {
         throw new BreakSignal(statement.levels);
       case "continue":
         throw new ContinueSignal(statement.levels);
+
+      // Module statements. Compiled templates contain none of these, but
+      // module functions are mostly made of them.
+      case "global":
+        // `global $x;` binds the name to the real global scope. Where the
+        // module runtime gives a function the global map as its own scope
+        // the binding already holds; where the two differ, the current
+        // global value is brought in.
+        for (const name of statement.names) {
+          if (name.kind !== "variable") continue;
+          const globals = this.context.globals ?? this.context.variables;
+          if (globals === this.context.variables) continue;
+          this.context.variables.set(name.name, globals.get(name.name) ?? null);
+        }
+        return;
+      case "for":
+        this.executeFor(statement);
+        return;
+      case "while":
+        this.executeWhile(statement);
+        return;
+      case "doWhile":
+        this.executeDoWhile(statement);
+        return;
+      case "switch":
+        this.executeSwitch(statement);
+        return;
+      case "throw":
+        // Six throws exist in the module tree, in two files that are ported
+        // by hand. Reaching one here is a real error, not something to
+        // swallow.
+        throw new TemplateError(
+          `The original threw: ${toStringValue(this.evaluateQuiet(statement.value))}`
+        );
+      case "namespace":
+      case "functionDeclaration":
+        // Declarations are handled when a module is compiled, not when a
+        // function body runs. One here means a whole file was handed to the
+        // function runner by mistake.
+        throw new TemplateError(
+          `A ${statement.kind} cannot be executed as a statement; compile the module instead.`
+        );
+    }
+  }
+
+  /** `for (init; cond; update)`, with PHP's comma-separated clauses. */
+  private executeFor(statement: Extract<Statement, { kind: "for" }>): void {
+    for (const initializer of statement.initializers) this.evaluate(initializer);
+    for (;;) {
+      // PHP evaluates every condition but only the last one decides.
+      let proceed = true;
+      for (const condition of statement.conditions) proceed = toBool(this.evaluate(condition));
+      if (statement.conditions.length > 0 && !proceed) return;
+      if (this.runLoopBody(statement.body)) return;
+      for (const update of statement.updates) this.evaluate(update);
+    }
+  }
+
+  private executeWhile(statement: Extract<Statement, { kind: "while" }>): void {
+    while (toBool(this.evaluate(statement.condition))) {
+      if (this.runLoopBody(statement.body)) return;
+    }
+  }
+
+  private executeDoWhile(statement: Extract<Statement, { kind: "doWhile" }>): void {
+    do {
+      if (this.runLoopBody(statement.body)) return;
+    } while (toBool(this.evaluate(statement.condition)));
+  }
+
+  /**
+   * Runs one loop iteration, reporting whether the loop should stop.
+   *
+   * `break 2` and `continue 2` carry outward, so a signal with levels above
+   * one is rethrown with one level removed rather than consumed here.
+   */
+  private runLoopBody(body: readonly Statement[]): boolean {
+    try {
+      this.run(body);
+    } catch (signal) {
+      if (signal instanceof BreakSignal) {
+        if (signal.levels > 1) throw new BreakSignal(signal.levels - 1);
+        return true;
+      }
+      if (signal instanceof ContinueSignal) {
+        if (signal.levels > 1) throw new ContinueSignal(signal.levels - 1);
+        return false;
+      }
+      throw signal;
+    }
+    return false;
+  }
+
+  /**
+   * `switch`, which in PHP compares loosely and falls through.
+   *
+   * `default` is taken only when no case matched, but execution still falls
+   * through from wherever it starts, so the match is found first and the
+   * run begins there.
+   */
+  private executeSwitch(statement: Extract<Statement, { kind: "switch" }>): void {
+    const subject = this.evaluate(statement.subject);
+    let start = statement.cases.findIndex(
+      branch => branch.test !== null && looseEquals(subject, this.evaluate(branch.test))
+    );
+    if (start === -1) start = statement.cases.findIndex(branch => branch.test === null);
+    if (start === -1) return;
+
+    try {
+      for (let index = start; index < statement.cases.length; index += 1) {
+        this.run(statement.cases[index]?.body ?? []);
+      }
+    } catch (signal) {
+      // A switch counts as one loop level for break.
+      if (signal instanceof BreakSignal) {
+        if (signal.levels > 1) throw new BreakSignal(signal.levels - 1);
+        return;
+      }
+      throw signal;
     }
   }
 

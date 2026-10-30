@@ -15,6 +15,26 @@ function argument(value: unknown): PhpValue {
     : null;
 }
 
+/**
+ * Looks one compiled function up by name.
+ *
+ * A missing name means the generated table no longer holds a function the
+ * kernel registered, which would otherwise surface as a silent undefined
+ * and a wrong game value, so it is reported instead.
+ */
+export function compiledFunction(
+  table: Readonly<Record<string, CompiledPhpFunction>>,
+  name: string
+): CompiledPhpFunction {
+  const found = table[name];
+  if (!found) {
+    throw new Error(
+      `No compiled function named ${name}. Regenerate with npm run generate:compiled-modules.`
+    );
+  }
+  return found;
+}
+
 /** Runs a checked-in module AST with its generated original configuration. */
 export function executeCompiledModuleFunction(
   compiled: CompiledPhpFunction,
@@ -36,8 +56,22 @@ export function executeCompiledModuleFunctionWithState(
   }
   for (const [name, value] of overrides) variables.set(name, clone(value));
   compiled.parameters.forEach((parameter, index) => {
-    const supplied = index < args.length;
-    variables.set(parameter.name, supplied ? argument(args[index]) : (parameter.defaultValue ?? null));
+    if (index < args.length) {
+      variables.set(parameter.name, argument(args[index]));
+      return;
+    }
+    // Defaults are expressions, not literals: the original writes
+    // `= array()` and named constants as well as numbers, so the default is
+    // evaluated rather than read off.
+    if (parameter.defaultValue === null) {
+      variables.set(parameter.name, null);
+      return;
+    }
+    const { value } = executeCompiledFunctionProgram(
+      [{ kind: "return", value: parameter.defaultValue }],
+      createTemplateContext({ variables, globals: variables, loadTemplate: () => undefined })
+    );
+    variables.set(parameter.name, value);
   });
   const functions = new Map<string, HostFunction>([
     ["eval", values => values[0] ?? null],

@@ -2,8 +2,7 @@ import { toNumber } from "./template/values";
 import { LEGACY_MAP_CONFIG } from "./map";
 import { LEGACY_COMPILED_COOLDOWN } from "../generated/legacy-compiled-cooldown";
 import {
-  executeCompiledModuleFunction, executeCompiledModuleFunctionWithState
-} from "./compiled-module-runtime";
+  executeCompiledModuleFunction, executeCompiledModuleFunctionWithState, compiledFunction } from "./compiled-module-runtime";
 import { runLegacyCraftAction, legacySlotsFromMixMask, type LegacyCraftActionResult } from "./crafting-action";
 import { checkLegacyMove, checkLegacySearch } from "./explore";
 import { calculateLegacyMeetCharacterRate } from "./explore";
@@ -376,14 +375,14 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
   // retune them. Reading the generated table keeps both routes open and keeps
   // the value itself sourced from the original.
   kernel.register("get_move_coldtime", "cooldown", (_context, destination) =>
-    toNumber(executeCompiledModuleFunction(LEGACY_COMPILED_COOLDOWN.get_move_coldtime, [destination]))
+    toNumber(executeCompiledModuleFunction(compiledFunction(LEGACY_COMPILED_COOLDOWN, "get_move_coldtime"), [destination]))
   );
   kernel.register("get_search_coldtime", "cooldown", () =>
-    toNumber(executeCompiledModuleFunction(LEGACY_COMPILED_COOLDOWN.get_search_coldtime))
+    toNumber(executeCompiledModuleFunction(compiledFunction(LEGACY_COMPILED_COOLDOWN, "get_search_coldtime")))
   );
   kernel.register("set_coldtime", "cooldown", ({ session }, cooldown, forced) => {
     const executed = executeCompiledModuleFunctionWithState(
-      LEGACY_COMPILED_COOLDOWN.set_coldtime,
+      compiledFunction(LEGACY_COMPILED_COOLDOWN, "set_coldtime"),
       forced === undefined ? [cooldown] : [cooldown, forced],
       new Map([["cmdcdtime", session.state.commandCooldown]])
     );
@@ -423,7 +422,7 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
     return next();
   });
   kernel.register("get_itemuse_coldtime", "cooldown", (_context, item) =>
-    toNumber(executeCompiledModuleFunction(LEGACY_COMPILED_COOLDOWN.get_itemuse_coldtime, [item]))
+    toNumber(executeCompiledModuleFunction(compiledFunction(LEGACY_COMPILED_COOLDOWN, "get_itemuse_coldtime"), [item]))
   );
   kernel.register("itemuse_wrapper", "cooldown", ({ call, next }, item) => {
     if (call<boolean>("check_in_coldtime")) return;
