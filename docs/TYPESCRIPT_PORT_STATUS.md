@@ -9,9 +9,9 @@ This ledger is generated against the captured Baota baseline. It prevents a part
 - Pending modules: **710**
 - Original hook implementations ported: **56 / 5,235 (1.07%)**, missing **5,179**
 - Player database fields captured: **124**
-- Original public routes reproduced byte for byte: **14 / 23 captured**
+- Original public routes reproduced byte for byte: **14 / 23 signed out**, **2 / 13 signed in**
 - Original templates compiling to identical bytes: **845 / 845**
-- Automated TypeScript tests: **177** plus **11** PHP-oracle assertions that execute and pass against the original interpreter
+- Automated TypeScript tests: **180** plus **16** PHP-oracle assertions that execute and pass against the original interpreter
 
 Module counts and the partial list below are taken from `docs/legacy-module-migration.json`, which `npm run generate:migration` derives from the captured source. Earlier revisions of this page carried a hand-edited list that had drifted to 37 modules; the generator is the only authority.
 
@@ -58,6 +58,16 @@ The compiler reproduces `parse_template` rewrite for rewrite: **all 845 template
 **Of the templates the original itself can render standalone, all 64 render to identical bytes, none differing.** The other 41 fail in PHP too without a page around them.
 
 A module function that is not ported raises rather than returning a plausible value, so a missing hook cannot quietly render as empty and pass for correct.
+
+## Signed-in parity
+
+Everything still outstanding lives behind an account, so a second golden-master set is captured through a real session. `npm run capture:golden-session` registers a disposable account on the isolated instance through the original's own `register.php` — answering its verification question with the value the page's own generator considers correct — signs in, and records the thirteen signed-in responses. The capture account's name is masked out of every fixture.
+
+Two of those fixtures corrected an assumption rather than exposing a fault: signed in but not in a match, `game.php` redirects to `valid.php` and `end.php` to `index.php`. Redirects are compared on their `Location`, not only their status.
+
+Current result: **2 of 13**. `roomcmd.php` and the signed-in refusal from `register.php` match; the rest need player data, room state, or the command engine.
+
+Unported `.php` answers **501**, never 404. An earlier "guest snapshot" branch served pre-rendered HTML from the asset bundle for a list of paths, but the bundle carries no `.php` by design, so those answered 404 — telling a browser the original's own URLs do not exist. Two tests had asserted the opposite against a mock that returned HTML for `index.php`, which is what kept it invisible.
 
 ## Templates are not a separate phase
 
