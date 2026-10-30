@@ -10,6 +10,7 @@ import type { Expression, Statement } from "./ast";
 import { PHP_BUILTINS, type HostFunction } from "./builtins";
 import { compileTemplate, type CompileOptions } from "./compile";
 import { parseTemplateProgram } from "./parser";
+import { ModuleScope, PhpRef } from "../php/module-store";
 import {
   PhpArray,
   compareValues,
@@ -39,6 +40,19 @@ export interface TemplateContext {
    * exact point of the call.
    */
   readonly writeFunctions?: Map<string, (args: PhpValue[]) => string> | undefined;
+  /**
+   * Dispatches a call to a compiled module function through the hook chain.
+   * Supplied by the module runtime; absent when rendering a plain template,
+   * where a dynamic call cannot occur.
+   */
+  readonly callQualified?: ((name: string, args: (PhpValue | PhpRef)[]) => PhpValue) | undefined;
+  /** Whether that runtime knows a function by this name. */
+  readonly hasQualified?: ((name: string) => boolean) | undefined;
+  /**
+   * Which of a function's parameters are declared `&$x`, so the caller
+   * passes a slot for those positions instead of a value.
+   */
+  readonly referenceParameters?: ((name: string) => readonly boolean[]) | undefined;
   /**
    * The true global scope, which $GLOBALS exposes. gexit() renders the error
    * template inside a function, so only the variables it imports are in
@@ -85,6 +99,9 @@ export function createTemplateContext(
     constants: overrides.constants ?? new Map(),
     functions: overrides.functions ?? new Map(),
     writeFunctions: overrides.writeFunctions,
+    callQualified: overrides.callQualified,
+    hasQualified: overrides.hasQualified,
+    referenceParameters: overrides.referenceParameters,
     loadTemplate: overrides.loadTemplate,
     compileOptions: overrides.compileOptions
   };
@@ -446,12 +463,57 @@ class Renderer {
     const host = this.context.functions.get(name) ?? this.context.functions.get(lowered);
     if (host) return host(values);
 
+    // A compiled module function, dispatched through the hook chain. Its
+    // arguments are rebuilt because a by-reference parameter needs a slot
+    // rather than the value already computed above.
+    if (this.context.callQualified && this.context.hasQualified?.(name)) {
+      return this.context.callQualified(name, this.callArguments(name, args));
+    }
+
     const builtin = PHP_BUILTINS[lowered];
     if (builtin) return builtin(values);
 
     throw new TemplateError(
       `Original function not ported: ${name}. Register it on the template context rather than approximating it.`
     );
+  }
+
+  /**
+   * Builds the arguments for a module function call.
+   *
+   * A parameter declared `&$x` is passed as a slot, so the callee's writes
+   * reach the caller's variable. 3,509 of the original's parameters are
+   * declared that way, and the combat and item code depends on it: they
+   * take `(&$pa, &$pd)` and modify the players in place.
+   *
+   * An argument that is not a place — a literal, an expression — cannot be
+   * bound, and PHP passes those by value too.
+   */
+  private callArguments(target: string, args: readonly Expression[]): (PhpValue | PhpRef)[] {
+    const byReference = this.context.referenceParameters?.(target) ?? [];
+    return args.map((argument, index) =>
+      byReference[index] ? this.bindReference(argument) : this.evaluate(argument)
+    );
+  }
+
+  /**
+   * Produces a binding for an expression where one is wanted.
+   *
+   * A variable, an array element or a variable variable names a place, so a
+   * slot is taken for it. `get_var_in_module()` returns `& $GLOBALS[...]`
+   * in the original, so a call may hand back a binding of its own. Anything
+   * else — a literal, an arithmetic expression — has no place to bind to,
+   * and PHP passes those by value too.
+   */
+  private bindReference(expression: Expression): PhpValue | PhpRef {
+    if (
+      expression.kind === "variable" ||
+      expression.kind === "index" ||
+      expression.kind === "variableVariable"
+    ) {
+      return new PhpRef(this.reference(expression));
+    }
+    return this.evaluate(expression);
   }
 
   private evaluate(expression: Expression): PhpValue {
@@ -500,15 +562,35 @@ class Renderer {
           `Method call ->${expression.name}() is not available here. Only the database ` +
             `object has methods in the original, and it is not bound in this context.`
         );
-      case "dynamicCall":
-        throw new TemplateError(
-          "A dynamic call such as $chprocess() needs the hook chain, which this context " +
-            "does not provide."
-        );
+      case "dynamicCall": {
+        // `$chprocess(...)`: in the original $chprocess holds the name of
+        // the implementation this one replaced, and calling it is a
+        // variable-function call, so the callee is resolved to a string and
+        // dispatched by name.
+        const callee = this.evaluate(expression.callee);
+        const target = toStringValue(callee);
+        if (!this.context.callQualified) {
+          throw new TemplateError(
+            `A dynamic call to ${target} needs the module runtime, which this context ` +
+              "does not provide."
+          );
+        }
+        return this.context.callQualified(target, this.callArguments(target, expression.args));
+      }
       case "reference":
+        // `&$x` binds only where something can hold the binding: the right
+        // of an assignment, and a by-reference argument. Both are handled
+        // before evaluation reaches here.
+        //
+        // The remaining position is inside an array literal —
+        // `array('itm' => &$itm0)` — where PHP stores a real reference and
+        // the item code writes through it. PhpArray holds values, so that
+        // binding cannot be represented yet. Returning the value would make
+        // those writes vanish silently, so it is refused instead and shows
+        // up as a blocked function rather than a wrong one.
         throw new TemplateError(
-          "A reference (&$x) cannot be taken in this context; it needs the module " +
-            "interpreter's variable slots."
+          "A reference inside an array literal is not supported yet: PhpArray holds " +
+            "values, so the binding would be lost and writes through it would vanish."
         );
       case "call":
         return this.callFunction(expression.callee, expression.args);
@@ -627,6 +709,25 @@ class Renderer {
   }
 
   private evaluateAssign(expression: Extract<Expression, { kind: "assign" }>): PhpValue {
+    // `$a = &$b` binds rather than copies, so the target name has to become
+    // an alias before any slot for it is taken.
+    if (expression.operator === "=" && expression.value.kind === "reference") {
+      const bound = this.bindReference(expression.value.target);
+      if (bound instanceof PhpRef && expression.target.kind === "variable") {
+        const scope = this.context.variables;
+        if (scope instanceof ModuleScope) {
+          scope.alias(expression.target.name, bound.slot);
+          return bound.slot.get();
+        }
+      }
+      // Outside a module scope there is nothing to bind to, so the value is
+      // copied; a template has no module variables to alias in the first
+      // place.
+      const value = bound instanceof PhpRef ? bound.slot.get() : bound;
+      this.reference(expression.target).set(value);
+      return value;
+    }
+
     const slot = this.reference(expression.target);
     if (expression.operator === "=") {
       const value = this.evaluate(expression.value);
