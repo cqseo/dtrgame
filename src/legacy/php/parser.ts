@@ -41,6 +41,7 @@ export class ModuleParser extends Parser {
         case "do": return this.parseDoWhile();
         case "switch": return this.parseSwitch();
         case "throw": return this.parseThrow();
+        case "try": return this.parseTry();
         // Neither appears in the module tree's game logic, but both are
         // cheap to tolerate and would otherwise parse as a constant.
         case "declare":
@@ -209,6 +210,34 @@ export class ModuleParser extends Parser {
     }
     this.expect("punct", "}");
     return { kind: "switch", subject, cases };
+  }
+
+  /**
+   * `try { } catch (Exception $e) { } finally { }`.
+   *
+   * command.php wraps its whole request in one and prints the message, so
+   * the catch variable and the types it names both matter.
+   */
+  private parseTry(): Statement {
+    this.expect("name", "try");
+    const body = this.parseBracedBody();
+    const catches: { types: string[]; variable: string; body: Statement[] }[] = [];
+
+    while (this.at("name", "catch")) {
+      this.next();
+      this.expect("punct", "(");
+      const types: string[] = [];
+      do {
+        types.push(this.expect("name").value.replace(/^\\+/, ""));
+      } while (this.eat("operator", "|"));
+      // PHP 8 allows `catch (Exception)` with no variable.
+      const variable = this.at("variable") ? this.next().value : "";
+      this.expect("punct", ")");
+      catches.push({ types, variable, body: this.parseBracedBody() });
+    }
+
+    const finallyBody = this.eat("name", "finally") ? this.parseBracedBody() : null;
+    return { kind: "try", body, catches, finally: finallyBody };
   }
 
   private parseThrow(): Statement {

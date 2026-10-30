@@ -426,6 +426,16 @@ export class Parser {
       return { kind: "reference", target: this.parseUnary() };
     }
 
+    // `new Exception(...)`. Exceptions are the only objects the original
+    // constructs, so the class name is kept and the renderer decides what
+    // it can build rather than this pretending to be an object model.
+    if (this.at("name", "new")) {
+      this.next();
+      const className = this.expect("name").value.replace(/^\\+/, "");
+      const args = this.at("punct", "(") ? this.parseArguments() : [];
+      return { kind: "new", className, args };
+    }
+
     const token = this.next();
 
     if (token.kind === "variable") return { kind: "variable", name: token.value };

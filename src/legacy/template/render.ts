@@ -10,7 +10,7 @@ import type { Expression, Statement } from "./ast";
 import { PHP_BUILTINS, type HostFunction } from "./builtins";
 import { compileTemplate, type CompileOptions } from "./compile";
 import { parseTemplateProgram } from "./parser";
-import { ModuleScope, PhpRef } from "../php/module-store";
+import { ModuleScope, PhpException, PhpRef, PhpThrow } from "../php/module-store";
 import {
   PhpArray,
   compareValues,
@@ -235,13 +235,20 @@ class Renderer {
       case "switch":
         this.executeSwitch(statement);
         return;
-      case "throw":
-        // Six throws exist in the module tree, in two files that are ported
-        // by hand. Reaching one here is a real error, not something to
-        // swallow.
-        throw new TemplateError(
-          `The original threw: ${toStringValue(this.evaluateQuiet(statement.value))}`
+      case "throw": {
+        // The original's throws are all `throw new Exception(...)`, and
+        // command.php catches them, so this raises a PHP exception the
+        // catch clauses can match rather than a renderer error.
+        const thrown = this.evaluate(statement.value);
+        throw new PhpThrow(
+          thrown instanceof PhpException
+            ? thrown
+            : new PhpException("Exception", toStringValue(thrown))
         );
+      }
+      case "try":
+        this.executeTry(statement);
+        return;
       case "namespace":
       case "functionDeclaration":
         // Declarations are handled when a module is compiled, not when a
@@ -251,6 +258,47 @@ class Renderer {
           `A ${statement.kind} cannot be executed as a statement; compile the module instead.`
         );
     }
+  }
+
+  /**
+   * `try` / `catch` / `finally`.
+   *
+   * Only a PHP exception is catchable here. The interpreter's own
+   * control-flow signals - return, break, continue, exit - pass straight
+   * through, as they must, and `finally` still runs for them.
+   */
+  private executeTry(statement: Extract<Statement, { kind: "try" }>): void {
+    try {
+      try {
+        this.run(statement.body);
+      } catch (error) {
+        if (!(error instanceof PhpThrow)) throw error;
+        const handler = statement.catches.find(clause =>
+          clause.types.some(type => this.matchesExceptionType(error.exception, type))
+        );
+        if (!handler) throw error;
+        if (handler.variable) {
+          this.context.variables.set(handler.variable, error.exception as unknown as PhpValue);
+        }
+        this.run(handler.body);
+      }
+    } finally {
+      if (statement.finally) this.run(statement.finally);
+    }
+  }
+
+  /**
+   * Whether a thrown exception matches a catch clause.
+   *
+   * The original defines no exception classes of its own and throws only
+   * Exception, so this covers the hierarchy it uses: Throwable and
+   * Exception catch everything thrown here, and anything else matches by
+   * name.
+   */
+  private matchesExceptionType(exception: PhpException, type: string): boolean {
+    const wanted = type.toLowerCase();
+    if (wanted === "throwable" || wanted === "exception") return true;
+    return wanted === exception.className.toLowerCase();
   }
 
   /** `for (init; cond; update)`, with PHP's comma-separated clauses. */
@@ -575,11 +623,32 @@ class Renderer {
       // runs. Reaching one here means a template or a module function
       // needs behaviour this renderer does not have, and guessing a value
       // would be a silent behaviour change, so it says so instead.
-      case "methodCall":
+      case "new": {
+        // Exceptions are the only objects the original builds. Anything
+        // else would need a class model it does not have, so it is
+        // reported rather than approximated with an empty value.
+        const known = ["exception", "runtimeexception", "logicexception", "errorexception"];
+        if (!known.includes(expression.className.toLowerCase())) {
+          throw new TemplateError(
+            `The original constructs no ${expression.className}; only exceptions are supported.`
+          );
+        }
+        const message = expression.args[0] ? toStringValue(this.evaluate(expression.args[0])) : "";
+        return new PhpException(expression.className, message) as unknown as PhpValue;
+      }
+      case "methodCall": {
+        const target = this.evaluate(expression.target);
+        if (target instanceof PhpException) {
+          const method = expression.name.toLowerCase();
+          if (method === "getmessage") return target.message;
+          if (method === "getcode") return 0;
+          throw new TemplateError(`Exception has no ${expression.name}() in this port.`);
+        }
         throw new TemplateError(
           `Method call ->${expression.name}() is not available here. Only the database ` +
             `object has methods in the original, and it is not bound in this context.`
         );
+      }
       case "dynamicCall": {
         // `$chprocess(...)`: in the original $chprocess holds the name of
         // the implementation this one replaced, and calling it is a

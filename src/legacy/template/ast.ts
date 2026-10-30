@@ -22,6 +22,12 @@ export type Expression =
   | { kind: "dynamicCall"; callee: Expression; args: readonly Expression[] }
   /** The right-hand side of `$a = &$b`, which binds rather than copies. */
   | { kind: "reference"; target: Expression }
+  /**
+   * `new Exception(...)`. The only objects the original constructs are
+   * exceptions: six `new` in the module tree, all `throw new Exception`,
+   * plus command.php's own try/catch.
+   */
+  | { kind: "new"; className: string; args: readonly Expression[] }
   | { kind: "call"; callee: string; args: readonly Expression[] }
   | { kind: "unary"; operator: string; operand: Expression }
   | { kind: "binary"; operator: string; left: Expression; right: Expression }
@@ -82,7 +88,21 @@ export type Statement =
       subject: Expression;
       cases: readonly { test: Expression | null; body: readonly Statement[] }[];
     }
-  | { kind: "throw"; value: Expression };
+  | { kind: "throw"; value: Expression }
+  /**
+   * command.php wraps the whole request in one of these. The module tree
+   * has none, so this exists for the page scripts.
+   */
+  | {
+      kind: "try";
+      body: readonly Statement[];
+      catches: readonly {
+        readonly types: readonly string[];
+        readonly variable: string;
+        readonly body: readonly Statement[];
+      }[];
+      finally: readonly Statement[] | null;
+    };
 
 export interface Parameter {
   readonly name: string;

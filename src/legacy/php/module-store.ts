@@ -36,6 +36,28 @@ export class PhpRef {
 }
 
 /**
+ * A PHP exception, which is the only object the original constructs.
+ *
+ * It carries the class name so `catch (Exception $e)` can match what was
+ * thrown, and the message so `$e->getMessage()` can return it. It is not
+ * an Error subclass: it travels as a PHP value, and PhpThrow carries it.
+ */
+export class PhpException {
+  constructor(
+    readonly className: string,
+    readonly message: string
+  ) {}
+}
+
+/** Carries a PhpException through the interpreter's own control flow. */
+export class PhpThrow extends Error {
+  constructor(readonly exception: PhpException) {
+    super(exception.message);
+    this.name = "PhpThrow";
+  }
+}
+
+/**
  * The live `___LOCAL_<MODULE>__VARS__<name>` globals.
  *
  * Seeded from the generated table, which is itself read out of a full module
