@@ -29,7 +29,19 @@ Before this harness ran, the seven PHP-oracle assertions had always been reporte
 
 The PHP oracle compares pure functions. Whole responses are now compared too: an isolated instance of the captured source runs under PHP 8.2.35 behind a copy of the production nginx routing contract, against its own database, so it can be driven freely without touching the live site or live player data. `npm run capture:golden` records whole responses from it into `test/fixtures/golden/`, and `test/original-routes-golden.test.mjs` replays each one against the Worker.
 
-Current result: **0 of 23 captured routes match the original**. Every original page still answers 501 or 404, the two client scripts the original ships are not served, and the routing contract (`/gamedata/` 403, `/include/` 403, `install_NEW.php` 410, `command.php` GET 403 / POST only) is not reproduced. No `assets` binding is configured in `wrangler.jsonc`, so the guest-snapshot path in `src/index.ts` cannot serve anything. The figure is a ratchet; raise it only when a route genuinely starts matching.
+Current result: **7 of 23 captured routes match the original**, byte for byte. Those are the edge routing contract — `/gamedata/` 403, `/include/` 403, `/install/` 403, `install_NEW.php` 410, `command.php` GET 403 with POST only, reproduced in `src/original-routing.ts` with nginx's own error pages — plus the two client scripts the original's pages load, now served from the asset bundle.
+
+The remaining 16 are all server-rendered pages and still answer 501 or 404. The figure is a ratchet; raise it only when a route genuinely starts matching.
+
+## Templates are not a separate phase
+
+`npm run audit:templates` inventories what the original's 858 templates actually contain, because the port needs an equivalent of `include/template.func.php` — the Discuz-derived compiler that rewrites `.htm` into PHP — and a Worker cannot evaluate PHP.
+
+Directive usage: 2,300 `{if}`, 1,842 `{template}`, 1,752 `{eval}`, 775 `{else}`, 259 `{elseif}`, 256 `{loop}`, 184 `{lang}`. Distinct expressions: 1,448 `eval`, 1,244 conditions, 182 loops.
+
+The decisive number is that **871 of those distinct expressions call original module functions** — 515 of the `eval` statements and 356 of the conditions. `import_module` alone appears 281 times, `skill_getvalue` 189. Templates also use PHP variable variables (`${'ar'.$apl.'s'}`), which `parse_template` handles with a dedicated rewrite.
+
+So rendering a page is not a presentation exercise that can follow the module port: roughly a third of template expressions are calls into the very hooks that are still missing. The sequence in the handoff treats page fidelity as a later phase, which would mean building a template engine with nothing to call. Work proceeds in vertical slices instead — take one original URL, port the modules its templates reach, and hold the whole response to its captured fixture.
 
 ## Milestones
 
