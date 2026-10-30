@@ -4,6 +4,13 @@
  *
  * Paths and expected statuses come from the production nginx configuration of
  * dts.zhangyingyin.top, which the isolated instance mirrors exactly.
+ *
+ * Capture caveat: the instance is reached through a loopback port-forward, so
+ * any rule conditioned on the client address answers as it would for
+ * 127.0.0.1. The maintenance scripts guarded by `allow 127.0.0.1; deny all;`
+ * (modulemng, daemonmng and friends) therefore return 200 here while a browser
+ * gets 403, so they are deliberately not captured. Their public behaviour is
+ * asserted directly in test/original-routing.test.ts instead.
  */
 
 /** Logged-out pages the browser can reach directly. */

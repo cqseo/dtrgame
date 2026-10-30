@@ -15,6 +15,8 @@ export interface OriginalEnv {
   SUPABASE_URL?: string;
   SUPABASE_SECRET_KEY?: string;
 }
+import { applyOriginalRouting } from "./original-routing";
+export { applyOriginalRouting } from "./original-routing";
 export { LegacyRoomDurableObject } from "./runtime/room-durable-object";
 export { LegacyGameDurableObject } from "./runtime/game-durable-object";
 export const ORIGINAL_GUEST_SNAPSHOTS = new Set([
@@ -37,6 +39,13 @@ const text = (body: string, status: number): Response => new Response(body, {
 export default {
   async fetch(request: Request, env: OriginalEnv): Promise<Response> {
     const url = new URL(request.url);
+
+    // The original's edge refuses or retires some paths before PHP ever runs.
+    // Reproduced first so the browser sees the same status and body it does
+    // today, independently of how much of the application is ported.
+    const routed = applyOriginalRouting(url.pathname, request.method);
+    if (routed) return routed;
+
     if (url.pathname === "/__stage_status") {
       return new Response(JSON.stringify(ORIGINAL_STAGING_STATUS), {
         headers: { "content-type": "application/json;charset=utf-8", "cache-control": "no-store" }
