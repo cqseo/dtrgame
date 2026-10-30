@@ -99,9 +99,48 @@ function dts_language($root) {
     return ['ok' => true, 'language' => $language];
 }
 
+/**
+ * Returns the sys module's configuration variables, which templates read
+ * ($gtitle, $charset, $gamecredits and so on).
+ *
+ * Credentials never leave this function: the database settings and authkey
+ * are dropped by name, and anything whose name looks like a secret is
+ * dropped too, so a value added to the config later cannot leak by default.
+ */
+function dts_config($root) {
+    $before = get_defined_vars();
+    $files = [
+        '/include/modules/core/sys/config/server.config.php',
+        '/include/modules/core/sys/config/resources.config.php',
+        '/include/modules/core/sys/config/game.config.php',
+        '/include/modules/core/sys/config/system.config.php',
+        '/include/modules/core/sys/config/gamemode.config.php',
+        '/include/modules/core/sys/config/version.config.php',
+    ];
+    foreach ($files as $file) {
+        if (is_file($root . $file)) {
+            include $root . $file;
+        }
+    }
+    $denied = ['dbhost', 'dbuser', 'dbpw', 'dbname', 'dbcharset', 'database', 'dbreport',
+               'authkey', 'pconnect', 'before', 'files', 'file', 'root', 'denied'];
+    $config = [];
+    foreach (get_defined_vars() as $name => $value) {
+        if (in_array($name, $denied, true)) continue;
+        // *_sign are shared signing secrets (command.php compares against
+        // them); gtablepre and server_address are internal deployment detail.
+        if (preg_match('/pass|pwd|secret|key|token|salt|auth|sign|^db|gtablepre|server_address/i', $name)) continue;
+        if (is_scalar($value) || $value === null || is_array($value)) $config[$name] = $value;
+    }
+    return ['ok' => true, 'config' => $config];
+}
+
 $results = [];
 foreach ($input['cases'] as $case) {
     switch ($case['action'] ?? 'render') {
+        case 'config':
+            $results[] = dts_config($root);
+            break;
         case 'compile':
             $results[] = dts_compile($case['template'], $root, $scratch);
             break;

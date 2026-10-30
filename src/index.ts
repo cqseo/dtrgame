@@ -15,6 +15,13 @@ export interface OriginalEnv {
   SUPABASE_URL?: string;
   SUPABASE_SECRET_KEY?: string;
 }
+import {
+  ORIGINAL_PAGES,
+  isSignedOutRequest,
+  loadTemplateTree,
+  originalPageHeaders,
+  renderOriginalPage
+} from "./original-pages";
 import { applyOriginalRouting } from "./original-routing";
 export { applyOriginalRouting } from "./original-routing";
 export { LegacyRoomDurableObject } from "./runtime/room-durable-object";
@@ -55,6 +62,20 @@ export default {
       return text("原版游戏后端指令尚未完成 1:1 移植；本环境不会写入玩家数据。", 501);
     }
     if (url.pathname === "/") url.pathname = "/index.php";
+
+    // Pages whose output already matches the original byte for byte.
+    const page = ORIGINAL_PAGES[url.pathname];
+    if (page && (!page.signedOutOnly || isSignedOutRequest(request, url))) {
+      const sources = await loadTemplateTree(page.template, async path => {
+        const response = await env.ASSETS.fetch(new Request(new URL(path, url.origin)));
+        return response.status === 200 ? await response.text() : undefined;
+      });
+      return new Response(renderOriginalPage(page, sources), {
+        status: 200,
+        headers: originalPageHeaders()
+      });
+    }
+
     if (url.pathname.toLowerCase().endsWith(".php") && !ORIGINAL_GUEST_SNAPSHOTS.has(url.pathname)) {
       return text("原版服务端页面尚未完成 1:1 移植。", 501);
     }

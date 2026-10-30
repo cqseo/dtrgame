@@ -16,6 +16,8 @@
     "generate:special-recipes": "node scripts/generate-legacy-special-recipes.mjs ../legacy-dts src/generated/legacy-special-recipes.ts",
     "generate:hooks": "node scripts/generate-legacy-hook-manifest.mjs ../legacy-dts src/generated/legacy-hook-manifest.ts",
     "generate:rooms": "node scripts/generate-legacy-room-types.mjs ../legacy-dts src/generated/legacy-room-types.ts",
+    "generate:config": "node scripts/generate-legacy-config.mjs src/generated/legacy-config.ts",
+    "generate:template-language": "node scripts/generate-template-language.mjs src/generated/legacy-template-language.ts",
     "test:php-parity": "node scripts/run-php-parity.mjs",
     "sync:assets": "node scripts/sync-original-assets.mjs ../legacy-dts public",
     "golden:up": "tools/golden-tunnel up",
