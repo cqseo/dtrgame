@@ -37,12 +37,13 @@ function phpFiles(dir) {
   return found;
 }
 
-/** Extracts each function body by brace matching from its opening brace. */
+/** Extracts each function's name, parameter names and body. */
 function functions(source) {
   const found = [];
-  const pattern = /function\s+&?\s*([A-Za-z_]\w*)\s*\(/g;
+  const pattern = /function\s+&?\s*([A-Za-z_]\w*)\s*\(([^)]*)\)/g;
   let match;
   while ((match = pattern.exec(source)) !== null) {
+    const parameters = [...(match[2] ?? "").matchAll(/\$(\w+)/g)].map(p => p[1]);
     let index = source.indexOf("{", pattern.lastIndex);
     if (index === -1) continue;
     let depth = 0;
@@ -55,7 +56,7 @@ function functions(source) {
         if (depth === 0) break;
       }
     }
-    found.push({ name: match[1], body: source.slice(index, end + 1) });
+    found.push({ name: match[1], parameters, body: source.slice(index, end + 1) });
   }
   return found;
 }
@@ -100,14 +101,66 @@ function classify(rawBody) {
   return "pure";
 }
 
+/**
+ * Top-level variables each module defines, so a parameter that collides with
+ * one can be spotted.
+ *
+ * eval(import_module('sys')) expands to `global $winner; global $winmode;`
+ * and PHP's `global` rebinds the name even when it is a parameter. Checked
+ * against the running game, gameover_get_gold_up($data, $winner, $winmode)
+ * ignores both arguments entirely and reads the module's values instead.
+ * Anything ported from the signature alone is silently wrong.
+ */
+const moduleVariableNames = new Map();
+for (const file of phpFiles(modulesRoot)) {
+  const moduleDir = relative(modulesRoot, file).split("/").slice(0, -1).join("/");
+  const names = moduleVariableNames.get(moduleDir) ?? new Set();
+  for (const assignment of readFileSync(file, "utf8").matchAll(/^\s{0,2}\$(\w+)\s*=/gm)) {
+    names.add(assignment[1]);
+  }
+  moduleVariableNames.set(moduleDir, names);
+}
+
+/** Module directory names as import_module() refers to them. */
+const variablesByModule = new Map();
+for (const [dir, names] of moduleVariableNames) {
+  const leaf = dir.split("/").pop();
+  if (!leaf) continue;
+  const merged = variablesByModule.get(leaf) ?? new Set();
+  for (const name of names) merged.add(name);
+  variablesByModule.set(leaf, merged);
+}
+
+function shadowedParameters(parameters, body) {
+  if (parameters.length === 0) return [];
+  const imported = new Set();
+  for (const call of body.matchAll(/import_module\s*\(([^)]*)\)/g)) {
+    for (const name of (call[1] ?? "").matchAll(/['"](\w+)['"]/g)) imported.add(name[1]);
+  }
+  if (imported.size === 0) return [];
+  const shadowed = [];
+  for (const parameter of parameters) {
+    for (const module of imported) {
+      if (variablesByModule.get(module)?.has(parameter)) {
+        shadowed.push(`${parameter} (from ${module})`);
+        break;
+      }
+    }
+  }
+  return shadowed;
+}
+
 const byClass = { pure: [], config: [], state: [], data: [], dispatch: [], override: [] };
+const shadowing = [];
 
 for (const file of phpFiles(modulesRoot)) {
   const source = readFileSync(file, "utf8");
   const where = relative(legacyRoot, file);
-  for (const { name, body } of functions(source)) {
+  for (const { name, parameters, body } of functions(source)) {
     const effective = stripPrologue(body).split("\n").filter(line => line.trim() !== "").length;
     byClass[classify(body)].push({ name, file: where, lines: effective });
+    const shadowed = shadowedParameters(parameters, body);
+    if (shadowed.length > 0) shadowing.push({ name, file: where, shadowed });
   }
 }
 
@@ -130,7 +183,13 @@ for (const entry of batchable.slice(0, 15)) {
   console.log(`  ${String(entry.lines).padStart(3)}  ${entry.name}  ${entry.file}`);
 }
 
+console.log(`\nfunctions whose parameters are shadowed by import_module(): ${shadowing.length}`);
+console.log("these cannot be ported from their signature; the module's value wins:");
+for (const entry of shadowing.slice(0, 12)) {
+  console.log(`  ${entry.name}  [${entry.shadowed.join(", ")}]  ${entry.file}`);
+}
+
 if (output) {
-  writeFileSync(output, `${JSON.stringify({ total, byClass, batchable }, null, 2)}\n`);
+  writeFileSync(output, `${JSON.stringify({ total, byClass, batchable, shadowing }, null, 2)}\n`);
   console.log(`\nWrote ${output}`);
 }

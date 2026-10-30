@@ -12,9 +12,18 @@
  */
 import { PHP_BUILTINS } from "./template/builtins";
 import { PhpArray, toBool, toStringValue, type PhpValue } from "./template/values";
-import type { ModuleVariables } from "./map-area";
+import { toPhpValue, type ModuleVariables } from "./map-area";
 
-const asArray = (value: PhpValue): PhpArray => (value instanceof PhpArray ? value : new PhpArray());
+/**
+ * Accepts a plain object or array as well as a PhpArray, because callers
+ * pass rows straight from JSON. Left unconverted, a row reads as an empty
+ * array and every field comes back null — and PHP's `null == ""` is true,
+ * so a missing name silently matched an empty winner field.
+ */
+function asArray(value: unknown): PhpArray {
+  const converted = toPhpValue(value);
+  return converted instanceof PhpArray ? converted : new PhpArray();
+}
 
 /** The original's message when an item slot holds nothing usable. */
 export const ITEM_MISSING_LOG = "该物品不存在！<br>";
