@@ -33,6 +33,13 @@ export interface TemplateContext {
    * is reported rather than guessed at.
    */
   readonly functions: Map<string, HostFunction>;
+  /**
+   * The true global scope, which $GLOBALS exposes. gexit() renders the error
+   * template inside a function, so only the variables it imports are in
+   * scope there while $GLOBALS still reaches everything; keeping the two
+   * separate is what makes that page match.
+   */
+  readonly globals?: Map<string, PhpValue> | undefined;
   /** Returns a template's source by the name template() would resolve. */
   readonly loadTemplate: (name: string) => string | undefined;
   readonly compileOptions?: CompileOptions | undefined;
@@ -65,6 +72,7 @@ export function createTemplateContext(
 ): TemplateContext {
   return {
     variables: overrides.variables ?? new Map(),
+    globals: overrides.globals,
     constants: overrides.constants ?? new Map(),
     functions: overrides.functions ?? new Map(),
     loadTemplate: overrides.loadTemplate,
@@ -292,6 +300,13 @@ class Renderer {
       case "interpolate":
         return expression.parts.map(part => toStringValue(this.evaluate(part))).join("");
       case "variable":
+        // $GLOBALS reaches the real global scope even from a function body.
+        if (expression.name === "GLOBALS") {
+          const globals = this.context.globals ?? this.context.variables;
+          const view = new PhpArray();
+          for (const [name, value] of globals) view.set(name, value);
+          return view;
+        }
         return this.context.variables.get(expression.name) ?? null;
       case "variableVariable":
         return this.context.variables.get(toStringValue(this.evaluate(expression.name))) ?? null;

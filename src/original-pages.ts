@@ -1,49 +1,89 @@
 /**
  * Server-rendered pages of the original, ported one URL at a time.
  *
- * Each entry here renders byte-identically to the captured response in
+ * Each entry renders byte-identically to the captured response in
  * test/fixtures/golden. A page is added only once that holds, so the route
  * ledger in test/original-routes-golden.test.mjs stays an honest count of
- * what actually works rather than of what has been attempted.
+ * what works rather than of what has been attempted.
  */
 import { LEGACY_CONFIG } from "./generated/legacy-config";
 import { LEGACY_TEMPLATE_LANGUAGE } from "./generated/legacy-template-language";
+import { createOriginalFunctions } from "./legacy/original-functions";
 import { compileTemplate } from "./legacy/template/compile";
 import { createTemplateContext, renderTemplate } from "./legacy/template/render";
-import type { PhpValue } from "./legacy/template/values";
+import { PhpArray, type PhpValue } from "./legacy/template/values";
 
 /** Where the original keeps the active template pack. */
 const TEMPLATE_DIR = "/templates/default";
 
-export interface OriginalPage {
-  /** Entry template, as the page's `include template(...)` names it. */
-  readonly template: string;
-  /** CURSCRIPT, which templates branch on. */
-  readonly curscript: string;
+/**
+ * The globals gexit() imports before `include template('error')`.
+ *
+ * gexit renders inside a function, so the error template sees only these —
+ * $gamecredits, for one, is absent, which is why the footer's credit block
+ * comes out empty on an error page but filled on an ordinary one.
+ */
+const GEXIT_GLOBALS = ["charset", "gtitle", "extrahead", "allowcsscache", "errorinfo", "bbsurl", "homepage"];
+
+export type OriginalPage =
+  /** The page's whole body is one template render. */
+  | { readonly kind: "template"; readonly template: string; readonly curscript: string }
+  /** Signed out, the page calls gexit() with this $_ERROR key. */
+  | { readonly kind: "error"; readonly errorKey: string; readonly curscript: string }
+  /** Signed out, the page exits with a fixed string. */
+  | { readonly kind: "literal"; readonly body: string };
+
+export interface OriginalPageEntry {
+  readonly page: OriginalPage;
   /**
-   * True when the original only takes this path for a visitor who is not
-   * signed in. login.php renders its form just for that case and otherwise
-   * verifies credentials, which is not ported, so a request carrying any is
-   * left to the unported branch instead of being answered with the form.
+   * The original only takes this path for a visitor who is not signed in.
+   * The signed-in branches verify credentials and read player data, which is
+   * not ported, so a request carrying any is left to the unported path
+   * rather than answered with a page the original would not have returned.
    */
   readonly signedOutOnly?: boolean;
+  /** The original branches on query parameters this port does not handle. */
+  readonly noQueryOnly?: boolean;
 }
 
-/**
- * Pages whose whole body is one template render. The original's thinner
- * pages are exactly this; the ones that funnel through command.php are not
- * here yet.
- */
-export const ORIGINAL_PAGES: Readonly<Record<string, OriginalPage>> = {
-  "/donate.php": { template: "donate", curscript: "donate" },
-  "/login.php": { template: "login_page", curscript: "login", signedOutOnly: true }
+export const ORIGINAL_PAGES: Readonly<Record<string, OriginalPageEntry>> = {
+  "/donate.php": { page: { kind: "template", template: "donate", curscript: "donate" } },
+  "/login.php": {
+    page: { kind: "template", template: "login_page", curscript: "login" },
+    signedOutOnly: true
+  },
+  // cardbook.php and kujilist.php reach udata_check(), which gexit()s with
+  // $_ERROR['no_login'] before any of their own content renders.
+  "/cardbook.php": {
+    page: { kind: "error", errorKey: "no_login", curscript: "cardbook" },
+    signedOutOnly: true,
+    noQueryOnly: true
+  },
+  "/kujilist.php": {
+    page: { kind: "error", errorKey: "no_login", curscript: "kujilist" },
+    signedOutOnly: true,
+    noQueryOnly: true
+  },
+  // chat.php exits before loading anything when there is no signed-in user.
+  "/chat.php": { page: { kind: "literal", body: "Not in game." }, signedOutOnly: true, noQueryOnly: true }
 };
 
-/** Mirrors login.php's `!isset($username) && empty($cuser)` guard. */
-export function isSignedOutRequest(request: Request, url: URL): boolean {
-  if (url.searchParams.has("username")) return false;
+/** Mirrors the `empty($cuser)` guard these pages share. */
+export function isSignedOutRequest(request: Request): boolean {
   const cookies = request.headers.get("cookie") ?? "";
   return !/(?:^|;\s*)[A-Za-z0-9_]*user=[^;]/.test(cookies);
+}
+
+export function selectOriginalPage(
+  pathname: string,
+  url: URL,
+  request: Request
+): OriginalPage | undefined {
+  const entry = ORIGINAL_PAGES[pathname];
+  if (!entry) return undefined;
+  if (entry.signedOutOnly && !isSignedOutRequest(request)) return undefined;
+  if (entry.noQueryOnly && url.search !== "") return undefined;
+  return entry.page;
 }
 
 /** Literal `include template('x')` names in compiled output. */
@@ -86,24 +126,68 @@ export async function loadTemplateTree(
   return sources;
 }
 
+/** The entry template a page needs fetched before it can render. */
+export function entryTemplate(page: OriginalPage): string | undefined {
+  if (page.kind === "template") return page.template;
+  if (page.kind === "error") return "error";
+  return undefined;
+}
+
 /** The constants include/common.inc.php defines before a page renders. */
-function pageConstants(page: OriginalPage): Map<string, PhpValue> {
+function pageConstants(curscript: string): Map<string, PhpValue> {
   return new Map<string, PhpValue>([
     ["IN_GAME", true],
     ["GAMENAME", "bra"],
-    ["CURSCRIPT", page.curscript],
+    ["CURSCRIPT", curscript],
     ["STYLEID", "1"],
     ["TEMPLATEID", "1"],
     ["TPLDIR", TEMPLATE_DIR.slice(1)]
   ]);
 }
 
+const configGlobals = (): Map<string, PhpValue> =>
+  new Map(Object.entries(LEGACY_CONFIG) as [string, PhpValue][]);
+
+function errorMessage(key: string): string {
+  const errors = (LEGACY_CONFIG as Record<string, unknown>)._ERROR as Record<string, string> | undefined;
+  return errors?.[key] ?? "";
+}
+
 export function renderOriginalPage(page: OriginalPage, sources: ReadonlyMap<string, string>): string {
-  return renderTemplate(page.template, {
-    ...createTemplateContext({ loadTemplate: name => sources.get(name) }),
-    variables: new Map(Object.entries(LEGACY_CONFIG) as [string, PhpValue][]),
-    constants: pageConstants(page),
-    compileOptions: { language: LEGACY_TEMPLATE_LANGUAGE }
+  if (page.kind === "literal") return page.body;
+
+  const globals = configGlobals();
+  const loadTemplate = (name: string) => sources.get(name);
+  const compileOptions = { language: LEGACY_TEMPLATE_LANGUAGE };
+
+  if (page.kind === "template") {
+    return renderTemplate(page.template, {
+      ...createTemplateContext({ loadTemplate }),
+      functions: createOriginalFunctions(),
+      variables: globals,
+      globals,
+      constants: pageConstants(page.curscript),
+      compileOptions
+    });
+  }
+
+  // gexit(): only the globals it imports are in scope, plus its own
+  // arguments. $GLOBALS still reaches everything, which error.htm uses.
+  const scope = new Map<string, PhpValue>();
+  for (const name of GEXIT_GLOBALS) {
+    if (globals.has(name)) scope.set(name, globals.get(name) ?? null);
+  }
+  scope.set("message", errorMessage(page.errorKey));
+  scope.set("file", "");
+  scope.set("line", 0);
+
+  return renderTemplate("error", {
+    ...createTemplateContext({ loadTemplate }),
+    functions: createOriginalFunctions(),
+    variables: scope,
+    globals,
+    constants: pageConstants(page.curscript),
+    compileOptions
   });
 }
 
@@ -116,3 +200,5 @@ export function originalPageHeaders(): Headers {
     expires: "0"
   });
 }
+
+export { PhpArray };

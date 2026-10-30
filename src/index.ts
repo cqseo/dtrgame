@@ -16,11 +16,11 @@ export interface OriginalEnv {
   SUPABASE_SECRET_KEY?: string;
 }
 import {
-  ORIGINAL_PAGES,
-  isSignedOutRequest,
+  entryTemplate,
   loadTemplateTree,
   originalPageHeaders,
-  renderOriginalPage
+  renderOriginalPage,
+  selectOriginalPage
 } from "./original-pages";
 import { applyOriginalRouting } from "./original-routing";
 export { applyOriginalRouting } from "./original-routing";
@@ -64,12 +64,15 @@ export default {
     if (url.pathname === "/") url.pathname = "/index.php";
 
     // Pages whose output already matches the original byte for byte.
-    const page = ORIGINAL_PAGES[url.pathname];
-    if (page && (!page.signedOutOnly || isSignedOutRequest(request, url))) {
-      const sources = await loadTemplateTree(page.template, async path => {
-        const response = await env.ASSETS.fetch(new Request(new URL(path, url.origin)));
-        return response.status === 200 ? await response.text() : undefined;
-      });
+    const page = selectOriginalPage(url.pathname, url, request);
+    if (page) {
+      const entry = entryTemplate(page);
+      const sources = entry
+        ? await loadTemplateTree(entry, async path => {
+            const response = await env.ASSETS.fetch(new Request(new URL(path, url.origin)));
+            return response.status === 200 ? await response.text() : undefined;
+          })
+        : new Map<string, string>();
       return new Response(renderOriginalPage(page, sources), {
         status: 200,
         headers: originalPageHeaders()
