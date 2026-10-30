@@ -55,6 +55,13 @@ export interface OriginalPageEntry {
  */
 export const ORIGINAL_PAGES: Readonly<Record<string, readonly OriginalPageEntry[]>> = {
   "/donate.php": [{ page: { kind: "template", template: "donate", curscript: "donate" } }],
+  // map.php is three lines — define CURSCRIPT, require common.inc.php,
+  // include template('map') — but the template calls
+  // \map_display\get_map_display_config(), which imports three modules'
+  // variables, reads them through get_var_in_module(), and calls
+  // \map\get_all_plsno(), which instance11_observe overrides for game type
+  // 21. So it needs the hook chain, not just the template engine, and it
+  // stays unported until that is real rather than approximated.
   "/login.php": [{
     page: { kind: "template", template: "login_page", curscript: "login" },
     signedOutOnly: true
