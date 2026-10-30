@@ -73,13 +73,7 @@ describe("the game row, through the original's own code", () => {
     expect((areas as PhpArray).values()).toEqual(["1", "2", "3", "5", "8"]);
   });
 
-  // The save path is blocked on one thing only: noise fills noisevars, so
-  // save_gameinfo_prepare_work calls gencode(), which is
-  // base64(gzip(json)). The Worker's CompressionStream is async and this
-  // interpreter is synchronous, so a synchronous gzip has to land first.
-  // These are written against the behaviour they must have, and skipped
-  // until it does, rather than being weakened to pass.
-  it.skip("writes back only what changed, as array_update does", () => {
+  it("writes back only what changed, as array_update does", () => {
     const { runtime, database } = runtimeWithGame();
     runtime.call("sys\\load_gameinfo");
 
@@ -104,7 +98,7 @@ describe("the game row, through the original's own code", () => {
     expect(sql).toContain("arealist = '1,2,3,5,8'");
   });
 
-  it.skip("leaves the stored row holding the new values", () => {
+  it("leaves the stored row holding the new values", () => {
     const { runtime, database } = runtimeWithGame();
     runtime.call("sys\\load_gameinfo");
     runtime.store.set("sys", "alivenum", 6);
@@ -114,15 +108,6 @@ describe("the game row, through the original's own code", () => {
     expect(stored?.get("alivenum")).toBe("6");
     // Untouched columns keep what they had.
     expect(stored?.get("hplayer")).toBe("someone");
-  });
-
-  it("refuses to save until a synchronous gzip exists, naming why", () => {
-    // Returning an empty array from gdecode, or an empty string from
-    // gencode, would read as "this room has no settings" and quietly reset
-    // the game's own state. Refusing is the only safe placeholder.
-    const { runtime } = runtimeWithGame();
-    runtime.call("sys\\load_gameinfo");
-    expect(() => runtime.call("sys\\save_gameinfo")).toThrowError(/synchronous gzip/);
   });
 
   it("refuses a statement it cannot parse rather than guessing", () => {

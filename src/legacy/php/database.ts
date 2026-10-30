@@ -201,10 +201,17 @@ export class InMemoryLegacyDatabase extends LegacyDatabase {
     });
   }
 
-  /** Splits `a = 'x',b = 'y'` without being fooled by a comma in a value. */
+  /**
+   * Splits `a = 'x',b = 'y'` without being fooled by a comma in a value.
+   *
+   * The column name must exclude the comma that separates assignments:
+   * `\S+?` would happily swallow it and name the second column
+   * ",deathnum", so every field but the first would be written to a column
+   * that does not exist and the update would appear to do nothing.
+   */
   #assignments(text: string): [string, string][] {
     const found: [string, string][] = [];
-    const pattern = /(\S+?)\s*=\s*'((?:[^'\\]|\\.)*)'/gs;
+    const pattern = /([^\s,]+)\s*=\s*'((?:[^'\\]|\\.)*)'/gs;
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(text)) !== null) {
       found.push([

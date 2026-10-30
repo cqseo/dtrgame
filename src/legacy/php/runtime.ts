@@ -12,6 +12,7 @@
  * modules.func.php. This supplies the scope, the imports and the calling.
  */
 import { LEGACY_HOOK_CHAINS } from "../../generated/legacy-hook-manifest";
+import { gdecode, gencode } from "./codec";
 import type { LegacyDatabase } from "./database";
 import type { CompiledPhpFunction } from "../module-compiler";
 import type { Statement } from "../template/ast";
@@ -318,36 +319,12 @@ export class LegacyModuleRuntime {
     functions.set("__MODULE_NULLFUNCTION__", () => null);
 
     // gencode/gdecode are the original's storage format for the columns
-    // that hold structured data -- roomvars, gamevars, noisevars:
-    //
-    //   gencode($p) = base64_encode(gzencode(json_encode($p)))
-    //   gdecode($p) = $p ? json_decode(gunzip(base64_decode($p))) : array()
-    //
-    // The empty case is handled here because it needs no codec, and it is
-    // the real state of a room that has not started. A non-empty payload
-    // needs gzip synchronously, which the Worker's CompressionStream
-    // cannot do, so it is refused rather than silently returning an empty
-    // array -- that would read as "this room has no settings" and quietly
-    // reset the game's own state.
-    functions.set("gdecode", values => {
-      const payload = values[0] ?? null;
-      if (!toBool(payload)) return new PhpArray();
-      throw new Error(
-        "gdecode() of a non-empty payload needs a synchronous gzip; the Worker's " +
-          "DecompressionStream is async and the interpreter is not. See " +
-          "src/original-protocol.ts for the async pair already in use at the edge."
-      );
-    });
-    functions.set("gencode", values => {
-      const payload = values[0] ?? null;
-      // An empty array encodes to the empty string the column started as,
-      // which keeps a round trip that touched nothing byte-identical.
-      if (payload instanceof PhpArray && payload.keys().length === 0) return "";
-      if (!toBool(payload)) return "";
-      throw new Error(
-        "gencode() of a non-empty value needs a synchronous gzip; see gdecode() above."
-      );
-    });
+    // that hold structured data -- roomvars, gamevars, noisevars. The
+    // implementations are byte-identical to PHP's, which matters because
+    // array_update() writes a column only when its value differs from the
+    // one it read.
+    functions.set("gdecode", values => gdecode(values[0] ?? null));
+    functions.set("gencode", values => gencode(values[0] ?? null));
 
     // The name of the function currently running, which a few helpers read.
     functions.set("__FUNCTION__", () => qualified);
