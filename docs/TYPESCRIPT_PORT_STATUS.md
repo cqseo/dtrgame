@@ -9,7 +9,9 @@ This ledger is generated against the captured Baota baseline. It prevents a part
 - Pending modules: **710**
 - Original hook implementations ported: **56 / 5,235 (1.07%)**, missing **5,179**
 - Player database fields captured: **124**
-- Automated TypeScript tests: **154** plus **7** PHP-oracle assertions that now execute and pass against the original interpreter
+- Original public routes reproduced byte for byte: **12 / 23 captured**
+- Original templates compiling to identical bytes: **845 / 845**
+- Automated TypeScript tests: **170** plus **11** PHP-oracle assertions that execute and pass against the original interpreter
 
 Module counts and the partial list below are taken from `docs/legacy-module-migration.json`, which `npm run generate:migration` derives from the captured source. Earlier revisions of this page carried a hand-edited list that had drifted to 37 modules; the generator is the only authority.
 
@@ -29,9 +31,32 @@ Before this harness ran, the seven PHP-oracle assertions had always been reporte
 
 The PHP oracle compares pure functions. Whole responses are now compared too: an isolated instance of the captured source runs under PHP 8.2.35 behind a copy of the production nginx routing contract, against its own database, so it can be driven freely without touching the live site or live player data. `npm run capture:golden` records whole responses from it into `test/fixtures/golden/`, and `test/original-routes-golden.test.mjs` replays each one against the Worker.
 
-Current result: **7 of 23 captured routes match the original**, byte for byte. Those are the edge routing contract — `/gamedata/` 403, `/include/` 403, `/install/` 403, `install_NEW.php` 410, `command.php` GET 403 with POST only, reproduced in `src/original-routing.ts` with nginx's own error pages — plus the two client scripts the original's pages load, now served from the asset bundle.
+Current result: **12 of 23 captured routes match the original**, byte for byte.
 
-The remaining 16 are all server-rendered pages and still answer 501 or 404. The figure is a ratchet; raise it only when a route genuinely starts matching.
+Reproduced so far:
+
+- The edge routing contract — `/gamedata/` 403, `/include/` 403, `/install/` 403, `install_NEW.php` 410, `command.php` GET 403 with POST only — in `src/original-routing.ts`, with nginx's own error pages.
+- The two client scripts the original's pages load, served from the asset bundle.
+- `donate.php` and `login.php`, which the original answers with a single template render.
+- `cardbook.php`, `kujilist.php` and `chat.php` signed out, where the original refuses before any of its own content runs.
+
+The remaining 11 are `index.php`, `register.php`, `game.php`, `end.php`, `rank.php`, `help.php`, `map.php`, `itemhelp.php`, `roomcmd.php`, `roomupdate.php` and `command.php`. Each needs original module functions, player data, or both; they are not blocked on presentation. The figure is a ratchet; raise it only when a route genuinely starts matching.
+
+### What those pages are waiting on
+
+`rank.php`, `help.php`, `end.php` and `game.php` are thin: each calls `render_page('command_X')`, which POSTs to the site's own `command.php` and returns the result. `command.php` is the engine the whole game funnels through, so those four arrive together with it rather than one at a time.
+
+The rest name the hook they stop at: `map.php` at `\map_display\get_map_display_config`, `register.php` at `\player\icon_parser`, `index.php` at `room_check_subroom`, `end.php` at `\player\get_dinfo`, `game.php` at `\gameflow_duel\is_gamestate_duel`.
+
+## The template engine
+
+`src/legacy/template/` is a complete port of the original's rendering path, verified against the original rather than against expectations.
+
+The compiler reproduces `parse_template` rewrite for rewrite: **all 845 templates compile to identical bytes**, 105 in the pack and 740 module-owned. Its output is PHP, and Workers forbid generating code at runtime, so the compiled text is interpreted — a lexer that alternates between HTML and code as PHP does, a parser with PHP 8 precedence, and an evaluator over PHP's own value semantics (ordered-map arrays, `"0"` falsy, PHP 8's number-to-string comparison, byte-based `strlen` and `strpos`, halves rounding away from zero). The library is the forty-odd functions an inventory of all 858 templates shows they actually call.
+
+**Of the templates the original itself can render standalone, all 64 render to identical bytes, none differing.** The other 41 fail in PHP too without a page around them.
+
+A module function that is not ported raises rather than returning a plausible value, so a missing hook cannot quietly render as empty and pass for correct.
 
 ## Templates are not a separate phase
 
