@@ -34,6 +34,12 @@ export interface TemplateContext {
    */
   readonly functions: Map<string, HostFunction>;
   /**
+   * PHP helpers such as bubblebox_start() render a template as a side effect.
+   * Their return value is still null, but their bytes are appended at the
+   * exact point of the call.
+   */
+  readonly writeFunctions?: Map<string, (args: PhpValue[]) => string> | undefined;
+  /**
    * The true global scope, which $GLOBALS exposes. gexit() renders the error
    * template inside a function, so only the variables it imports are in
    * scope there while $GLOBALS still reaches everything; keeping the two
@@ -75,6 +81,7 @@ export function createTemplateContext(
     globals: overrides.globals,
     constants: overrides.constants ?? new Map(),
     functions: overrides.functions ?? new Map(),
+    writeFunctions: overrides.writeFunctions,
     loadTemplate: overrides.loadTemplate,
     compileOptions: overrides.compileOptions
   };
@@ -273,13 +280,20 @@ class Renderer {
     }
     if (lowered === "function_exists") {
       const target = toStringValue(this.evaluate(args[0] as Expression));
-      return this.context.functions.has(target) || PHP_BUILTINS[target.toLowerCase()] !== undefined;
+      return this.context.functions.has(target) || this.context.writeFunctions?.has(target) === true ||
+        PHP_BUILTINS[target.toLowerCase()] !== undefined;
     }
     if (lowered === "constant") {
       return this.context.constants.get(toStringValue(this.evaluate(args[0] as Expression))) ?? null;
     }
 
     const values = args.map(argument => this.evaluate(argument));
+
+    const writer = this.context.writeFunctions?.get(name) ?? this.context.writeFunctions?.get(lowered);
+    if (writer) {
+      this.output += writer(values);
+      return null;
+    }
 
     // Original module functions keep their namespace in the key.
     const host = this.context.functions.get(name) ?? this.context.functions.get(lowered);

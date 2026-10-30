@@ -16,6 +16,7 @@ const COMMANDS = new Set<LegacyRoomCommandName>([
 
 interface InitializeBody { roomId: number; roomType: number; founder: string; now: number; }
 interface EnterBody { username: string; }
+interface ActivateBody { gamestate: number; now: number; }
 interface LegacyRoomObjectEnv extends Cloudflare.Env {
   SUPABASE_URL?: string;
   SUPABASE_SECRET_KEY?: string;
@@ -94,6 +95,26 @@ export class LegacyRoomDurableObject {
           const username = String(body.username ?? "");
           if (!username) return json({ error: "Missing username." }, 400);
           this.#record = enterLegacyWaitingRoom(this.#record, username);
+          if (this.#env.SUPABASE_URL && this.#env.SUPABASE_SECRET_KEY) {
+            const rest = new SupabaseLegacyRest({ url: this.#env.SUPABASE_URL, secretKey: this.#env.SUPABASE_SECRET_KEY });
+            await new SupabaseLegacyRooms(rest).saveRecord(this.#record);
+          }
+          await this.ctx.storage.put("record", this.#record);
+          return json(this.#record);
+        });
+      }
+      if (request.method === "POST" && url.pathname === "/activate") {
+        return this.#exclusive(async () => {
+          if (!this.#record) return json({ error: "房间数据记录不存在。" }, 404);
+          const body = await request.json<ActivateBody>();
+          const gamestate = Number(body.gamestate);
+          if (!Number.isSafeInteger(gamestate) || gamestate < 0) return json({ error: "Invalid game state." }, 400);
+          validTimestamp(body.now);
+          this.#record.groomstatus = 40;
+          this.#record.gamestate = gamestate;
+          this.#record.room.readystat = 2;
+          this.#record.room.timestamp += 1;
+          this.#record.room.chatdata = Array.from({ length: 10 }, () => ({ cid: -1, data: "" }));
           if (this.#env.SUPABASE_URL && this.#env.SUPABASE_SECRET_KEY) {
             const rest = new SupabaseLegacyRest({ url: this.#env.SUPABASE_URL, secretKey: this.#env.SUPABASE_SECRET_KEY });
             await new SupabaseLegacyRooms(rest).saveRecord(this.#record);

@@ -19,7 +19,7 @@ export interface LegacyMatchState {
   weatherId?: number;
 }
 
-interface StoredLegacyMatch { version: number; state: LegacyMatchState; }
+export interface StoredLegacyMatch { version: number; state: LegacyMatchState; }
 interface LegacyGameObjectEnv extends Cloudflare.Env { SUPABASE_URL?: string; SUPABASE_SECRET_KEY?: string; }
 interface GameCommandBody {
   username: string;

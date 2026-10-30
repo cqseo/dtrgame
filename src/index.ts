@@ -16,7 +16,9 @@ export interface OriginalEnv {
 }
 import {
   entryTemplate,
+  isSignedOutRequest,
   loadTemplateTree,
+  originalErrorMessage,
   originalPageHeaders,
   renderOriginalError,
   renderOriginalPage,
@@ -24,11 +26,16 @@ import {
 } from "./original-pages";
 import { applyOriginalRouting } from "./original-routing";
 import { handleLegacyLogin } from "./runtime/http-auth";
+import { handleLegacyIndex } from "./runtime/http-index";
+import { handleLegacyGameCommand, handleLegacyGamePage } from "./runtime/http-game";
 import { handleLegacyRoomCommand, handleLegacyRoomUpdate } from "./runtime/http-room";
 import { LegacyLobbyService } from "./runtime/lobby-service";
 import { LegacyRoomService } from "./runtime/room-service";
+import { LegacyMatchStarter } from "./runtime/match-starter";
+import { LegacyGameService } from "./runtime/game-service";
 import {
-  createSupabaseRuntime, SupabaseLegacyAccounts, SupabaseLegacyLobby, SupabaseLegacyRooms
+  createSupabaseRuntime, SupabaseLegacyAccounts, SupabaseLegacyIndex, SupabaseLegacyLobby,
+  SupabaseLegacyMatches, SupabaseLegacyMatchStart, SupabaseLegacyRooms
 } from "./runtime/supabase";
 import { legacyCommandResponse } from "./runtime/command";
 export { applyOriginalRouting } from "./original-routing";
@@ -43,7 +50,10 @@ export const ORIGINAL_STAGING_STATUS = {
   originProxy: false,
   readonly: false,
   accountSession: "wired",
-  roomLifecycle: "partial"
+  roomLifecycle: "partial",
+  matchLifecycle: "partial",
+  gameCommandTransport: "partial",
+  routeParity: "16/23 signed-out fixtures"
 };
 const text = (body: string, status: number): Response => new Response(body, {
   status, headers: { "content-type": "text/plain;charset=utf-8", "cache-control": "no-store" }
@@ -62,6 +72,33 @@ export default {
       return new Response(JSON.stringify(ORIGINAL_STAGING_STATUS), {
         headers: { "content-type": "application/json;charset=utf-8", "cache-control": "no-store" }
       });
+    }
+    const signedOutGameRequest = isSignedOutRequest(request) && (
+      (url.pathname === "/command.php" && request.method === "POST") ||
+      (url.pathname === "/game.php" && ["GET", "HEAD", "POST"].includes(request.method))
+    );
+    if (signedOutGameRequest) {
+      const sources = await loadTemplateTree("error", async path => {
+        const response = await env.ASSETS.fetch(new Request(new URL(path, url.origin)));
+        return response.status === 200 ? response.text() : undefined;
+      });
+      const body = renderOriginalError(originalErrorMessage("no_login"), "game", sources);
+      return new Response(request.method === "HEAD" ? null : body, {
+        status: 200, headers: originalPageHeaders()
+      });
+    }
+    if ((url.pathname === "/game.php" || url.pathname === "/command.php") &&
+        (request.method === "GET" || request.method === "HEAD" || request.method === "POST")) {
+      const rest = createSupabaseRuntime(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
+      if (rest) {
+        const service = new LegacyGameService(
+          env.GAMES, new SupabaseLegacyAccounts(rest), new SupabaseLegacyMatches(rest)
+        );
+        const response = url.pathname === "/game.php"
+          ? await handleLegacyGamePage(request, service, env.ASSETS)
+          : await handleLegacyGameCommand(request, service);
+        if (response) return response;
+      }
     }
     const postedLogin = request.method === "POST"
       ? new URLSearchParams(await request.clone().text())
@@ -96,7 +133,9 @@ export default {
         request,
         new LegacyLobbyService(env.ROOMS, accounts, new SupabaseLegacyLobby(rest), rooms),
         new LegacyRoomService(env.ROOMS, accounts, rooms),
-        env.ASSETS
+        env.ASSETS,
+        Math.floor(Date.now() / 1000),
+        new LegacyMatchStarter(env.GAMES, env.ROOMS, new SupabaseLegacyMatchStart(rest))
       );
       if (response) return response;
     }
@@ -109,6 +148,19 @@ export default {
         request, new LegacyRoomService(env.ROOMS, accounts, rooms), env.ASSETS
       );
       if (response) return response;
+    }
+    if ((url.pathname === "/" || url.pathname === "/index.php") &&
+        (request.method === "GET" || request.method === "HEAD")) {
+      const rest = createSupabaseRuntime(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
+      if (rest) {
+        const response = await handleLegacyIndex(
+          request,
+          new SupabaseLegacyAccounts(rest),
+          new SupabaseLegacyIndex(rest),
+          env.ASSETS
+        );
+        if (response) return response;
+      }
     }
     if (request.method !== "GET" && request.method !== "HEAD") {
       return text("原版游戏后端指令尚未完成 1:1 移植；本环境不会写入玩家数据。", 501);

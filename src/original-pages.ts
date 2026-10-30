@@ -59,6 +59,11 @@ export const ORIGINAL_PAGES: Readonly<Record<string, readonly OriginalPageEntry[
     page: { kind: "template", template: "login_page", curscript: "login" },
     signedOutOnly: true
   }],
+  "/game.php": [{
+    page: { kind: "error", errorKey: "no_login", curscript: "game" },
+    signedOutOnly: true,
+    noQueryOnly: true
+  }],
   // register.php refuses a visitor who already holds credentials, before it
   // builds its form; the signed-out branch is still unported.
   "/register.php": [{

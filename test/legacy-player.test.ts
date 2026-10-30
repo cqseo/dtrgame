@@ -21,11 +21,11 @@ describe("captured ACFUN DTS baseline", () => {
   });
 
   it("constructs the exact pre-card standard entrant", () => {
-    const player = createLegacyEntrant({ name: "测试者", gender: "f", icon: 1, serialNumber: 7, now: 123, random: sequenceRandom([9, 0, 0, 130]), areaWave: 2 });
+    const player = createLegacyEntrant({ name: "测试者", gender: "f", icon: 1, serialNumber: 7, now: 123, random: sequenceRandom([9, 0, 0, 130]), areaWave: 2, spawnArea: 7 });
     expect(player).toMatchObject({
       name: "测试者", gd: "f", icon: 1, sNo: 7,
       hp: 400, mhp: 400, sp: 400, msp: 400,
-      att: 104, def: 96, lvl: 0, exp: 160, money: 20,
+      att: 104, def: 96, lvl: 0, exp: 160, money: 20, pls: 7,
       pose: 3, tactic: 2,
       arb: "女生校服", arbk: "DB", arbe: 5, arbs: "15",
       itm1: "面包", itmk1: "HH", itme1: 100, itms1: "30",

@@ -17,6 +17,61 @@ export interface SupabaseGameRow {
   roomvars: string;
 }
 
+export interface SupabaseIndexGameRow extends SupabaseGameRow {
+  gamenum: number;
+  starttime: number;
+  validnum: number;
+  alivenum: number;
+  deathnum: number;
+  hdamage: number;
+  hplayer: string;
+  winmode: number;
+  winner: string;
+  areanum: number;
+}
+
+export interface SupabaseLegacyIndexState {
+  globalState: SupabaseIndexGameRow;
+  rooms: SupabaseIndexGameRow[];
+  siteText: Record<string, string>;
+}
+
+export interface LegacyStartProfile {
+  username: string;
+  password: string;
+  groupid: number;
+  gender: string;
+  icon: string;
+  ip: string;
+  card: number;
+  motto: string;
+  killmsg: string;
+  lastword: string;
+}
+
+export interface LegacyMatchStartRecord {
+  matchId: number;
+  gamenum: number;
+  gamestate: number;
+  profiles: LegacyStartProfile[];
+}
+
+export interface LegacyUserMatch {
+  roomId: number;
+  matchId: number;
+  gamenum: number;
+  gamestate: number;
+  gametype: number;
+  groomtype: number;
+  groomstatus: number;
+  starttime: number;
+  validnum: number;
+  alivenum: number;
+  deathnum: number;
+  areanum: number;
+  weather: number;
+}
+
 function validateIdentifier(value: string): string {
   if (!/^[a-z_][a-z0-9_]*$/.test(value)) throw new TypeError(`Unsafe Supabase identifier: ${value}`);
   return value;
@@ -124,6 +179,69 @@ export class SupabaseLegacyRooms {
   }
 }
 
+export class SupabaseLegacyIndex {
+  constructor(readonly rest: SupabaseLegacyRest) {}
+
+  async load(): Promise<SupabaseLegacyIndexState> {
+    const rows = await this.rest.rpc<Array<{
+      global_state: SupabaseIndexGameRow;
+      rooms: SupabaseIndexGameRow[];
+      site_text: Record<string, string>;
+    }>>("dtr_legacy_index_state", {});
+    const row = rows[0];
+    if (!row) throw new Error("Legacy index state is unavailable.");
+    return {
+      globalState: row.global_state,
+      rooms: Array.isArray(row.rooms) ? row.rooms : [],
+      siteText: row.site_text ?? {}
+    };
+  }
+}
+
+export class SupabaseLegacyMatchStart {
+  constructor(readonly rest: SupabaseLegacyRest) {}
+
+  async start(roomId: number, usernames: readonly string[], gamestate: number, now: number): Promise<LegacyMatchStartRecord> {
+    const rows = await this.rest.rpc<Array<{
+      match_id: number;
+      gamenum: number;
+      gamestate: number;
+      profiles: LegacyStartProfile[];
+    }>>("dtr_legacy_start_match", {
+      p_room_id: roomId,
+      p_usernames: usernames,
+      p_gamestate: gamestate,
+      p_started_at: now
+    });
+    const row = rows[0];
+    const matchId = Number(row?.match_id);
+    if (!row || !Number.isSafeInteger(matchId) || matchId < 1 || !Array.isArray(row.profiles)) {
+      throw new Error("游戏初始化数据不完整。");
+    }
+    return { matchId, gamenum: Number(row.gamenum), gamestate: Number(row.gamestate), profiles: row.profiles };
+  }
+}
+
+export class SupabaseLegacyMatches {
+  constructor(readonly rest: SupabaseLegacyRest) {}
+
+  async forUser(username: string): Promise<LegacyUserMatch | null> {
+    const rows = await this.rest.rpc<Array<{
+      room_id: number; match_id: number; gamenum: number; gamestate: number; gametype: number;
+      groomtype: number; groomstatus: number; starttime: number; validnum: number;
+      alivenum: number; deathnum: number; areanum: number; weather: number;
+    }>>("dtr_legacy_user_match", { p_username: username });
+    const row = rows[0];
+    if (!row) return null;
+    return {
+      roomId: Number(row.room_id), matchId: Number(row.match_id), gamenum: Number(row.gamenum),
+      gamestate: Number(row.gamestate), gametype: Number(row.gametype), groomtype: Number(row.groomtype),
+      groomstatus: Number(row.groomstatus), starttime: Number(row.starttime), validnum: Number(row.validnum),
+      alivenum: Number(row.alivenum), deathnum: Number(row.deathnum), areanum: Number(row.areanum),
+      weather: Number(row.weather)
+    };
+  }
+}
 export class SupabaseLegacyLobby {
   constructor(readonly rest: SupabaseLegacyRest) {}
 

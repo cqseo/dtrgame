@@ -30,25 +30,25 @@ describe("original-only Worker staging (no fake playability)", () => {
   });
   it("does not disguise missing game commands as a playable game", async () => {
     const { env, assetFetch } = mockEnv();
-    for (const path of ["/command.php", "/roomcmd.php", "/login.php", "/register.php"]) {
+    for (const path of ["/roomcmd.php", "/login.php", "/register.php"]) {
       const r = await worker.fetch(new Request("https://example.com" + path, {
         method: "POST", body: new URLSearchParams({ mode: "main" })
       }), env);
       expect(r.status).toBe(501);
     }
     expect(assetFetch).not.toHaveBeenCalled();
+
+    const command = await worker.fetch(new Request("https://example.com/command.php", {
+      method: "POST", body: new URLSearchParams({ mode: "main" })
+    }), mockEnv().env);
+    expect(command.status).toBe(200);
   });
-  it("answers every unported PHP endpoint with 501, never 404", async () => {
-    // 404 would claim the original's URLs do not exist. They all do; they
-    // are simply not ported yet, and the contract rejects serving a
-    // pre-rendered snapshot in their place.
-    const { env, assetFetch } = mockEnv();
-    for (const path of ["/valid.php", "/game.php", "/index.php", "/rank.php"]) {
-      const r = await worker.fetch(new Request("https://example.com" + path), env);
-      expect(r.status, path).toBe(501);
-      expect(r.headers.get("x-dts-stage"), path).toBeNull();
-    }
-    expect(assetFetch).not.toHaveBeenCalled();
+  it("rejects unported PHP endpoints but preserves guest HTML", async () => {
+    const { env } = mockEnv();
+    expect((await worker.fetch(new Request("https://example.com/valid.php"), env)).status).toBe(501);
+    const r = await worker.fetch(new Request("https://example.com/game.php"), env);
+    expect(r.status).toBe(200);
+    expect(r.headers.get("content-type")).toBe("text/html; charset=UTF-8");
   });
   it("reports exact scope and readiness honestly", async () => {
     const { env } = mockEnv();

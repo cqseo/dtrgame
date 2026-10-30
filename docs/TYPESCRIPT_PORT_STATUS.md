@@ -9,9 +9,9 @@ This ledger is generated against the captured Baota baseline. It prevents a part
 - Pending modules: **710**
 - Original hook implementations ported: **56 / 5,235 (1.07%)**, missing **5,179**
 - Player database fields captured: **124**
-- Original public routes reproduced byte for byte: **14 / 23 signed out**, **2 / 13 signed in**
+- Original public routes reproduced byte for byte: **16 / 23 signed out**, **2 / 13 signed in**
 - Original templates compiling to identical bytes: **845 / 845**
-- Automated TypeScript tests: **180** plus **16** PHP-oracle assertions that execute and pass against the original interpreter
+- Automated TypeScript tests: **199**; **50** PHP-oracle assertions are environment-gated and run against the original PHP interpreter
 
 Module counts and the partial list below are taken from `docs/legacy-module-migration.json`, which `npm run generate:migration` derives from the captured source. Earlier revisions of this page carried a hand-edited list that had drifted to 37 modules; the generator is the only authority.
 
@@ -31,7 +31,7 @@ Before this harness ran, the seven PHP-oracle assertions had always been reporte
 
 The PHP oracle compares pure functions. Whole responses are now compared too: an isolated instance of the captured source runs under PHP 8.2.35 behind a copy of the production nginx routing contract, against its own database, so it can be driven freely without touching the live site or live player data. `npm run capture:golden` records whole responses from it into `test/fixtures/golden/`, and `test/original-routes-golden.test.mjs` replays each one against the Worker.
 
-Current result: **14 of 23 captured routes match the original**, byte for byte.
+Current result: **16 of 23 captured routes match the original**, byte for byte.
 
 Reproduced so far:
 
@@ -40,8 +40,9 @@ Reproduced so far:
 - `donate.php` and `login.php`, which the original answers with a single template render.
 - `cardbook.php`, `kujilist.php` and `chat.php` signed out, where the original refuses before any of its own content runs.
 - `roomcmd.php` and `roomupdate.php` signed out, including the original error-page scope and encoded update payload.
+- `game.php` and `command.php` signed out, including the original `gexit()` error-page bytes.
 
-The remaining 9 are `index.php`, `register.php`, `game.php`, `end.php`, `rank.php`, `help.php`, `map.php`, `itemhelp.php` and `command.php`. Each needs original module functions, player data, or both; they are not blocked on presentation. The figure is a ratchet; raise it only when a route genuinely starts matching.
+The remaining 7 are `index.php`, `register.php`, `end.php`, `rank.php`, `help.php`, `map.php` and `itemhelp.php`. Each needs original module functions, player data, or both; they are not blocked on presentation. The figure is a ratchet; raise it only when a route genuinely starts matching.
 
 ### What those pages are waiting on
 
@@ -85,7 +86,7 @@ Compatibility-kernel milestone: the original loader order, mandatory dependency 
 
 Runtime milestone: one active match is serialized by a Cloudflare Durable Object. Its base `command.php` transaction now covers movement, search, cooldowns, rest, pose/tactic changes, wounds, team create/join/quit, weather/pose-modified map-item discovery and removal, pending-item pickup/merge/full-pack behavior, inventory use/move/merge, edible effects, weapon/armor/accessory equip-swap-unequip, condition medicine, ammunition loading, item drops back into the persistent map pool, and item crafting. Search/move now traverses the original player/corpse encounter order, including encounter, visibility, initiative and corpse-protection rolls. Corpse money/destruction/item transfer validates the stored corpse action and commits looter plus corpse atomically. A serialized two-player assault transaction covers base hit/damage, weapon use and breakage, mastery/experience, death state, kill counters, range and counterattacks, then commits both players in one match version; failed initiative immediately runs the defender's attack in that same transaction. Versioned full-match snapshots are persisted through service-role-only Supabase RPCs; initialization writes version zero, later versions are monotonic, and an empty Durable Object can restore the latest validated snapshot. The private table has RLS enabled and no client grants. This is still staging and does not yet make the full game playable.
 
-Authenticated transport milestone: `login.php` now executes the original MD5 compatibility flow against the isolated QA user table, records `lastvisit`, clears the previous room, emits the original 15-day `bra_user`/`bra_pass` cookies and supports logout. `roomcmd.php` now reaches atomic create/join RPCs and one serialized Durable Object per waiting room; entry chat, room cookies and Supabase `roomvars` persistence are connected. The two write RPCs use transaction locks and are executable by `service_role` only; `anon` and `authenticated` have no grant. The original signed-in index/room HTML and start-to-match bridge remain incomplete, so this does not yet constitute a playable E2E.
+Authenticated transport milestone: `login.php` now executes the original MD5 compatibility flow against the isolated QA user table, records `lastvisit`, clears the previous room, emits the original 15-day `bra_user`/`bra_pass` cookies and supports logout. `roomcmd.php` reaches atomic create/join RPCs and one serialized Durable Object per waiting room; entry chat, room cookies, Supabase `roomvars` persistence, the original signed-in lobby/room frame, room polling and the ready-to-match bridge are connected. A service-role-only user-to-match locator now routes authenticated `game.php` and `command.php` traffic to the correct match object, restores an empty object from a versioned snapshot and returns the original encoded command envelope. The current signed-in game page is an explicitly temporary functional frame: original module-owned game templates, card/skill initialization, map-item initialization, match conclusion and every mode are not yet parity-complete. This therefore does not constitute a playable 1:1 E2E.
 
 "Partial" means only the named, tested mechanics have been translated. A module can become "complete" only after every code/config/template hook has a parity fixture against `/www/wwwroot/dts-game-test`.
 

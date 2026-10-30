@@ -3,6 +3,8 @@ import { createLegacyRoomRecord } from "../src/legacy/room";
 import { legacyEncode } from "../src/original-protocol";
 import {
   SupabaseLegacyAccounts,
+  SupabaseLegacyIndex,
+  SupabaseLegacyMatches,
   SupabaseLegacyRest,
   SupabaseLegacyRooms,
   SupabaseMatchSnapshots
@@ -59,6 +61,40 @@ describe("Supabase legacy runtime adapter", () => {
     expect(new URL(requests[1]!.url).pathname).toBe("/rest/v1/rpc/dtr_legacy_save_room");
     expect(new Headers(requests[1]?.init?.headers).get("content-profile")).toBe("public");
     expect(JSON.parse(String(requests[1]?.init?.body))).toMatchObject({ p_groomtype: 0, p_groomstatus: 10 });
+  });
+
+  it("loads the global and active-room index snapshot in one RPC", async () => {
+    const fetchMock = vi.fn(async (request: RequestInfo | URL) => {
+      expect(new URL(String(request)).pathname).toBe("/rest/v1/rpc/dtr_legacy_index_state");
+      return Response.json([{
+        global_state: { groomid: 0, gamenum: 1 },
+        rooms: [{ groomid: 4, groomstatus: 10 }],
+        site_text: { adminmsg: "公告" }
+      }]);
+    }) as unknown as typeof fetch;
+    await expect(new SupabaseLegacyIndex(client(fetchMock)).load()).resolves.toMatchObject({
+      globalState: { groomid: 0, gamenum: 1 },
+      rooms: [{ groomid: 4, groomstatus: 10 }],
+      siteText: { adminmsg: "公告" }
+    });
+  });
+
+  it("locates only the authenticated user's active match", async () => {
+    const fetchMock = vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => {
+      expect(new URL(String(request)).pathname).toBe("/rest/v1/rpc/dtr_legacy_user_match");
+      expect(JSON.parse(String(init?.body))).toEqual({ p_username: "测试者" });
+      return Response.json([{
+        room_id: 4, match_id: 4_000_000_007, gamenum: 7, gamestate: 40,
+        gametype: 10, groomtype: 0, groomstatus: 40, starttime: 123,
+        validnum: 2, alivenum: 2, deathnum: 0, areanum: 0, weather: 1
+      }]);
+    }) as unknown as typeof fetch;
+
+    await expect(new SupabaseLegacyMatches(client(fetchMock)).forUser("测试者")).resolves.toEqual({
+      roomId: 4, matchId: 4_000_000_007, gamenum: 7, gamestate: 40,
+      gametype: 10, groomtype: 0, groomstatus: 40, starttime: 123,
+      validnum: 2, alivenum: 2, deathnum: 0, areanum: 0, weather: 1
+    });
   });
 
   it("loads and version-guards complete match snapshots through private server RPCs", async () => {

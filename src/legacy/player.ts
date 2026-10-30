@@ -13,12 +13,13 @@ export interface LegacyEntryInput {
   now: number;
   random: LegacyRandom;
   areaWave: number;
+  spawnArea?: number;
 }
 
 /** Exact base player construction from include/valid.func.php before card/skill hooks. */
 export function createLegacyEntrant(input: LegacyEntryInput): LegacyPlayerRecord {
   const player = createLegacyPlayerRecord();
-  const randomStatOffset = assertLegacyRandomResult(input.random.int(0, 10), 0, 10);
+  const randomStatOffset = assertLegacyRandomResult(input.random.int(0, 15), 0, 15);
   player.name = input.name;
   player.pass = input.storedPass ?? "";
   player.gd = input.gender;
@@ -32,7 +33,7 @@ export function createLegacyEntrant(input: LegacyEntryInput): LegacyPlayerRecord
   player.ss = player.mss = 0;
   player.att = 95 + randomStatOffset;
   player.def = 105 - randomStatOffset;
-  player.pls = 0;
+  player.pls = input.spawnArea ?? 0;
   player.killnum = player.npckillnum = 0;
   player.lvl = 0;
   player.exp = input.areaWave * 80;
