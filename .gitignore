@@ -6,3 +6,10 @@ dist/
 .env.*
 !.env.example
 *.log
+
+# Host, user and key for the PHP 8.2 reference bridge. This repository is
+# public; the connection details must never be committed.
+tools/.php-remote.local
+
+# Regenerated from the captured source by `npm run audit:legacy`.
+docs/legacy-source-manifest.json

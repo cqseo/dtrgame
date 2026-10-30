@@ -5,17 +5,32 @@ This ledger is generated against the captured Baota baseline. It prevents a part
 - Modules listed by the legacy loader: **744**
 - Enabled modules: **735**
 - Fully parity-accepted modules: **0**
-- Partially ported modules: **37**
-- Pending modules: **707**
+- Partially ported modules: **34**
+- Pending modules: **710**
+- Original hook implementations ported: **56 / 5,235 (1.07%)**, missing **5,179**
 - Player database fields captured: **124**
-- Automated TypeScript parity tests in this milestone: **151** (plus **7** environment-gated assertions)
+- Automated TypeScript tests: **154** plus **7** PHP-oracle assertions that now execute and pass against the original interpreter
 
-Partially ported modules: `player`, `map`, `lvlctl`, `itemmain`, `pose`, `tactic`, `edible`, `explore`, `weather`, `rest`, `wound`, `cooldown`, `metman`, `weapon`, `wep_n`, `wep_p`, `wep_k`, `wep_g`, `wep_c`, `wep_d`, `wep_f`, `wep_b`, `wep_j`, `armor`, `armor_art`, `item_uc`, `ammunition`, `attack`, `battle`, `team`, `enemy`, `corpse`, `itemmix`, `itemmix_sync`, `itemmix_overlay`, `attrbase`, `ex_residue`.
+Module counts and the partial list below are taken from `docs/legacy-module-migration.json`, which `npm run generate:migration` derives from the captured source. Earlier revisions of this page carried a hand-edited list that had drifted to 37 modules; the generator is the only authority.
+
+Partially ported modules: `map`, `player`, `explore`, `lvlctl`, `itemmain`, `metman`, `itemmix`, `edible`, `corpse`, `itemmix_sync`, `enemy`, `itemmix_overlay`, `team`, `battle`, `attack`, `weapon`, `wep_n`, `wep_p`, `wep_k`, `wep_c`, `wep_d`, `wep_f`, `wound`, `wep_g`, `wep_j`, `armor`, `rest`, `pose`, `tactic`, `weather`, `attrbase`, `wep_b`, `cooldown`, `ex_residue`.
+
+## Hook-level truth
+
+Module status is a coarse measure: 34 modules carry a "partial" label while contributing only 56 of the original's 5,235 hook implementations between them. `test/legacy-real-hook-coverage.test.ts` audits the real production kernel (`LEGACY_BASE_COMMAND_KERNEL`) against the captured manifest, records the figure above as a ratchet, and additionally fails if the kernel ever registers a hook that does not exist in the original. Raise its baseline only when real hooks land.
+
+## PHP reference interpreter
+
+The live original is served through `php-cgi-82.sock`, so golden masters must be produced by **PHP 8.2.35**, not 8.3; the minor version changes semantics that parity depends on. `tools/php-remote` bridges to that interpreter on the Baota host over SSH and is used automatically by `npm run test:php-parity`, which refuses to run on any other minor version. The remote side reads only the frozen, write-protected copy at `/opt/dts-sandbox/parity/legacy-dts`; the live site is never written to.
+
+Before this harness ran, the seven PHP-oracle assertions had always been reported as skipped, so no TypeScript behaviour had ever been compared against the original interpreter. They now execute and pass, which makes crafting the first area with evidence rather than intent behind it. `npm run test:php-parity` auto-discovers every `test/*.parity.test.mjs` suite, so new areas join the gate as they are written.
+
+## Milestones
 
 Compatibility-kernel milestone: the original loader order, mandatory dependency graph, newest-first hook dispatch, `$chprocess` parent calls (including repeated calls and changed arguments), PHP reference parameters, request globals, deterministic RNG checkpoints, state rollback and execution tracing are implemented. The captured graph contains **3,211 hook names / 5,235 implementations / 505 overloaded chains**. This infrastructure does not count any unported hook body as complete.
 
 Runtime milestone: one active match is serialized by a Cloudflare Durable Object. Its base `command.php` transaction now covers movement, search, cooldowns, rest, pose/tactic changes, wounds, team create/join/quit, weather/pose-modified map-item discovery and removal, pending-item pickup/merge/full-pack behavior, inventory use/move/merge, edible effects, weapon/armor/accessory equip-swap-unequip, condition medicine, ammunition loading, item drops back into the persistent map pool, and item crafting. Search/move now traverses the original player/corpse encounter order, including encounter, visibility, initiative and corpse-protection rolls. Corpse money/destruction/item transfer validates the stored corpse action and commits looter plus corpse atomically. A serialized two-player assault transaction covers base hit/damage, weapon use and breakage, mastery/experience, death state, kill counters, range and counterattacks, then commits both players in one match version; failed initiative immediately runs the defender's attack in that same transaction. Versioned full-match snapshots are persisted through service-role-only Supabase RPCs; initialization writes version zero, later versions are monotonic, and an empty Durable Object can restore the latest validated snapshot. The private table has RLS enabled and no client grants. This is still staging and does not yet make the full game playable.
 
-“Partial” means only the named, tested mechanics have been translated. A module can become “complete” only after every code/config/template hook has a parity fixture against `/www/wwwroot/dts-game-test`.
+"Partial" means only the named, tested mechanics have been translated. A module can become "complete" only after every code/config/template hook has a parity fixture against `/www/wwwroot/dts-game-test`.
 
 Run `npm run generate:migration` beside the captured legacy source to regenerate the full 744-row JSON ledger at `docs/legacy-module-migration.json`.

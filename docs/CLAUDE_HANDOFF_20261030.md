@@ -16,9 +16,10 @@
 | 原版加载器模块 | 744 |
 | 启用模块 | 735 |
 | 完整通过 1:1 验收 | **0** |
-| 部分移植 | **37** |
-| 待移植 | **707** |
-| 自动化测试 | **151 passed / 7 skipped** |
+| 部分移植 | **34**（原写 37，与生成器不符，已按 `legacy-module-migration.json` 更正） |
+| 待移植 | **710**（原写 707） |
+| 已移植 hook 实现 | **56 / 5,235（1.07%）** |
+| 自动化测试 | **154 passed**；7 个 PHP oracle 断言已真实执行并通过（此前一直 skipped） |
 | TypeScript 检查 | 通过 |
 | Cloudflare dry-run build | 通过，641.80 KiB / gzip 80.95 KiB |
 | 正式 Cloudflare 发布 | **未发布**，当前版本不可完整游玩 |
@@ -64,7 +65,9 @@
 - UI 备份 SHA-256：`52abb75a53fa27fb5ab2bfabc08f612b691917ed7dbc48ea1fdc266227f094dc`。
 - UI hash manifest：`/opt/dts-sandbox/backups/legacy-ui-reference-20261028/full-ui-manifest.json`。
 - 本地捕获的原版源：仓库相邻目录 `../legacy-dts`。
-- PHP 参考解释器：`../php-reference/usr/bin/php8.3`。
+- PHP 参考解释器：**必须是 PHP 8.2.x**。线上 nginx 走 `php-cgi-82.sock`（8.2.35），此前文档写的 `php8.3` 会引入次版本语义差异，不得用于黄金样本。
+- 服务器端冻结只读副本：`/opt/dts-sandbox/parity/legacy-dts`（已 `chmod -R a-w`，4,395 文件，与本地副本一致）。
+- `tools/php-remote` 通过 SSH 桥接宝塔主机上的 8.2.35；`npm run test:php-parity` 默认使用它，并在非 8.2 版本上直接拒绝运行。
 - 已验证 1,565 个原版展示文件 hash/length 全部一致，不得自行改动原素材。
 
 如果 Claude 所在环境没有 `../legacy-dts`，必须从宝塔原路径重新拉取一份只读副本，不要在线修改 PHP 来迎合 TypeScript。

@@ -1,0 +1,63 @@
+#!/bin/bash
+# PHP 8.2 reference-interpreter bridge.
+#
+# The original ACFUN 大逃杀 is served through php-cgi-82.sock (PHP 8.2.35), so
+# golden masters must come from that interpreter. This shim exposes it wherever
+# a local `php` binary is expected, such as DTS_PHP_BIN in the parity harness.
+#
+# The remote side only reads the frozen, write-protected copy of the captured
+# source. The live site is never written to or executed through this path.
+#
+# This repository is public, so no host, user or key is hardcoded. Configure it
+# either through the environment or through tools/.php-remote.local, which is
+# untracked:
+#
+#   DTS_SSH_HOST=user@host          # required
+#   DTS_SSH_KEY=~/.ssh/id_ed25519   # default
+#   DTS_REMOTE_PHP=/path/to/php8.2  # default: php
+#   DTS_REMOTE_DIR=/path/to/parity  # working dir holding legacy-dts
+set -eu
+
+here="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091
+[ -f "$here/.php-remote.local" ] && . "$here/.php-remote.local"
+
+if [ -z "${DTS_SSH_HOST:-}" ]; then
+  echo "php-remote: set DTS_SSH_HOST (user@host) in the environment or tools/.php-remote.local" >&2
+  exit 1
+fi
+
+SSH_KEY="${DTS_SSH_KEY:-$HOME/.ssh/id_ed25519}"
+REMOTE_PHP="${DTS_REMOTE_PHP:-php}"
+REMOTE_DIR="${DTS_REMOTE_DIR:-/opt/dts-sandbox/parity}"
+
+SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=accept-new -o BatchMode=yes"
+SSH_OPTS="$SSH_OPTS -o ControlMaster=auto -o ControlPath=$HOME/.ssh/cm-dts-%r@%h:%p -o ControlPersist=120"
+
+# Split argv into leading php flags and the local script path plus its args.
+flags=""
+script=""
+script_args=""
+for arg in "$@"; do
+  if [ -z "$script" ] && [ -f "$arg" ]; then
+    script="$arg"
+  elif [ -z "$script" ]; then
+    flags="$flags $(printf '%q' "$arg")"
+  else
+    script_args="$script_args $(printf '%q' "$arg")"
+  fi
+done
+
+# No script path: a probe such as `php -n -v`. Answer from the real interpreter.
+if [ -z "$script" ]; then
+  # shellcheck disable=SC2086
+  exec ssh $SSH_OPTS "$DTS_SSH_HOST" "$REMOTE_PHP$flags"
+fi
+
+remote_script="$REMOTE_DIR/scripts/$(basename "$script")"
+
+# Ship the script first, then run it with stdin forwarded untouched.
+# shellcheck disable=SC2086
+ssh $SSH_OPTS "$DTS_SSH_HOST" "mkdir -p $REMOTE_DIR/scripts && cat > $remote_script" < "$script"
+# shellcheck disable=SC2086
+exec ssh $SSH_OPTS "$DTS_SSH_HOST" "cd $REMOTE_DIR && $REMOTE_PHP$flags $remote_script$script_args"
