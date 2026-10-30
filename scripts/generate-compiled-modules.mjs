@@ -48,6 +48,11 @@ const MODULES = [
   // sys declares its 40 functions across five files under one namespace,
   // and holds the only implementations of load_gameinfo, save_gameinfo,
   // process_lock and routine -- the whole game tick goes through them.
+  // noise and instance8 are the rest of the load_gameinfo / save_gameinfo
+  // chains: post_work_extra is sys -> noise -> instance8, and both
+  // gameinfo_audit and save_gameinfo_prepare_work are sys -> noise.
+  { module: "noise", file: "include/modules/base/noise/main.php" },
+  { module: "instance8", file: "include/modules/extra/instance/instance8_proud/main.php" },
   {
     module: "sys",
     files: [

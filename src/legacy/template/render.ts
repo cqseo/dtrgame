@@ -10,6 +10,7 @@ import type { Expression, Statement } from "./ast";
 import { PHP_BUILTINS, type HostFunction } from "./builtins";
 import { compileTemplate, type CompileOptions } from "./compile";
 import { parseTemplateProgram } from "./parser";
+import { LegacyDatabase } from "../php/database";
 import { ModuleScope, PhpException, PhpRef, PhpThrow } from "../php/module-store";
 import {
   PhpArray,
@@ -643,6 +644,18 @@ class Renderer {
           if (method === "getmessage") return target.message;
           if (method === "getcode") return 0;
           throw new TemplateError(`Exception has no ${expression.name}() in this port.`);
+        }
+        // $db. Every `->` in the original's module tree is on it.
+        if (target instanceof LegacyDatabase) {
+          const method = (target as unknown as Record<string, unknown>)[expression.name];
+          if (typeof method !== "function") {
+            throw new TemplateError(
+              `The original's database has no ${expression.name}(); the twelve it uses ` +
+                "are implemented in src/legacy/php/database.ts."
+            );
+          }
+          const args = expression.args.map(argument => this.evaluate(argument));
+          return (method as (...values: PhpValue[]) => PhpValue).apply(target, args);
         }
         throw new TemplateError(
           `Method call ->${expression.name}() is not available here. Only the database ` +

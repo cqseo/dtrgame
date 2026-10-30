@@ -15,6 +15,8 @@ import { LEGACY_COMPILED_COOLDOWN } from "../../generated/legacy-compiled-cooldo
 import { LEGACY_COMPILED_INSTANCE11 } from "../../generated/legacy-compiled-instance11";
 import { LEGACY_COMPILED_MAP } from "../../generated/legacy-compiled-map";
 import { LEGACY_COMPILED_MAP_DISPLAY } from "../../generated/legacy-compiled-map_display";
+import { LEGACY_COMPILED_INSTANCE8 } from "../../generated/legacy-compiled-instance8";
+import { LEGACY_COMPILED_NOISE } from "../../generated/legacy-compiled-noise";
 import { LEGACY_COMPILED_SYS } from "../../generated/legacy-compiled-sys";
 import type { CompiledPhpFunction } from "../module-compiler";
 import { LegacyModuleRuntime, type ModuleRuntimeOptions } from "./runtime";
@@ -24,7 +26,9 @@ const COMPILED_MODULES: readonly Readonly<Record<string, CompiledPhpFunction>>[]
   LEGACY_COMPILED_MAP,
   LEGACY_COMPILED_MAP_DISPLAY,
   LEGACY_COMPILED_INSTANCE11,
-  LEGACY_COMPILED_SYS
+  LEGACY_COMPILED_SYS,
+  LEGACY_COMPILED_NOISE,
+  LEGACY_COMPILED_INSTANCE8
 ];
 
 /**
@@ -46,5 +50,7 @@ export const COMPILED_MODULE_NAMES: readonly string[] = [
   "map",
   "map_display",
   "instance11",
-  "sys"
+  "sys",
+  "noise",
+  "instance8"
 ];
