@@ -1,0 +1,136 @@
+{
+  "files": 1661,
+  "functions": 6081,
+  "byRefParams": 3509,
+  "variableVariables": 226,
+  "interpolations": 2569,
+  "tokens": {
+    "T_VARIABLE": 85818,
+    "T_DOUBLE_ARROW": 37485,
+    "T_EVAL": 8624,
+    "T_FUNCTION": 6081,
+    "T_CURLY_OPEN": 2221,
+    "T_NAMESPACE": 1599,
+    "T_EMPTY": 1150,
+    "T_REQUIRE": 753,
+    "T_FOREACH": 583,
+    "T_ISSET": 499,
+    "T_OBJECT_OPERATOR": 329,
+    "T_FOR": 196,
+    "T_LIST": 177,
+    "T_INCLUDE": 143,
+    "T_UNSET": 120,
+    "T_WHILE": 110,
+    "T_GLOBAL": 102,
+    "T_EXIT": 46,
+    "T_DO": 21,
+    "T_DOLLAR_OPEN_CURLY_BRACES": 14,
+    "T_INCLUDE_ONCE": 10,
+    "T_SWITCH": 7,
+    "T_THROW": 6,
+    "T_NEW": 6,
+    "T_START_HEREDOC": 6,
+    "T_END_HEREDOC": 6,
+    "T_ELLIPSIS": 1
+  },
+  "rare": {
+    "T_EXIT": [
+      "include/modules/base/itemmain/config/mapitem.config.php:1",
+      "include/modules/base/itemmain/config/stitem.config.php:1",
+      "include/modules/base/itemmain/config/stwep.config.php:1",
+      "include/modules/base/items/trap/config/trapitem.config.php:1",
+      "include/modules/base/itemshop/config/shopitem.config.php:1",
+      "include/modules/extra/instance/gtype1/main/config/shopitem.config.php:1",
+      "include/modules/extra/instance/gtype2/main/config/shopitem.config.php:1",
+      "include/modules/extra/instance/gtype5/main/config/mapitem.config.php:1",
+      "include/modules/extra/instance/gtype5/main/config/shopitem.config.php:1",
+      "include/modules/extra/instance/gtype5/main/config/stitem.config.php:1",
+      "include/modules/extra/instance/gtype5/main/config/stwep.config.php:1",
+      "include/modules/extra/instance/gtype5/main/config/trapitem.config.php:1"
+    ],
+    "T_DO": [
+      "include/modules/base/event/main.php:499",
+      "include/modules/base/itemmain/main.php:354",
+      "include/modules/base/itemmain/main.php:478",
+      "include/modules/base/itemmain/main.php:485",
+      "include/modules/base/items/boxes/main.php:50",
+      "include/modules/base/items/trap/main.php:42",
+      "include/modules/base/weather/main.php:349",
+      "include/modules/core/player/main.php:432",
+      "include/modules/core/sys/gamectl.php:354",
+      "include/modules/core/sys/news.php:198",
+      "include/modules/extra/achievement/achievement_base/main.php:338",
+      "include/modules/extra/card/cardbase/main.php:476"
+    ],
+    "T_DOLLAR_OPEN_CURLY_BRACES": [
+      "include/modules/base/armor/main.php:160",
+      "include/modules/base/armor_art/main.php:43",
+      "include/modules/base/items/item_misc/main.php:353",
+      "include/modules/base/items/item_misc/main.php:361",
+      "include/modules/base/items/item_ub/main.php:27",
+      "include/modules/base/items/item_ub/main.php:33",
+      "include/modules/base/items/poison/main.php:175",
+      "include/modules/base/items/poison/main.php:178",
+      "include/modules/base/items/song/main.php:637",
+      "include/modules/extra/attr/ex_storage/main.php:321",
+      "include/modules/extra/card/skills/skill725/main.php:93",
+      "include/modules/extra/card/skills/skill725/main.php:95"
+    ],
+    "T_INCLUDE_ONCE": [
+      "include/modules/extra/achievement/achievement_base/main.php:457",
+      "include/modules/extra/achievement/achievement_base/main.php:837",
+      "include/modules/extra/card/cardbase/main.php:404",
+      "include/modules/extra/card/skills/skill528/main.php:93",
+      "include/modules/extra/card/skills/skill530/main.php:51",
+      "include/modules/extra/instance/gtype1/main/main.php:283",
+      "include/modules/extra/instance/instance3_ascension/main.php:402",
+      "include/modules/extra/instance/instance_close_button/main.php:23",
+      "include/modules/extra/item_extra/item_uvo_extra/main.php:496",
+      "include/modules/extra/misc/elorating/main.php:521"
+    ],
+    "T_SWITCH": [
+      "include/modules/base/event/main.php:92",
+      "include/modules/base/items/song/main.php:45",
+      "include/modules/extra/attr/ex_alternative/main.php:151",
+      "include/modules/extra/misc/extra_event/main.php:156",
+      "include/modules/extra/misc/extra_event/main.php:160",
+      "include/modules/extra/misc/extra_event/main.php:212",
+      "include/modules/extra/misc/logistics/main.php:223"
+    ],
+    "T_THROW": [
+      "include/modules/base/skillbase/main.php:44",
+      "include/modules/base/skillbase/main.php:58",
+      "include/modules/base/skillbase/main.php:69",
+      "include/modules/base/skillbase/main.php:102",
+      "include/modules/modules.func.php:187",
+      "include/modules/modules.func.php:227"
+    ],
+    "T_NEW": [
+      "include/modules/base/skillbase/main.php:44",
+      "include/modules/base/skillbase/main.php:58",
+      "include/modules/base/skillbase/main.php:69",
+      "include/modules/base/skillbase/main.php:102",
+      "include/modules/modules.func.php:187",
+      "include/modules/modules.func.php:227"
+    ],
+    "T_START_HEREDOC": [
+      "include/modules/core/sys/config/version.config.php:5",
+      "include/modules/extra/instance/gtype1/main/main.php:355",
+      "include/modules/extra/instance/gtype1/main/main.php:358",
+      "include/modules/modules.func.php:23",
+      "include/modules/modules.func.php:59",
+      "include/modules/modules.func.php:84"
+    ],
+    "T_END_HEREDOC": [
+      "include/modules/core/sys/config/version.config.php:15",
+      "include/modules/extra/instance/gtype1/main/main.php:357",
+      "include/modules/extra/instance/gtype1/main/main.php:365",
+      "include/modules/modules.func.php:55",
+      "include/modules/modules.func.php:82",
+      "include/modules/modules.func.php:97"
+    ],
+    "T_ELLIPSIS": [
+      "include/modules/extra/card/skills/skill729/main.php:68"
+    ]
+  }
+}

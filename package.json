@@ -11,6 +11,7 @@
     "audit:legacy": "node scripts/audit-legacy.mjs ../legacy-dts docs/legacy-source-manifest.json",
     "audit:templates": "node scripts/audit-template-directives.mjs ../legacy-dts",
     "audit:hooks": "node scripts/audit-hook-complexity.mjs ../legacy-dts docs/hook-complexity.json",
+    "audit:module-syntax": "node scripts/audit-module-syntax.mjs",
     "generate:legacy": "node scripts/generate-legacy-registry.mjs ../legacy-dts src/generated/legacy-registry.ts",
     "generate:items": "node scripts/generate-legacy-starting-items.mjs ../legacy-dts src/generated/legacy-starting-items.ts",
     "generate:recipes": "node scripts/generate-legacy-recipes.mjs ../legacy-dts src/generated/legacy-recipes.ts",
