@@ -1,3 +1,5 @@
+import { legacyModuleVar } from "../generated/legacy-module-vars";
+import { toNumber } from "./template/values";
 import { LEGACY_MAP_CONFIG } from "./map";
 import { runLegacyCraftAction, legacySlotsFromMixMask, type LegacyCraftActionResult } from "./crafting-action";
 import { checkLegacyMove, checkLegacySearch } from "./explore";
@@ -365,8 +367,13 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
     return next();
   });
 
-  kernel.register("get_move_coldtime", "cooldown", () => 650);
-  kernel.register("get_search_coldtime", "cooldown", () => 650);
+  // The original returns $movecoldtime and $searchcoldtime from the cooldown
+  // module's config rather than a literal, which is what lets skill417,
+  // skill451, skill601 and skill738 change them and what lets an operator
+  // retune them. Reading the generated table keeps both routes open and keeps
+  // the value itself sourced from the original.
+  kernel.register("get_move_coldtime", "cooldown", () => toNumber(legacyModuleVar("cooldown", "movecoldtime")));
+  kernel.register("get_search_coldtime", "cooldown", () => toNumber(legacyModuleVar("cooldown", "searchcoldtime")));
   kernel.register("set_coldtime", "cooldown", ({ session }, cooldown) => {
     const value = Number(cooldown);
     if (session.state.commandCooldown < value) session.state.commandCooldown = value;
@@ -404,7 +411,9 @@ function createKernel(): LegacyCompatibilityKernel<LegacyPlayerCommandState> {
     state.remainingCooldown = state.requestStartMs >= expires ? 0 : expires - state.requestStartMs;
     return next();
   });
-  kernel.register("get_itemuse_coldtime", "cooldown", () => 250);
+  kernel.register("get_itemuse_coldtime", "cooldown", () =>
+    toNumber(legacyModuleVar("cooldown", "itemusecoldtime"))
+  );
   kernel.register("itemuse_wrapper", "cooldown", ({ call, next }, item) => {
     if (call<boolean>("check_in_coldtime")) return;
     call("set_coldtime", call("get_itemuse_coldtime", item));

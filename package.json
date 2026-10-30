@@ -19,6 +19,7 @@
     "generate:rooms": "node scripts/generate-legacy-room-types.mjs ../legacy-dts src/generated/legacy-room-types.ts",
     "generate:config": "node scripts/generate-legacy-config.mjs src/generated/legacy-config.ts",
     "generate:template-language": "node scripts/generate-template-language.mjs src/generated/legacy-template-language.ts",
+    "generate:module-vars": "node scripts/generate-module-vars.mjs",
     "test:php-parity": "node scripts/run-php-parity.mjs",
     "sync:assets": "node scripts/sync-original-assets.mjs ../legacy-dts public",
     "golden:up": "tools/golden-tunnel up",
@@ -29,7 +30,9 @@
     "verify": "npm run check && npm test && npm run build",
     "deploy": "wrangler deploy"
   },
-  "engines": { "node": ">=22.0.0" },
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20261028.1",
     "typescript": "7.0.2",
