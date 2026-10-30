@@ -150,6 +150,25 @@ function shadowedParameters(parameters, body) {
   return shadowed;
 }
 
+/**
+ * How many modules implement each function name.
+ *
+ * The original dispatches newest-first through the chain, so a name
+ * implemented by more than one module does not behave like any single body.
+ * This is exact where the stub-body heuristic was only suggestive: the
+ * whole weapon damage chain has short, innocent-looking bodies and is
+ * overridden throughout, and porting any of them alone would be wrong.
+ */
+const chainLength = new Map();
+for (const file of phpFiles(modulesRoot)) {
+  const owner = relative(modulesRoot, file).split("/").slice(0, -1).join("/");
+  for (const { name } of functions(readFileSync(file, "utf8"))) {
+    const owners = chainLength.get(name) ?? new Set();
+    owners.add(owner);
+    chainLength.set(name, owners);
+  }
+}
+
 const byClass = { pure: [], config: [], state: [], data: [], dispatch: [], override: [] };
 const shadowing = [];
 
@@ -158,7 +177,12 @@ for (const file of phpFiles(modulesRoot)) {
   const where = relative(legacyRoot, file);
   for (const { name, parameters, body } of functions(source)) {
     const effective = stripPrologue(body).split("\n").filter(line => line.trim() !== "").length;
-    byClass[classify(body)].push({ name, file: where, lines: effective });
+    byClass[classify(body)].push({
+      name,
+      file: where,
+      lines: effective,
+      implementedBy: chainLength.get(name)?.size ?? 1
+    });
     const shadowed = shadowedParameters(parameters, body);
     if (shadowed.length > 0) shadowing.push({ name, file: where, shadowed });
   }
@@ -174,10 +198,17 @@ for (const [kind, list] of Object.entries(byClass).sort((a, b) => b[1].length - 
   );
 }
 
+const shadowedNames = new Set(shadowing.map(entry => `${entry.name}@${entry.file}`));
 const batchable = [...byClass.pure, ...byClass.config]
   .filter(entry => entry.lines <= 12)
+  .filter(entry => entry.implementedBy === 1)
+  .filter(entry => !shadowedNames.has(`${entry.name}@${entry.file}`))
   .sort((a, b) => a.lines - b.lines);
-console.log(`\nportable without game state, 12 lines or fewer: ${batchable.length}`);
+
+const overridden = [...byClass.pure, ...byClass.config].filter(entry => entry.implementedBy > 1).length;
+console.log(`\nof the small stateless functions, ${overridden} are implemented by more than one`);
+console.log("module, so the dispatch chain decides their behaviour, not the body read in isolation");
+console.log(`\nsole implementation, stateless, 12 lines or fewer: ${batchable.length}`);
 console.log("first 15:");
 for (const entry of batchable.slice(0, 15)) {
   console.log(`  ${String(entry.lines).padStart(3)}  ${entry.name}  ${entry.file}`);
