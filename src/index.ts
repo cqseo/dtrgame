@@ -34,11 +34,6 @@ import { legacyCommandResponse } from "./runtime/command";
 export { applyOriginalRouting } from "./original-routing";
 export { LegacyRoomDurableObject } from "./runtime/room-durable-object";
 export { LegacyGameDurableObject } from "./runtime/game-durable-object";
-export const ORIGINAL_GUEST_SNAPSHOTS = new Set([
-  "/index.php", "/game.php", "/map.php", "/help.php", "/register.php",
-  "/login.php", "/alive.php", "/rank.php", "/news.php", "/winner.php",
-  "/user.php", "/cardbook.php", "/roomcmd.php"
-]);
 export const ORIGINAL_STAGING_STATUS = {
   source: "ACFUN 大逃杀 installed Baota source",
   presentation: "original asset byte parity",
@@ -136,15 +131,15 @@ export default {
       });
     }
 
-    if (url.pathname.toLowerCase().endsWith(".php") && !ORIGINAL_GUEST_SNAPSHOTS.has(url.pathname)) {
+    // Every unported .php answers 501. It used to fall through to the asset
+    // bundle for a list of "guest snapshot" paths, which held pre-rendered
+    // HTML; the bundle carries no .php, so those answered 404 — telling a
+    // browser the original's own URLs do not exist, when the original always
+    // answers them. The contract also rejects a static-snapshot release
+    // outright, so there is nothing to fall back to.
+    if (url.pathname.toLowerCase().endsWith(".php")) {
       return text("原版服务端页面尚未完成 1:1 移植。", 501);
     }
-    const assetResponse = await env.ASSETS.fetch(new Request(url, request));
-    if (!ORIGINAL_GUEST_SNAPSHOTS.has(url.pathname)) return assetResponse;
-    const headers = new Headers(assetResponse.headers);
-    headers.set("content-type", "text/html;charset=utf-8");
-    headers.set("cache-control", "no-store");
-    headers.set("x-dts-stage", "original-guest-html-snapshot");
-    return new Response(assetResponse.body, { status: assetResponse.status, headers });
+    return env.ASSETS.fetch(new Request(url, request));
   }
 };

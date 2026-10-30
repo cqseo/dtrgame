@@ -9,12 +9,17 @@ function mockEnv() {
   return { env: { ASSETS: { fetch } } as unknown as OriginalEnv, assetFetch: fetch };
 }
 describe("original-only Worker staging (no fake playability)", () => {
-  it("routes the root through original /index.php assets", async () => {
+  it("resolves the root to /index.php and reports it unported", async () => {
+    // The root maps to index.php as the original's index does, but the page
+    // itself is not ported, so it answers 501. An earlier version of this
+    // test expected 200 from a mocked asset bundle that returned HTML for
+    // index.php; the real bundle carries no .php at all, so that expectation
+    // described the mock rather than the Worker, and hid the page answering
+    // 404 — telling a browser the original's own URL does not exist.
     const { env, assetFetch } = mockEnv();
     const r = await worker.fetch(new Request("https://example.com/"), env);
-    expect(r.status).toBe(200);
-    expect(await r.text()).toContain("ACFUN 大 逃 杀");
-    expect(assetFetch.mock.calls[0]?.[0].url).toBe("https://example.com/index.php");
+    expect(r.status).toBe(501);
+    expect(assetFetch).not.toHaveBeenCalled();
   });
   it("preserves original CSS and JS paths without transformation", async () => {
     const { env, assetFetch } = mockEnv();
@@ -33,12 +38,17 @@ describe("original-only Worker staging (no fake playability)", () => {
     }
     expect(assetFetch).not.toHaveBeenCalled();
   });
-  it("rejects unported PHP endpoints but preserves guest HTML", async () => {
-    const { env } = mockEnv();
-    expect((await worker.fetch(new Request("https://example.com/valid.php"), env)).status).toBe(501);
-    const r = await worker.fetch(new Request("https://example.com/game.php"), env);
-    expect(r.status).toBe(200);
-    expect(r.headers.get("x-dts-stage")).toBe("original-guest-html-snapshot");
+  it("answers every unported PHP endpoint with 501, never 404", async () => {
+    // 404 would claim the original's URLs do not exist. They all do; they
+    // are simply not ported yet, and the contract rejects serving a
+    // pre-rendered snapshot in their place.
+    const { env, assetFetch } = mockEnv();
+    for (const path of ["/valid.php", "/game.php", "/index.php", "/rank.php"]) {
+      const r = await worker.fetch(new Request("https://example.com" + path), env);
+      expect(r.status, path).toBe(501);
+      expect(r.headers.get("x-dts-stage"), path).toBeNull();
+    }
+    expect(assetFetch).not.toHaveBeenCalled();
   });
   it("reports exact scope and readiness honestly", async () => {
     const { env } = mockEnv();
