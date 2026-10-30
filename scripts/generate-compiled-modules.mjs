@@ -53,6 +53,13 @@ const MODULES = [
   // gameinfo_audit and save_gameinfo_prepare_work are sys -> noise.
   { module: "noise", file: "include/modules/base/noise/main.php" },
   { module: "instance8", file: "include/modules/extra/instance/instance8_proud/main.php" },
+  // gameflow_base is the newest implementation of updategame, so a bare
+  // call to it enters here and walks back to map and then sys.
+  { module: "gameflow_base", file: "include/modules/core/gameflow/gameflow_base/main.php" },
+  // gamestateupdate is gameflow_base -> gameflow_antiafk -> gameflow_combo,
+  // so the tick enters at gameflow_combo and walks back.
+  { module: "gameflow_antiafk", file: "include/modules/core/gameflow/gameflow_antiafk/main.php" },
+  { module: "gameflow_combo", file: "include/modules/core/gameflow/gameflow_combo/main.php" },
   {
     module: "sys",
     files: [

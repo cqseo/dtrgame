@@ -15,10 +15,14 @@ import { LEGACY_COMPILED_COOLDOWN } from "../../generated/legacy-compiled-cooldo
 import { LEGACY_COMPILED_INSTANCE11 } from "../../generated/legacy-compiled-instance11";
 import { LEGACY_COMPILED_MAP } from "../../generated/legacy-compiled-map";
 import { LEGACY_COMPILED_MAP_DISPLAY } from "../../generated/legacy-compiled-map_display";
+import { LEGACY_COMPILED_GAMEFLOW_ANTIAFK } from "../../generated/legacy-compiled-gameflow_antiafk";
+import { LEGACY_COMPILED_GAMEFLOW_COMBO } from "../../generated/legacy-compiled-gameflow_combo";
+import { LEGACY_COMPILED_GAMEFLOW_BASE } from "../../generated/legacy-compiled-gameflow_base";
 import { LEGACY_COMPILED_INSTANCE8 } from "../../generated/legacy-compiled-instance8";
 import { LEGACY_COMPILED_NOISE } from "../../generated/legacy-compiled-noise";
 import { LEGACY_COMPILED_SYS } from "../../generated/legacy-compiled-sys";
 import type { CompiledPhpFunction } from "../module-compiler";
+import { createHostConstants, createHostFunctions } from "./host-environment";
 import { LegacyModuleRuntime, type ModuleRuntimeOptions } from "./runtime";
 
 const COMPILED_MODULES: readonly Readonly<Record<string, CompiledPhpFunction>>[] = [
@@ -28,7 +32,10 @@ const COMPILED_MODULES: readonly Readonly<Record<string, CompiledPhpFunction>>[]
   LEGACY_COMPILED_INSTANCE11,
   LEGACY_COMPILED_SYS,
   LEGACY_COMPILED_NOISE,
-  LEGACY_COMPILED_INSTANCE8
+  LEGACY_COMPILED_INSTANCE8,
+  LEGACY_COMPILED_GAMEFLOW_BASE,
+  LEGACY_COMPILED_GAMEFLOW_ANTIAFK,
+  LEGACY_COMPILED_GAMEFLOW_COMBO
 ];
 
 /**
@@ -39,7 +46,16 @@ const COMPILED_MODULES: readonly Readonly<Record<string, CompiledPhpFunction>>[]
  * into another's.
  */
 export function createLegacyModuleRuntime(options: ModuleRuntimeOptions = {}): LegacyModuleRuntime {
-  const runtime = new LegacyModuleRuntime(undefined, options);
+  // The host environment first, so a caller can still override any of it.
+  const withHost: ModuleRuntimeOptions = {
+    ...options,
+    constants: new Map([
+      ...createHostConstants("index"),
+      ...(options.constants ?? [])
+    ]),
+    functions: new Map([...createHostFunctions(), ...(options.functions ?? [])])
+  };
+  const runtime = new LegacyModuleRuntime(undefined, withHost);
   for (const table of COMPILED_MODULES) runtime.registerModule(Object.values(table));
   return runtime;
 }
@@ -52,5 +68,8 @@ export const COMPILED_MODULE_NAMES: readonly string[] = [
   "instance11",
   "sys",
   "noise",
-  "instance8"
+  "instance8",
+  "gameflow_base",
+  "gameflow_antiafk",
+  "gameflow_combo"
 ];
