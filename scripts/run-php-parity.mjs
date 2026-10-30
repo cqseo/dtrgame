@@ -36,10 +36,33 @@ if (version[1] !== "8.2") {
   process.exit(1);
 }
 
-const suites = readdirSync("test")
+/**
+ * Suites to run, narrowed by any arguments given.
+ *
+ * Every assertion here costs a round trip to the PHP host, and the whole
+ * set takes about five minutes, so running all of it to check one change
+ * is the slowest part of working on this. An argument is matched as a
+ * substring of the suite path, so `npm run test:php-parity -- card-pack`
+ * runs one suite in seconds. The gate still runs everything when given no
+ * arguments.
+ */
+const requested = process.argv.slice(2).filter(argument => !argument.startsWith("-"));
+const discovered = readdirSync("test")
   .filter(name => name.endsWith(".parity.test.mjs"))
   .sort()
   .map(name => `test/${name}`);
+
+const suites =
+  requested.length === 0
+    ? discovered
+    : discovered.filter(suite => requested.some(argument => suite.includes(argument)));
+
+if (requested.length > 0 && suites.length === 0) {
+  console.error(
+    `No parity suite matches ${requested.join(", ")}. Available:\n  ${discovered.join("\n  ")}`
+  );
+  process.exit(1);
+}
 if (suites.length === 0) {
   console.error("No *.parity.test.mjs suites found under test/.");
   process.exit(1);
