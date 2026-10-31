@@ -62,6 +62,14 @@ export function createLockFunctions(): Map<string, HostFunction> {
  * error, so the ones that are actually needed must be given a real
  * implementation over the platform's storage when the time comes.
  */
+/**
+ * The modification time reported for the compiled-in templates.
+ *
+ * Any fixed value in the past works; this one is the date the templates
+ * were captured, so it reads as what it is rather than as a magic number.
+ */
+const TEMPLATE_MTIME = 1761782400;
+
 export function createFilesystemFunctions(): Map<string, HostFunction> {
   const functions = new Map<string, HostFunction>();
   const refuse = (name: string): HostFunction => () => {
@@ -71,9 +79,37 @@ export function createFilesystemFunctions(): Map<string, HostFunction> {
         "that calls it."
     );
   };
-  for (const name of ["writeover", "openfile", "gdir", "touch", "unlink", "filemtime"]) {
+  for (const name of ["writeover", "openfile", "gdir", "touch", "unlink"]) {
     functions.set(name, refuse(name));
   }
+
+  /*
+   * filemtime is answerable, and answering it is not pretending.
+   *
+   * The original calls it to decide whether a compiled template is older
+   * than its source. Here the templates are compiled into the Worker, so
+   * they genuinely cannot change between requests, and a fixed timestamp
+   * is the truthful answer rather than a convenient one. It is the build
+   * itself that changes them, and a build is a new Worker.
+   *
+   * The value is a constant rather than the current time: returning
+   * "now" would make every comparison say the source is newer and send
+   * the original into recompiling on every request.
+   */
+  functions.set("filemtime", () => TEMPLATE_MTIME);
+
+  /*
+   * debug_backtrace returns an empty stack.
+   *
+   * The original calls it only from its error reporting, to say where a
+   * warning came from. The interpreter does not keep PHP-level frames,
+   * so there is no stack to give; an empty array is what PHP itself
+   * returns when there is nothing above the current frame. The effect is
+   * a thinner admin-facing error trace, and no change to anything a
+   * player sees.
+   */
+  functions.set("debug_backtrace", () => new PhpArray());
+  functions.set("debug_print_backtrace", () => null);
   // file_exists is answerable: nothing this port writes exists on a disk.
   functions.set("file_exists", () => false);
   return functions;

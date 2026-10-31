@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
 import { md5 } from "../src/legacy/template/md5.ts";
 
 /**
@@ -17,7 +16,14 @@ import { md5 } from "../src/legacy/template/md5.ts";
  * side of MD5's 56-byte padding boundary, where a wrong implementation
  * usually first diverges.
  */
-const PHP = process.env.DTS_PHP_BIN ?? "./tools/php-remote";
+/*
+ * Gated on DTS_PHP_BIN, like the other parity suites, so the default
+ * `vitest run` does not reach across the network. The bridge is an SSH
+ * connection to the reference host; when that host is slow a suite that
+ * ran it unconditionally would hang the whole run rather than fail, as
+ * this one did before the gate and the timeout below.
+ */
+const PHP = process.env.DTS_PHP_BIN;
 
 const CASES = [
   "",
@@ -37,7 +43,7 @@ const CASES = [
   "~!@#$%^&*()_+{}|:\"<>?`-=[]\\;',./"
 ];
 
-describe.skipIf(!existsSync(PHP) && !process.env.DTS_PHP_BIN)("md5 against PHP", () => {
+describe.skipIf(!PHP)("md5 against PHP", () => {
   it("matches PHP's md5() on every case", () => {
     const script =
       "<?php $in = json_decode(stream_get_contents(STDIN), true); " +
@@ -47,7 +53,10 @@ describe.skipIf(!existsSync(PHP) && !process.env.DTS_PHP_BIN)("md5 against PHP",
       execFileSync(PHP, ["-r", script.slice(6)], {
         input: JSON.stringify(CASES),
         encoding: "utf8",
-        maxBuffer: 1 << 20
+        maxBuffer: 1 << 20,
+        // Never wait on the bridge indefinitely: a stalled SSH session
+        // must fail this suite, not hang the run.
+        timeout: 120_000
       })
     );
 

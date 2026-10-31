@@ -29,5 +29,11 @@
     "APP_ENV": "development",
     "SUPABASE_URL": "https://qtjcjmpapjsgrrgtfica.supabase.co"
   },
+  // The port runs the original's PHP through an interpreter, which is
+  // CPU work by nature: one player action dispatches through hundreds of
+  // hook implementations. The Paid plan's default is 30s; this raises it
+  // so a heavy tick cannot be cut off mid-write. It is a ceiling, not a
+  // reservation -- a request is billed for what it uses.
+  "limits": { "cpu_ms": 120000 },
   "observability": { "enabled": true, "head_sampling_rate": 1 }
 }
