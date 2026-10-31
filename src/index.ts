@@ -40,6 +40,8 @@ import {
   SupabaseLegacyMatches, SupabaseLegacyMatchStart, SupabaseLegacyRooms
 } from "./runtime/supabase";
 import { legacyCommandResponse } from "./runtime/command";
+import { hasLegacyPage, runLegacyPage } from "./runtime/legacy-page-handler";
+import { SupabaseLegacyDatabase } from "./runtime/supabase-legacy-database";
 export { applyOriginalRouting } from "./original-routing";
 export { LegacyRoomDurableObject } from "./runtime/room-durable-object";
 export { LegacyGameDurableObject } from "./runtime/game-durable-object";
@@ -175,6 +177,54 @@ export default {
         if (response) return response;
       }
     }
+    /*
+     * The original's own page scripts.
+     *
+     * This comes after the hand-written handlers above, so anything
+     * already wired keeps its behaviour, and before the 501, which is
+     * what it replaces. A page runs the original's code, so there is
+     * nothing here deciding what a page should say.
+     */
+    if (hasLegacyPage(url.pathname)) {
+      const rest = createSupabaseRuntime(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
+      if (rest) {
+        // The snapshot has to hold the rows the page will look at. A page
+        // reads the visitor's own account, and register and login also
+        // read the account named in the form, which is how the original
+        // refuses a name that is taken.
+        const visitor = readOriginalVisitor(request);
+        const posted = request.method === "POST"
+          ? new URLSearchParams(await request.clone().text()).get("username")
+          : null;
+        const username = posted ?? visitor.user ?? "";
+        try {
+          const database = await SupabaseLegacyDatabase.load(
+            rest,
+            0,
+            // An empty name is an anonymous visitor, which the load
+            // RPC reads as "no account rows".
+            username,
+            ["game", "users"]
+          );
+          const body = await runLegacyPage(url.pathname, request, {
+            database,
+            tablePrefix: "acbra2_"
+          });
+          if (body !== undefined) {
+            await database.commit();
+            return new Response(request.method === "HEAD" ? null : body, {
+              status: 200,
+              headers: originalPageHeaders()
+            });
+          }
+        } catch (error) {
+          // A page that cannot run must not answer as though it did.
+          console.error(`legacy page ${url.pathname} failed`, error);
+          return text("原版页面执行失败，已记录。", 500);
+        }
+      }
+    }
+
     if (request.method !== "GET" && request.method !== "HEAD") {
       return text("原版游戏后端指令尚未完成 1:1 移植；本环境不会写入玩家数据。", 501);
     }

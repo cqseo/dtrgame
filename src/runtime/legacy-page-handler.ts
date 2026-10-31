@@ -12,6 +12,7 @@
  * runtime.ts for why that replaces the original's HTTP call to itself.
  */
 import { LEGACY_PAGE_SCRIPTS } from "../generated/legacy-page-scripts";
+import { LEGACY_TEMPLATES } from "../generated/legacy-templates";
 import { createLegacyModuleRuntime } from "../legacy/php/compiled-modules";
 import type { LegacyDatabase } from "../legacy/php/database";
 import type { LegacyPageRequest } from "../legacy/php/runtime";
@@ -35,8 +36,11 @@ const entriesOf = (params: URLSearchParams): (readonly [string, string])[] =>
 
 export interface LegacyPageDependencies {
   readonly database: LegacyDatabase;
-  /** Reads a template by the name the original's template() returns. */
-  readonly loadTemplate: (name: string) => string | undefined;
+  /**
+   * Reads a template by the name the original's template() returns.
+   * Defaults to the compiled-in set, which is every captured template.
+   */
+  readonly loadTemplate?: ((name: string) => string | undefined) | undefined;
   readonly tablePrefix: string;
   readonly roomId?: string;
 }
@@ -72,7 +76,8 @@ export async function runLegacyPage(
   // one between requests would leak a player's state into another's.
   const runtime = createLegacyModuleRuntime({
     database: dependencies.database,
-    loadTemplate: dependencies.loadTemplate,
+    loadTemplate: dependencies.loadTemplate ??
+      ((name: string) => LEGACY_TEMPLATES[name] ?? LEGACY_TEMPLATES[name.replace(/^.*\/(?=templates\/)/, "./")]),
     // The page defines CURSCRIPT itself, and a constant cannot be
     // redefined, so it must not be preset here.
     curscript: null

@@ -60,7 +60,9 @@ export class SupabaseLegacyDatabase extends SnapshotLegacyDatabase {
     requested: readonly LegacyDatabaseTable[] = ["game"]
   ): Promise<SupabaseLegacyDatabase> {
     if (!Number.isSafeInteger(roomId) || roomId < 0 || roomId > 12) throw new RangeError("Invalid legacy room id.");
-    if (!username || [...username].length > 15) throw new RangeError("Invalid legacy username.");
+    // An empty name is an anonymous visitor: the pages are served
+    // before anyone has an account, and register.php runs to create one.
+    if ([...username].length > 15) throw new RangeError("Invalid legacy username.");
     const unique = [...new Set(requested)];
     if (unique.some(name => !(["game", "users", ...ROOM_TABLES] as string[]).includes(name))) {
       throw new RangeError("Invalid legacy database table request.");
