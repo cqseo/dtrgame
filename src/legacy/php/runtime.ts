@@ -21,6 +21,7 @@ import type { LegacyDatabase } from "./database";
 import type { CompiledPhpFunction } from "../module-compiler";
 import type { Statement } from "../template/ast";
 import type { HostFunction } from "../template/builtins";
+import type { CompileOptions } from "../template/compile";
 import { TemplateExit, createTemplateContext, executeCompiledFunctionProgram } from "../template/render";
 import { PhpArray, toBool, toStringValue, type PhpValue } from "../template/values";
 import {
@@ -101,6 +102,16 @@ export interface ModuleRuntimeOptions {
   /** Host functions this port provides, keyed as the original writes them. */
   readonly functions?: ReadonlyMap<string, HostFunction>;
   readonly loadTemplate?: (name: string) => string | undefined;
+  /**
+   * How a template is compiled, chiefly the language pack.
+   *
+   * {lang x} is substituted when the template is compiled, not when it
+   * is rendered. Without the pack a page still renders, but every
+   * translated string comes out as its own placeholder -- the
+   * registration page showed !vq_question_desc! where the question
+   * belongs -- which is a page that works and is not the original's.
+   */
+  readonly compileOptions?: CompileOptions | undefined;
 }
 
 /** What a page script needs to know about the HTTP request. */
@@ -227,9 +238,19 @@ export class LegacyModuleRuntime {
   }
 
   /** Which parameters of a function are declared `&$x`. */
-  referenceParameters(name: string, namespace?: string): readonly boolean[] {
+  /**
+   * Which of a function's parameters are declared `&$x`.
+   *
+   * Undefined, not an empty array, when this runtime has no such
+   * function: an empty array is an answer -- "it takes none by
+   * reference" -- and the renderer would stop there instead of
+   * consulting the builtin table. That is what silently disabled
+   * preg_match_all's $matches, so the registration captcha built its
+   * corpus from nothing.
+   */
+  referenceParameters(name: string, namespace?: string): readonly boolean[] | undefined {
     const fn = this.#functions.get(this.resolve(name, namespace));
-    return fn ? fn.parameters.map(parameter => parameter.byReference) : [];
+    return fn ? fn.parameters.map(parameter => parameter.byReference) : undefined;
   }
 
   /**
@@ -350,7 +371,8 @@ export class LegacyModuleRuntime {
       hasQualified: name => this.has(name, ""),
       referenceParameters: name => this.referenceParameters(name, ""),
       loadTemplate: this.#options.loadTemplate ?? (() => undefined),
-      loadPhp: name => this.#loadPhp(name)
+      loadPhp: name => this.#loadPhp(name),
+      compileOptions: this.#options.compileOptions
     });
     try {
       return executeCompiledFunctionProgram(program, context);
@@ -415,7 +437,8 @@ export class LegacyModuleRuntime {
       hasQualified: name => this.has(name, fn.namespace),
       referenceParameters: name => this.referenceParameters(name, fn.namespace),
       loadTemplate: this.#options.loadTemplate ?? (() => undefined),
-      loadPhp: name => this.#loadPhp(name)
+      loadPhp: name => this.#loadPhp(name),
+      compileOptions: this.#options.compileOptions
     });
 
     return executeCompiledFunctionProgram(fn.program, context).value;

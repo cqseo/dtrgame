@@ -15,6 +15,7 @@
  */
 import { COMPILED_MODULE_NAMES, COMPILED_MODULE_TABLES } from "../../generated/legacy-compiled-index";
 import { LEGACY_COMPILED_GLOBALS } from "../../generated/legacy-compiled-globals";
+import { LEGACY_TEMPLATE_LANGUAGE } from "../../generated/legacy-template-language";
 import { createHostConstants, createHostFunctions } from "./host-environment";
 import { LegacyModuleRuntime, type ModuleRuntimeOptions } from "./runtime";
 
@@ -35,7 +36,10 @@ export function createLegacyModuleRuntime(
       ...createHostConstants(options.curscript === undefined ? "index" : options.curscript),
       ...(options.constants ?? [])
     ]),
-    functions: new Map([...createHostFunctions(), ...(options.functions ?? [])])
+    functions: new Map([...createHostFunctions(), ...(options.functions ?? [])]),
+    // {lang x} is resolved when a template compiles, so the pack has to
+    // be here or every translated string renders as its placeholder.
+    compileOptions: options.compileOptions ?? { language: LEGACY_TEMPLATE_LANGUAGE }
   };
   const runtime = new LegacyModuleRuntime(undefined, withHost);
   for (const table of COMPILED_MODULE_TABLES) runtime.registerModule(Object.values(table));
