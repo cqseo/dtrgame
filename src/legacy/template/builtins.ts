@@ -5,6 +5,7 @@
  * templates rather than from a general port of PHP's standard library, so
  * each entry here exists because a template depends on it.
  */
+import { pregMatch, pregMatchAll, pregQuote, pregReplace, pregSplit } from "./preg";
 import {
   PhpArray,
   compareValues,
@@ -374,6 +375,35 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
     return value.keys().length;
   },
 
+  /**
+   * The PCRE functions. preg_match and preg_match_all write their
+   * captures into a by-reference third argument and return a count, so
+   * they are given a slot rather than a value; see
+   * BUILTIN_REFERENCE_PARAMETERS below.
+   */
+  preg_match: ([pattern, subject, matches]) => {
+    const found = pregMatch(pattern ?? null, subject ?? null);
+    if (matches && typeof matches === "object" && "slot" in (matches as object)) {
+      (matches as unknown as { slot: { set(value: PhpValue): void } }).slot.set(
+        found ?? new PhpArray()
+      );
+    }
+    return found ? 1 : 0;
+  },
+  preg_match_all: ([pattern, subject, matches]) => {
+    const found = pregMatchAll(pattern ?? null, subject ?? null);
+    if (matches && typeof matches === "object" && "slot" in (matches as object)) {
+      (matches as unknown as { slot: { set(value: PhpValue): void } }).slot.set(found);
+    }
+    const first = found.get(0);
+    return first instanceof PhpArray ? first.keys().length : 0;
+  },
+  preg_replace: ([pattern, replacement, subject]) =>
+    pregReplace(pattern ?? null, replacement ?? null, subject ?? null),
+  preg_split: ([pattern, subject, limit, flags]) =>
+    pregSplit(pattern ?? null, subject ?? null, limit ?? null, flags ?? null),
+  preg_quote: ([subject, delimiter]) => pregQuote(subject ?? null, delimiter ?? null),
+
   // Time.
   time: () => Math.floor(Date.now() / 1000),
   date: ([format, timestamp]) =>
@@ -455,3 +485,20 @@ function toJson(value: PhpValue): unknown {
   }
   return value;
 }
+
+/**
+ * Builtins that take an argument by reference.
+ *
+ * PHP marks these in the function signature; here the caller has to know,
+ * because a builtin receives values. Without this, preg_match would be
+ * handed the current value of an undefined variable and its captures
+ * would go nowhere.
+ *
+ * An array argument does not need to appear here: PhpArray is mutable, so
+ * sort() and array_push() change the caller's array through the value
+ * they are given.
+ */
+export const BUILTIN_REFERENCE_PARAMETERS: Readonly<Record<string, readonly boolean[]>> = {
+  preg_match: [false, false, true],
+  preg_match_all: [false, false, true]
+};

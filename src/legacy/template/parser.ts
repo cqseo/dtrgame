@@ -418,6 +418,16 @@ export class Parser {
   }
 
   protected parsePrimary(): Expression {
+    // `include` in a value position. PHP allows it as an expression, and
+    // the original relies on that in gexit() and template.func.php.
+    if (
+      this.at("name", "include") || this.at("name", "include_once") ||
+      this.at("name", "require") || this.at("name", "require_once")
+    ) {
+      this.next();
+      return { kind: "includeExpression", template: this.parseExpression() };
+    }
+
     // `&$x` as an operand: the modules build `array('itm' => &$itm0, …)` so
     // the entries alias the caller's variables, and `foreach (array(&$pa,
     // &$pd) as &$pl)` to act on both combatants in turn.

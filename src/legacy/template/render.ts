@@ -7,7 +7,7 @@
  * templates rely on to see variables the caller set.
  */
 import type { Expression, Statement } from "./ast";
-import { PHP_BUILTINS, type HostFunction } from "./builtins";
+import { BUILTIN_REFERENCE_PARAMETERS, PHP_BUILTINS, type HostFunction } from "./builtins";
 import { compileTemplate, type CompileOptions } from "./compile";
 import { parseTemplateProgram } from "./parser";
 import { LegacyDatabase } from "../php/database";
@@ -213,15 +213,20 @@ class Renderer {
       // Module statements. Compiled templates contain none of these, but
       // module functions are mostly made of them.
       case "global":
-        // `global $x;` binds the name to the real global scope. Where the
-        // module runtime gives a function the global map as its own scope
-        // the binding already holds; where the two differ, the current
-        // global value is brought in.
+        // `global $x` makes the local name an alias of the global, not a
+        // copy of it: include/user.func.php declares `global $db` and then
+        // calls methods on it, and writes through such a name have to
+        // reach the global the rest of the request shares.
         for (const name of statement.names) {
           if (name.kind !== "variable") continue;
-          const globals = this.context.globals ?? this.context.variables;
-          if (globals === this.context.variables) continue;
-          this.context.variables.set(name.name, globals.get(name.name) ?? null);
+          const globals = this.context.globals;
+          if (!globals || globals === this.context.variables) continue;
+          const scope = this.context.variables;
+          if (scope instanceof ModuleScope && globals instanceof ModuleScope) {
+            scope.alias(name.name, globals.slotFor(name.name));
+          } else {
+            scope.set(name.name, globals.get(name.name) ?? null);
+          }
         }
         return;
       case "for":
@@ -533,7 +538,10 @@ class Renderer {
     }
 
     const builtin = PHP_BUILTINS[lowered];
-    if (builtin) return builtin(values);
+    if (builtin) {
+      const references = BUILTIN_REFERENCE_PARAMETERS[lowered];
+      return builtin(references ? this.callArguments(lowered, args) as PhpValue[] : values);
+    }
 
     throw new TemplateError(
       `Original function not ported: ${name}. Register it on the template context rather than approximating it.`
@@ -552,7 +560,10 @@ class Renderer {
    * bound, and PHP passes those by value too.
    */
   private callArguments(target: string, args: readonly Expression[]): (PhpValue | PhpRef)[] {
-    const byReference = this.context.referenceParameters?.(target) ?? [];
+    const byReference =
+      this.context.referenceParameters?.(target) ??
+      BUILTIN_REFERENCE_PARAMETERS[target.toLowerCase()] ??
+      [];
     return args.map((argument, index) =>
       byReference[index] ? this.bindReference(argument) : this.evaluate(argument)
     );
@@ -676,6 +687,14 @@ class Renderer {
           );
         }
         return this.context.callQualified(target, this.callArguments(target, expression.args));
+      }
+      case "includeExpression": {
+        // PHP returns whatever the included file returns, or 1 when it
+        // returns nothing, which is every template here. The output it
+        // produced has already been appended.
+        const name = toStringValue(this.evaluate(expression.template));
+        this.include(name);
+        return 1;
       }
       case "reference":
         // `&$x` binds only where something can hold the binding: the right

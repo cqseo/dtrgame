@@ -23,6 +23,12 @@ export type Expression =
   /** The right-hand side of `$a = &$b`, which binds rather than copies. */
   | { kind: "reference"; target: Expression }
   /**
+   * `include` used as an expression rather than a statement, which PHP
+   * allows: gexit() writes `throw new Exception(include template('error'))`
+   * and template.func.php writes `!include_once language(...)`.
+   */
+  | { kind: "includeExpression"; template: Expression }
+  /**
    * `new Exception(...)`. The only objects the original constructs are
    * exceptions: six `new` in the module tree, all `throw new Exception`,
    * plus command.php's own try/catch.

@@ -14,6 +14,7 @@
  * original's own code.
  */
 import { COMPILED_MODULE_NAMES, COMPILED_MODULE_TABLES } from "../../generated/legacy-compiled-index";
+import { LEGACY_COMPILED_GLOBALS } from "../../generated/legacy-compiled-globals";
 import { createHostConstants, createHostFunctions } from "./host-environment";
 import { LegacyModuleRuntime, type ModuleRuntimeOptions } from "./runtime";
 
@@ -33,6 +34,10 @@ export function createLegacyModuleRuntime(options: ModuleRuntimeOptions = {}): L
   };
   const runtime = new LegacyModuleRuntime(undefined, withHost);
   for (const table of COMPILED_MODULE_TABLES) runtime.registerModule(Object.values(table));
+  // The global-namespace functions the original's include files declare,
+  // such as fetch_udata_by_username. Compiled rather than hand-written, so
+  // what runs is the original's own code.
+  runtime.registerModule(Object.values(LEGACY_COMPILED_GLOBALS));
   return runtime;
 }
 

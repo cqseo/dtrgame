@@ -81,8 +81,19 @@ export class ModuleParser extends Parser {
     this.eat("operator", "&");
     const name = this.expect("name").value;
     const parameters = this.parseParameters();
+    // A return type, as in `function dts_quickmatch_tick(): void`. The
+    // module tree declares none, but the include files do.
+    if (this.eat("operator", ":")) this.skipTypeName();
     const body = this.parseBracedBody();
     return { kind: "functionDeclaration", name, parameters, body };
+  }
+
+  /** Skips a type: `void`, `?Foo`, `int|false`, and so on. */
+  private skipTypeName(): void {
+    this.eat("operator", "?");
+    do {
+      if (this.at("name")) this.next();
+    } while (this.eat("operator", "|") || this.eat("operator", "&"));
   }
 
   private parseParameters(): Parameter[] {

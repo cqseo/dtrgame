@@ -103,6 +103,15 @@ export class LegacyModuleRuntime {
   readonly store: ModuleVariableStore;
   readonly chains: HookChains;
   readonly #functions = new Map<string, CompiledPhpFunction>();
+  /**
+   * The true global scope, which `global $x` binds to.
+   *
+   * A handful of names are both a global and a sys module variable -- $db,
+   * $gtablepre, $room_id -- because common.inc.php sets them up for
+   * everything that follows. They are aliased rather than copied so the
+   * two never drift apart during a request.
+   */
+  readonly #globals = new ModuleScope();
   readonly #options: ModuleRuntimeOptions;
 
   constructor(store = ModuleVariableStore.fromOriginal(), options: ModuleRuntimeOptions = {}) {
@@ -111,6 +120,9 @@ export class LegacyModuleRuntime {
     this.chains = buildChainsFromManifest();
     if (options.database) {
       this.store.set("sys", "db", options.database as unknown as PhpValue);
+    }
+    for (const shared of ["db", "gtablepre", "tablepre", "room_id", "now"]) {
+      this.#globals.alias(shared, this.store.slot("sys", shared));
     }
   }
 
@@ -125,6 +137,12 @@ export class LegacyModuleRuntime {
    */
   registerModule(functions: readonly CompiledPhpFunction[]): void {
     for (const fn of functions) {
+      // A global-namespace function is keyed by its bare name: it is not
+      // a hook, cannot be overridden, and module code calls it unqualified.
+      if (fn.namespace === "") {
+        this.#functions.set(fn.name.toLowerCase(), fn);
+        continue;
+      }
       const key = qualify(fn.namespace, fn.name);
       const chain = this.chains.chain(fn.name);
       // A name absent from the manifest is not dispatched at all. init() is
@@ -218,7 +236,7 @@ export class LegacyModuleRuntime {
 
     const context = createTemplateContext({
       variables: scope,
-      globals: scope,
+      globals: this.#globals,
       constants: new Map([...(this.#options.constants ?? []), ["__MAGIC__", MAGIC]]),
       functions: this.hostFunctions(scope, qualified),
       callQualified: (name, callArgs) => this.call(name, callArgs, qualified, fn.namespace),

@@ -192,17 +192,34 @@ export class InMemoryLegacyDatabase extends LegacyDatabase {
     return rows;
   }
 
-  /** Only `col='value'`, joined by AND, which is all the ported paths use. */
+  /**
+   * Only `col='value'` and `col IN ('a','b')`, joined by AND.
+   *
+   * Those are the two forms the original's own accessors build:
+   * fetch_udata() uses the first and fetch_udata_multilist() the second.
+   * Anything else throws rather than being approximated, so a path that
+   * needs more fails loudly here instead of quietly returning the wrong
+   * rows.
+   */
   #matches(row: PhpArray, where: string | undefined): boolean {
     if (!where) return true;
     return where.split(/\s+AND\s+/i).every(clause => {
-      const condition = /^\s*(\S+?)\s*=\s*'(.*)'\s*$/s.exec(clause);
-      if (!condition) {
-        throw new Error(`Unsupported WHERE clause, refusing to guess: ${clause}`);
-      }
       // The original's columns come back from MySQL as strings, and its
-      // comparisons are string comparisons, so this compares as strings.
-      return String(row.get(condition[1] as string) ?? "") === (condition[2] as string);
+      // comparisons are string comparisons, so these compare as strings.
+      const equality = /^\s*(\S+?)\s*=\s*'(.*)'\s*$/s.exec(clause);
+      if (equality) {
+        return String(row.get(equality[1] as string) ?? "") === (equality[2] as string);
+      }
+
+      const membership = /^\s*([^\s,]+)\s+IN\s*\((.*)\)\s*$/is.exec(clause);
+      if (membership) {
+        const values = [...(membership[2] as string).matchAll(/'((?:[^'\\]|\\.)*)'/gs)].map(
+          found => (found[1] as string).replace(/\\(.)/g, "$1")
+        );
+        return values.includes(String(row.get(membership[1] as string) ?? ""));
+      }
+
+      throw new Error(`Unsupported WHERE clause, refusing to guess: ${clause}`);
     });
   }
 
