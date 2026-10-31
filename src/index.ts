@@ -28,12 +28,13 @@ import {
 import { applyOriginalRouting } from "./original-routing";
 import { handleLegacyLogin } from "./runtime/http-auth";
 import { handleLegacyIndex } from "./runtime/http-index";
-import { handleLegacyGameCommand, handleLegacyGamePage } from "./runtime/http-game";
+import { handleLegacyGameCommand, handleLegacyGamePage, handleOriginalRoomRoutineCommand } from "./runtime/http-game";
 import { handleLegacyRoomCommand, handleLegacyRoomUpdate } from "./runtime/http-room";
 import { LegacyLobbyService } from "./runtime/lobby-service";
 import { LegacyRoomService } from "./runtime/room-service";
 import { LegacyMatchStarter } from "./runtime/match-starter";
 import { LegacyGameService } from "./runtime/game-service";
+import { LegacyOriginalCommandService } from "./runtime/original-command-service";
 import {
   createSupabaseRuntime, SupabaseLegacyAccounts, SupabaseLegacyIndex, SupabaseLegacyLobby,
   SupabaseLegacyMatches, SupabaseLegacyMatchStart, SupabaseLegacyRooms
@@ -92,6 +93,17 @@ export default {
         (request.method === "GET" || request.method === "HEAD" || request.method === "POST")) {
       const rest = createSupabaseRuntime(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
       if (rest) {
+        if (url.pathname === "/command.php") {
+          const original = await handleOriginalRoomRoutineCommand(
+            request,
+            new LegacyOriginalCommandService(
+              rest,
+              new SupabaseLegacyAccounts(rest),
+              new SupabaseLegacyMatches(rest)
+            )
+          );
+          if (original) return original;
+        }
         const service = new LegacyGameService(
           env.GAMES, new SupabaseLegacyAccounts(rest), new SupabaseLegacyMatches(rest)
         );

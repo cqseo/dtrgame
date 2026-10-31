@@ -9,6 +9,7 @@ import {
   SupabaseLegacyRooms,
   SupabaseMatchSnapshots
 } from "../src/runtime/supabase";
+import { SupabaseLegacyDatabase } from "../src/runtime/supabase-legacy-database";
 
 function client(fetchMock: typeof fetch): SupabaseLegacyRest {
   return new SupabaseLegacyRest({
@@ -116,5 +117,38 @@ describe("Supabase legacy runtime adapter", () => {
     ]);
     await expect(snapshots.load(0)).resolves.toBeNull();
     expect(() => snapshots.save(9, -1, { matchId: 9, gamestate: 20 })).toThrow("Invalid match snapshot identity");
+  });
+
+  it("runs synchronous legacy SQL over one Supabase snapshot and commits only changed rows", async () => {
+    const requests: { path: string; body: Record<string, unknown> }[] = [];
+    const fetchMock = vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => {
+      const path = new URL(String(request)).pathname;
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      requests.push({ path, body });
+      if (path.endsWith("/dtr_legacy_database_load")) {
+        return Response.json([{
+          revision: 3,
+          tables: { players: [{ pid: 2, name: "测试者", hp: 10, type: 0 }] }
+        }]);
+      }
+      return Response.json([{ revision: 4 }]);
+    }) as unknown as typeof fetch;
+
+    const database = await SupabaseLegacyDatabase.load(client(fetchMock), 4, "测试者", ["players"]);
+    expect(database.query("UPDATE acbra2_s4_players SET hp = '8' WHERE pid='2'")).toBe(true);
+    await expect(database.commit()).resolves.toBe(4);
+
+    expect(requests[0]).toEqual({
+      path: "/rest/v1/rpc/dtr_legacy_database_load",
+      body: { p_room_id: 4, p_username: "测试者", p_tables: ["players"] }
+    });
+    expect(requests[1]?.path).toBe("/rest/v1/rpc/dtr_legacy_database_commit");
+    expect(requests[1]?.body).toMatchObject({ p_room_id: 4, p_expected_revision: 3 });
+    expect(requests[1]?.body.p_changes).toEqual([{
+      operation: "upsert",
+      table: "acbra2_s4_players",
+      key: { pid: "2" },
+      row: { pid: "2", name: "测试者", hp: "8", type: "0" }
+    }]);
   });
 });

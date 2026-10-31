@@ -30,6 +30,11 @@ export interface LegacyStatement {
   readonly sql: string;
 }
 
+/** One row-level change made while the original code ran synchronously. */
+export type LegacyRowMutation =
+  | { readonly operation: "upsert"; readonly table: string; readonly key: Readonly<Record<string, PhpValue>>; readonly row: Readonly<Record<string, PhpValue>> }
+  | { readonly operation: "delete"; readonly table: string; readonly key: Readonly<Record<string, PhpValue>> };
+
 /**
  * What a database must provide for the original's modules to run.
  *
@@ -220,5 +225,82 @@ export class InMemoryLegacyDatabase extends LegacyDatabase {
       ]);
     }
     return found;
+  }
+}
+
+/** Convert a PostgREST JSON row into the stringly values MySQL returned. */
+export function legacyRowFromJson(source: Readonly<Record<string, unknown>>): PhpArray {
+  const row = new PhpArray();
+  for (const [key, value] of Object.entries(source)) {
+    if (value === null || typeof value === "boolean" || typeof value === "number" || typeof value === "string") {
+      row.set(key, value === null ? "" : String(value));
+      continue;
+    }
+    throw new TypeError(`Legacy database row ${key} is not a scalar.`);
+  }
+  return row;
+}
+
+function rowRecord(row: PhpArray): Record<string, PhpValue> {
+  const record: Record<string, PhpValue> = {};
+  for (const [key, value] of row.pairs()) record[String(key)] = value;
+  return record;
+}
+
+function sameRow(left: PhpArray, right: PhpArray): boolean {
+  const leftKeys = left.keys().map(String);
+  const rightKeys = right.keys().map(String);
+  if (leftKeys.length !== rightKeys.length || leftKeys.some((key, index) => key !== rightKeys[index])) return false;
+  return leftKeys.every(key => left.get(key) === right.get(key));
+}
+
+/**
+ * A request-local database snapshot.
+ *
+ * Supabase is asynchronous while the original PHP database object is not.
+ * The Worker therefore fetches a room snapshot first, runs the original code
+ * unchanged against this object, then commits only the rows that changed.
+ */
+export class SnapshotLegacyDatabase extends InMemoryLegacyDatabase {
+  readonly #before = new Map<string, PhpArray[]>();
+
+  constructor(tables: Readonly<Record<string, readonly PhpArray[]>> = {}) {
+    super(tables);
+    for (const [name, rows] of this.tables) this.#before.set(name, rows.map(row => row.clone()));
+  }
+
+  mutations(primaryKeys: Readonly<Record<string, string>>): LegacyRowMutation[] {
+    const mutations: LegacyRowMutation[] = [];
+    for (const [table, rows] of this.tables) {
+      const primaryKey = primaryKeys[table];
+      if (!primaryKey) throw new Error(`No primary key is registered for legacy table ${table}.`);
+      const before = this.#before.get(table) ?? [];
+      const oldByKey = new Map(before.map(row => [String(row.get(primaryKey)), row]));
+      const currentKeys = new Set<string>();
+
+      for (const row of rows) {
+        const keyValue = row.get(primaryKey);
+        const key = String(keyValue);
+        if (!key) throw new Error(`Legacy table ${table} has a row without ${primaryKey}.`);
+        currentKeys.add(key);
+        const old = oldByKey.get(key);
+        if (!old || !sameRow(old, row)) {
+          mutations.push({
+            operation: "upsert",
+            table,
+            key: { [primaryKey]: keyValue },
+            row: rowRecord(row)
+          });
+        }
+      }
+
+      for (const row of before) {
+        const keyValue = row.get(primaryKey);
+        if (!currentKeys.has(String(keyValue))) {
+          mutations.push({ operation: "delete", table, key: { [primaryKey]: keyValue } });
+        }
+      }
+    }
+    return mutations;
   }
 }

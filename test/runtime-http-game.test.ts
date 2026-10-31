@@ -6,7 +6,12 @@ import type { LegacyRandom } from "../src/legacy/random";
 import { legacyDecode } from "../src/original-protocol";
 import type { StoredLegacyMatch } from "../src/runtime/game-durable-object";
 import type { LegacyGameService } from "../src/runtime/game-service";
-import { handleLegacyGameCommand, handleLegacyGamePage } from "../src/runtime/http-game";
+import {
+  handleLegacyGameCommand,
+  handleLegacyGamePage,
+  handleOriginalRoomRoutineCommand
+} from "../src/runtime/http-game";
+import type { LegacyOriginalCommandService } from "../src/runtime/original-command-service";
 import type { LegacyUserMatch } from "../src/runtime/supabase";
 
 const assets = {
@@ -86,5 +91,33 @@ describe("legacy game HTTP surface", () => {
       innerHTML: { log: "移动完成", sp: "385 / 400", anum: 1 },
       value: { mode: "command", command: "menu" }
     });
+  });
+
+  it("routes room_routine_single through the compiled original command service", async () => {
+    const executeRoomRoutine = vi.fn(async (_request: Request, _now: number) => ({
+      ok: true as const,
+      revision: 8
+    }));
+    const response = await handleOriginalRoomRoutineCommand(new Request("https://game.test/command.php", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: "page=command&command=room_routine_single"
+    }), { executeRoomRoutine } as unknown as LegacyOriginalCommandService, 200);
+
+    expect(response?.status).toBe(200);
+    expect(await response?.text()).toBe("");
+    expect(executeRoomRoutine).toHaveBeenCalledOnce();
+    expect(executeRoomRoutine.mock.calls[0]?.[1]).toBe(200);
+  });
+
+  it("leaves other commands on the existing path until their original page program is connected", async () => {
+    const executeRoomRoutine = vi.fn();
+    const response = await handleOriginalRoomRoutineCommand(new Request("https://game.test/command.php", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: "page=command&command=move&moveto=1"
+    }), { executeRoomRoutine } as unknown as LegacyOriginalCommandService, 200);
+    expect(response).toBeUndefined();
+    expect(executeRoomRoutine).not.toHaveBeenCalled();
   });
 });

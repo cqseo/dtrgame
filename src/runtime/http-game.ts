@@ -4,6 +4,7 @@ import {
 import { legacyCommandResponse } from "./command";
 import { legacyGameUiPayload, renderLegacyGamePage } from "./game-render";
 import { LegacyGameService } from "./game-service";
+import { LegacyOriginalCommandService } from "./original-command-service";
 import type { LegacyAuthAssets } from "./http-auth";
 
 async function gameSources(assets: LegacyAuthAssets, origin: string): Promise<Map<string, string>> {
@@ -72,4 +73,27 @@ export async function handleLegacyGameCommand(
     });
   }
   return legacyCommandResponse(legacyGameUiPayload(result.snapshot, result.username, result.output));
+}
+
+/** Routes the first completed original command.php branch to compiled PHP code. */
+export async function handleOriginalRoomRoutineCommand(
+  request: Request,
+  service: LegacyOriginalCommandService,
+  now = Math.floor(Date.now() / 1000)
+): Promise<Response | undefined> {
+  const url = new URL(request.url);
+  if (url.pathname !== "/command.php" || request.method !== "POST") return undefined;
+  const input = new URLSearchParams(await request.clone().text());
+  if (input.get("command") !== "room_routine_single") return undefined;
+  const result = await service.executeRoomRoutine(request, now);
+  if (!result.ok) {
+    return legacyCommandResponse({
+      url: "error.php",
+      errormsg: result.error === "no_login" ? "用户未登陆，请从首页登录后再进入游戏" : result.error
+    });
+  }
+  return new Response("", {
+    status: 200,
+    headers: { "content-type": "text/html; charset=UTF-8", "cache-control": "no-store" }
+  });
 }
