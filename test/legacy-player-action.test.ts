@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { LEGACY_TABLES } from "../src/generated/legacy-tables";
 import { createLegacyModuleRuntime } from "../src/legacy/php/compiled-modules";
 import { InMemoryLegacyDatabase } from "../src/legacy/php/database";
 import { PhpArray } from "../src/legacy/template/values";
@@ -35,11 +35,8 @@ const row = (fields: Record<string, string>): PhpArray => {
 };
 
 function emptyDatabase(): Record<string, PhpArray[]> {
-  const schema = readFileSync("src/generated/legacy-schema.sql", "utf8");
   const tables: Record<string, PhpArray[]> = {};
-  for (const match of schema.matchAll(/CREATE TABLE IF NOT EXISTS "([^"]+)"/g)) {
-    tables[match[1] as string] = [];
-  }
+  for (const name of LEGACY_TABLES) tables[name] = [];
   return tables;
 }
 

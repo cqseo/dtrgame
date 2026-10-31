@@ -95,7 +95,12 @@ export class SupabaseLegacyRest {
     }
     this.#url = normalizeUrl(config.url);
     this.#key = config.secretKey;
-    this.#fetch = config.fetch ?? fetch;
+    // fetch has to be called with globalThis as its receiver. Stored on
+    // an instance and called as this.#fetch(...), the receiver is the
+    // instance, and workerd rejects that with "Illegal invocation".
+    // Node's fetch does not check the receiver, so no unit test can catch
+    // this -- only a request against a deployed Worker does.
+    this.#fetch = config.fetch ?? fetch.bind(globalThis);
   }
 
   async rpc<T>(name: string, args: Readonly<Record<string, unknown>>): Promise<T> {
