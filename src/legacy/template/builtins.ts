@@ -406,6 +406,15 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
 
   // Time.
   time: () => Math.floor(Date.now() / 1000),
+  // microtime(true) gives seconds as a float; microtime() gives PHP's
+  // "0.00000000 0000000000" pair. The original times its own hot paths
+  // with it and warns when one runs long, so both spellings are needed.
+  microtime: ([asFloat]) => {
+    const seconds = Date.now() / 1000;
+    if (toBool(asFloat ?? false)) return seconds;
+    const whole = Math.floor(seconds);
+    return `${(seconds - whole).toFixed(8)} ${whole}`;
+  },
   date: ([format, timestamp]) =>
     formatDate(str(format), timestamp === undefined || timestamp === null ? Math.floor(Date.now() / 1000) : int(timestamp), false),
   gmdate: ([format, timestamp]) =>

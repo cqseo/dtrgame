@@ -238,7 +238,7 @@ export class LegacyModuleRuntime {
       variables: scope,
       globals: this.#globals,
       constants: new Map([...(this.#options.constants ?? []), ["__MAGIC__", MAGIC]]),
-      functions: this.hostFunctions(scope, qualified),
+      functions: this.hostFunctions(scope, qualified, args),
       callQualified: (name, callArgs) => this.call(name, callArgs, qualified, fn.namespace),
       hasQualified: name => this.has(name, fn.namespace),
       referenceParameters: name => this.referenceParameters(name, fn.namespace),
@@ -304,8 +304,27 @@ export class LegacyModuleRuntime {
    * into the template's own scope, so the same implementations are used
    * there rather than a second copy that could drift.
    */
-  hostFunctions(scope: ModuleScope, qualified = ""): Map<string, HostFunction> {
+  hostFunctions(
+    scope: ModuleScope,
+    qualified = "",
+    callArgs: readonly (PhpRef | PhpValue)[] = []
+  ): Map<string, HostFunction> {
     const functions = new Map<string, HostFunction>(this.#options.functions ?? []);
+
+    // func_get_args() reads the arguments of the call in progress, so it
+    // cannot be a plain builtin: it is bound per call, here, where they
+    // are known. Several hooks are variadic and use it to pass their
+    // arguments on untouched.
+    functions.set("func_get_args", () => {
+      const array = new PhpArray();
+      // PHP hands func_get_args() values, not references, even where the
+      // parameter was declared by reference.
+      for (const value of callArgs) {
+        array.push(value instanceof PhpRef ? value.slot.get() : value);
+      }
+      return array;
+    });
+    functions.set("func_num_args", () => callArgs.length);
 
     // eval() in the original executes the code import_module() returned.
     // Here import_module has already applied its effect, so eval only has

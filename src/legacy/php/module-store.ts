@@ -174,16 +174,25 @@ export class ModuleScope extends Map<string, PhpValue> {
     return super.size + this.#aliases.size;
   }
 
+  // Map's iteration methods return an iterator, not an iterable. Handing
+  // back the array itself satisfies TypeScript through the cast and then
+  // fails at run time: `for (const x of scope)` calls [Symbol.iterator]()
+  // and needs a .next() on what comes back, which an array has not. That
+  // broke every read of $GLOBALS.
   override keys(): MapIterator<string> {
-    return this.#entries().map(([key]) => key) as unknown as MapIterator<string>;
+    return this.#entries()
+      .map(([key]) => key)
+      [Symbol.iterator]() as unknown as MapIterator<string>;
   }
 
   override values(): MapIterator<PhpValue> {
-    return this.#entries().map(([, value]) => value) as unknown as MapIterator<PhpValue>;
+    return this.#entries()
+      .map(([, value]) => value)
+      [Symbol.iterator]() as unknown as MapIterator<PhpValue>;
   }
 
   override entries(): MapIterator<[string, PhpValue]> {
-    return this.#entries() as unknown as MapIterator<[string, PhpValue]>;
+    return this.#entries()[Symbol.iterator]() as unknown as MapIterator<[string, PhpValue]>;
   }
 
   override [Symbol.iterator](): MapIterator<[string, PhpValue]> {

@@ -172,6 +172,52 @@ export class InMemoryLegacyDatabase extends LegacyDatabase {
       return true;
     }
 
+    const remove = /^DELETE\s+FROM\s+(\S+)(?:\s+WHERE\s+(.+?))?(?:\s+LIMIT\s+\d+)?$/is.exec(
+      statement
+    );
+    if (remove) {
+      const rows = this.#rowsOf(remove[1] as string);
+      const kept = rows.filter(row => !this.#matches(row, remove[2]));
+      this.#affected = rows.length - kept.length;
+      this.tables.set(remove[1] as string, kept);
+      return true;
+    }
+
+    // Both spellings the original uses: the column-list form and MySQL's
+    // INSERT ... SET, which shares its syntax with UPDATE ... SET.
+    const insertSet = /^INSERT\s+(?:INTO\s+)?(\S+)\s+SET\s+(.+)$/is.exec(statement);
+    const insertValues =
+      /^INSERT\s+(?:INTO\s+)?(\S+)\s*\(([^)]*)\)\s*VALUES\s*\((.*)\)$/is.exec(statement);
+    if (insertSet || insertValues) {
+      const table = (insertSet ?? insertValues)![1] as string;
+      const row = new PhpArray();
+      if (insertSet) {
+        for (const [column, value] of this.#assignments(insertSet[2] as string)) {
+          row.set(column, value);
+        }
+      } else {
+        const columns = (insertValues![2] as string)
+          .split(",")
+          .map(part => part.trim().replace(/`/g, ""));
+        const values = [...(insertValues![3] as string).matchAll(/'((?:[^'\\]|\\.)*)'|([^,']+)/gs)]
+          .map(found => (found[1] ?? found[2] ?? "").trim())
+          .filter((_, index) => index < columns.length);
+        if (values.length !== columns.length) {
+          throw new Error(
+            `INSERT names ${columns.length} columns but ${values.length} values: ${statement}`
+          );
+        }
+        columns.forEach((column, index) => row.set(column, values[index] as string));
+      }
+      const rows = this.#rowsOf(table);
+      // The original reads insert_id() straight after an INSERT on every
+      // table with an AUTO_INCREMENT key, so the id has to be real.
+      this.#insertId = rows.length + 1;
+      rows.push(row);
+      this.#affected = 1;
+      return true;
+    }
+
     throw new Error(
       `The in-memory database does not understand this statement, and will not ` +
         `guess at it: ${statement}`

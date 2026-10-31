@@ -54,8 +54,16 @@ const sourceRoot = resolve(
  * here that uses an anonymous closure, which the parser does not support.
  */
 const GLOBAL_FILES = [
+  "include/global.func.php",
   "include/user.func.php",
-  "include/roommng/room.func.php"
+  "include/messages.func.php",
+  "include/itemplace.func.php",
+  "include/bubblebox.func.php",
+  "include/valid.func.php",
+  "include/socket.func.php",
+  "include/modules/modules.func.php",
+  "include/roommng/room.func.php",
+  "include/roommng/roommng.func.php"
 ];
 
 const tree = readModuleTree(sourceRoot);
