@@ -18,3 +18,7 @@ docs/legacy-source-manifest.json
 docs/hook-complexity.json
 tools/.php-remote-stamps/
 .tmp/
+
+# Supabase access token and secret key. This repository is public; these
+# must never be committed. Read by tooling through the environment only.
+tools/.supabase.local
