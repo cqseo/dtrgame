@@ -19,6 +19,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compilePhpModuleFile } from "../src/legacy/module-compiler.ts";
 import { ENTRY_POINTS, closureFrom, readModuleTree } from "./lib/module-closure.mjs";
+import { LEGACY_MODULES } from "../src/generated/legacy-registry.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..");
@@ -58,9 +59,57 @@ const GLOBAL_FILES = [
 ];
 
 const tree = readModuleTree(sourceRoot);
+
+/**
+ * Every module, not a closure over the entry points.
+ *
+ * The closure existed because a Worker script had a hard compressed size
+ * limit and the whole original looked too big for it. Cloudflare removed
+ * that limit on 2026-09-04: the cap is now 64 MiB uncompressed on every
+ * plan, free included, and all 6,081 functions come to 11.3 MB of AST.
+ * There is no longer anything to buy by shipping less than all of it.
+ *
+ * Shipping all of it also removes a whole class of bug rather than
+ * trading one for another. Dispatch enters a hook chain at its newest
+ * implementation and walks back; with a partial set, any chain reaching
+ * an uncompiled module raises LegacyFunctionNotCompiled, and whether a
+ * given player action hits one depends on the room state that produced
+ * it. A closure is therefore only ever as correct as its entry list, and
+ * the entry list cannot be proven complete. Compiling the lot makes the
+ * question moot.
+ *
+ * DTS_MODULES still narrows the set, which keeps the edit-run loop short
+ * when working on one module.
+ */
+/**
+ * The files the loader actually enables.
+ *
+ * "Every module" means every module the original loads, which is not the
+ * same as every file under include/modules. The tree also holds
+ * scaffolding for module authors to copy -- two such files both declare
+ * namespace `skill编号` -- and nothing stops a disabled module from
+ * colliding with a live one, because PHP never loads the two together.
+ * The registry is the loader's own list, so it is the authority.
+ */
+const enabledFiles = new Set(
+  LEGACY_MODULES.filter(module => module.enabled).flatMap(module =>
+    module.codeFiles.map(file => `include/modules/${module.path}${file}`)
+  )
+);
+
+function enabledNamespaces() {
+  const namespaces = [];
+  for (const [namespace, files] of tree.declaringFiles) {
+    if (files.some(file => enabledFiles.has(file.relative))) namespaces.push(namespace);
+  }
+  return namespaces.sort();
+}
+
 const MODULES = process.env.DTS_MODULES
-  ? process.env.DTS_MODULES.split(",").map(name => name.trim()).filter(Boolean)
-  : closureFrom(ENTRY_POINTS, tree).modules;
+  ? process.env.DTS_MODULES === "closure"
+    ? closureFrom(ENTRY_POINTS, tree).modules
+    : process.env.DTS_MODULES.split(",").map(name => name.trim()).filter(Boolean)
+  : enabledNamespaces();
 
 /** Renders a value as a TypeScript literal, preserving undefined-vs-null. */
 /**
