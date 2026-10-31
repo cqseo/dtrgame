@@ -33,6 +33,17 @@ export interface LegacyStatement {
 /** One row-level change made while the original code ran synchronously. */
 export type LegacyRowMutation =
   | { readonly operation: "upsert"; readonly table: string; readonly key: Readonly<Record<string, PhpValue>>; readonly row: Readonly<Record<string, PhpValue>> }
+  /**
+   * A row the original created without naming its key.
+   *
+   * insert_udata() lists every column but uid, because MySQL's
+   * AUTO_INCREMENT assigns it. The port cannot invent one: the snapshot
+   * holds only the rows this request loaded, so the largest uid it can
+   * see says nothing about the largest in the table, and a guess would
+   * overwrite somebody. The key is left out and the database assigns
+   * it, which is what the original relies on.
+   */
+  | { readonly operation: "insert"; readonly table: string; readonly row: Readonly<Record<string, PhpValue>> }
   | { readonly operation: "delete"; readonly table: string; readonly key: Readonly<Record<string, PhpValue>> };
 
 /**
@@ -343,6 +354,15 @@ export class SnapshotLegacyDatabase extends InMemoryLegacyDatabase {
 
       for (const row of rows) {
         const keyValue = row.get(primaryKey);
+        // A row the original inserted without a key: the database
+        // assigns one. Before this, such a row was upserted with a key
+        // of "null", which Postgres refused outright, so registration
+        // could not save an account.
+        if (keyValue === null || keyValue === undefined || keyValue === "") {
+          const { [primaryKey]: _omitted, ...withoutKey } = rowRecord(row);
+          mutations.push({ operation: "insert", table, row: withoutKey });
+          continue;
+        }
         const key = String(keyValue);
         if (!key) throw new Error(`Legacy table ${table} has a row without ${primaryKey}.`);
         currentKeys.add(key);
