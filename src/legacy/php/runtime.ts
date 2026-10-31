@@ -131,6 +131,7 @@ export interface LegacyPageRequest {
   readonly cookies?: readonly (readonly [string, string])[];
   readonly remoteAddress?: string;
   readonly userAgent?: string;
+  readonly serverPort?: string;
 }
 
 export class LegacyModuleRuntime {
@@ -427,6 +428,7 @@ export class LegacyModuleRuntime {
     server.set("REQUEST_URI", request.uri ?? "/");
     server.set("REMOTE_ADDR", request.remoteAddress ?? "");
     server.set("HTTP_USER_AGENT", request.userAgent ?? "");
+    server.set("SERVER_PORT", request.serverPort ?? "80");
     this.#globals.set("_SERVER", server);
   }
 

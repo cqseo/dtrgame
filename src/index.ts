@@ -40,7 +40,7 @@ import {
   SupabaseLegacyMatches, SupabaseLegacyMatchStart, SupabaseLegacyRooms
 } from "./runtime/supabase";
 import { legacyCommandResponse } from "./runtime/command";
-import { hasLegacyPage, runLegacyPage } from "./runtime/legacy-page-handler";
+import { hasLegacyPage, runLegacyPageResponse } from "./runtime/legacy-page-handler";
 import { SupabaseLegacyDatabase } from "./runtime/supabase-legacy-database";
 export { applyOriginalRouting } from "./original-routing";
 export { LegacyRoomDurableObject } from "./runtime/room-durable-object";
@@ -206,16 +206,13 @@ export default {
             username,
             ["game", "users"]
           );
-          const body = await runLegacyPage(url.pathname, request, {
+          const response = await runLegacyPageResponse(url.pathname, request, {
             database,
             tablePrefix: "acbra2_"
           });
-          if (body !== undefined) {
+          if (response !== undefined) {
             await database.commit();
-            return new Response(request.method === "HEAD" ? null : body, {
-              status: 200,
-              headers: originalPageHeaders()
-            });
+            return response;
           }
         } catch (error) {
           // A page that cannot run must not answer as though it did.

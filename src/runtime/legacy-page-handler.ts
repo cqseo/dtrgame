@@ -16,6 +16,7 @@ import { LEGACY_TEMPLATES } from "../generated/legacy-templates";
 import { createLegacyModuleRuntime } from "../legacy/php/compiled-modules";
 import type { LegacyDatabase } from "../legacy/php/database";
 import type { LegacyPageRequest } from "../legacy/php/runtime";
+import { LegacyHttpResponse } from "./legacy-http-response";
 
 /** Reads the request's cookies as the original's $_COOKIE. */
 function cookiesOf(request: Request): (readonly [string, string])[] {
@@ -26,7 +27,9 @@ function cookiesOf(request: Request): (readonly [string, string])[] {
     if (at === -1) continue;
     const name = part.slice(0, at).trim();
     if (name === "") continue;
-    pairs.push([name, decodeURIComponent(part.slice(at + 1).trim())]);
+    const value = part.slice(at + 1).trim().replace(/\+/g, " ");
+    try { pairs.push([name, decodeURIComponent(value)]); }
+    catch { pairs.push([name, value]); }
   }
   return pairs;
 }
@@ -43,6 +46,7 @@ export interface LegacyPageDependencies {
   readonly loadTemplate?: ((name: string) => string | undefined) | undefined;
   readonly tablePrefix: string;
   readonly roomId?: string;
+  readonly response?: LegacyHttpResponse;
 }
 
 /** Whether a path is one of the original's compiled page scripts. */
@@ -75,6 +79,7 @@ export async function runLegacyPage(
   // One runtime per request: module variables are mutable, so sharing
   // one between requests would leak a player's state into another's.
   const runtime = createLegacyModuleRuntime({
+    functions: dependencies.response?.functions() ?? new Map(),
     database: dependencies.database,
     loadTemplate: dependencies.loadTemplate ??
       ((name: string) => LEGACY_TEMPLATES[name] ?? LEGACY_TEMPLATES[name.replace(/^.*\/(?=templates\/)/, "./")]),
@@ -94,8 +99,21 @@ export async function runLegacyPage(
     get: entriesOf(url.searchParams),
     cookies: cookiesOf(request),
     remoteAddress: request.headers.get("cf-connecting-ip") ?? "",
-    userAgent: request.headers.get("user-agent") ?? ""
+    userAgent: request.headers.get("user-agent") ?? "",
+    serverPort: url.port || (url.protocol === "https:" ? "443" : "80")
   };
 
   return runtime.runPageScript(program, pageRequest).output;
+}
+
+/** Preserves redirects, status and multiple cookies, as well as the body. */
+export async function runLegacyPageResponse(
+  pathname: string, request: Request, dependencies: LegacyPageDependencies
+): Promise<Response | undefined> {
+  const response = new LegacyHttpResponse();
+  const body = await runLegacyPage(pathname, request, { ...dependencies, response });
+  if (body === undefined) return undefined;
+  return new Response(request.method === "HEAD" || [204, 205, 304].includes(response.status) ? null : body, {
+    status: response.status, headers: response.headers
+  });
 }
