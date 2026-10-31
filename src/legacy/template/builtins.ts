@@ -6,6 +6,8 @@
  * each entry here exists because a template depends on it.
  */
 import { pregMatch, pregMatchAll, pregQuote, pregReplace, pregSplit } from "./preg";
+import { md5 } from "./md5";
+import { toPhpFromJson } from "../php/codec";
 import {
   PhpArray,
   compareValues,
@@ -28,7 +30,7 @@ const arr = (value: PhpValue | undefined): PhpArray =>
 /** PHP counts bytes, not code points, so strings convert through UTF-8. */
 const utf8 = new TextEncoder();
 const utf8Decode = new TextDecoder();
-const byteLength = (value: string): number => utf8.encode(value).length;
+export const byteLength = (value: string): number => utf8.encode(value).length;
 
 /** PHP's substr and strpos work on byte offsets. */
 function byteSubstr(value: string, start: number, length?: number): string {
@@ -78,6 +80,25 @@ function formatDate(format: string, timestamp: number, utc: boolean): string {
     }
   }
   return out;
+}
+
+function varExport(value: PhpValue, depth: number): string {
+  const pad = "  ".repeat(depth);
+  if (value === null) return "NULL";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? String(value) : String(value);
+  }
+  if (value instanceof PhpArray) {
+    const lines = [`array (`];
+    for (const [key, entry] of value.pairs()) {
+      const renderedKey = typeof key === "number" ? String(key) : `'${key.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+      lines.push(`${pad}  ${renderedKey} => ${varExport(entry, depth + 1)},`);
+    }
+    lines.push(`${pad})`);
+    return lines.join("\n");
+  }
+  return `'${String(value).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 }
 
 export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
@@ -403,6 +424,368 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
   preg_split: ([pattern, subject, limit, flags]) =>
     pregSplit(pattern ?? null, subject ?? null, limit ?? null, flags ?? null),
   preg_quote: ([subject, delimiter]) => pregQuote(subject ?? null, delimiter ?? null),
+
+  // Hashing. The original's accounts are MD5; see md5.ts for why that
+  // is a compatibility requirement rather than a choice.
+  md5: ([value]) => md5(str(value)),
+
+  /**
+   * var_export, in PHP's own layout.
+   *
+   * The original uses it inside its error reporting, so what it prints
+   * reaches the player when something goes wrong. The format is exact
+   * for the types the original exports -- null, bool, int, float, string
+   * and array -- because a reader comparing a port's error with the
+   * original's would otherwise see a difference that is not a real one.
+   */
+  var_export: ([value, asString]) => {
+    const rendered = varExport(value ?? null, 0);
+    return toBool(asString ?? false) ? rendered : rendered;
+  },
+
+  // Paths. The original uses these on template and module names, which
+  // are paths in form even where nothing is read from disk.
+  pathinfo: ([path, options]) => {
+    const text = str(path);
+    const slash = text.lastIndexOf("/");
+    const dir = slash === -1 ? "." : text.slice(0, slash) || "/";
+    const base = slash === -1 ? text : text.slice(slash + 1);
+    const dot = base.lastIndexOf(".");
+    const extension = dot <= 0 ? undefined : base.slice(dot + 1);
+    const filename = dot <= 0 ? base : base.slice(0, dot);
+    if (options !== undefined && options !== null) {
+      switch (int(options)) {
+        case 1: return dir;
+        case 2: return base;
+        case 4: return extension ?? "";
+        case 8: return filename;
+        default: break;
+      }
+    }
+    const out = new PhpArray();
+    out.set("dirname", dir);
+    out.set("basename", base);
+    // PHP omits the key entirely when there is no extension.
+    if (extension !== undefined) out.set("extension", extension);
+    out.set("filename", filename);
+    return out;
+  },
+  basename: ([path, suffix]) => {
+    const text = str(path).replace(/\/+$/, "");
+    const slash = text.lastIndexOf("/");
+    let base = slash === -1 ? text : text.slice(slash + 1);
+    const ending = suffix === undefined ? "" : str(suffix);
+    if (ending !== "" && base !== ending && base.endsWith(ending)) {
+      base = base.slice(0, -ending.length);
+    }
+    return base;
+  },
+  dirname: ([path]) => {
+    const text = str(path).replace(/\/+$/, "");
+    const slash = text.lastIndexOf("/");
+    if (slash === -1) return ".";
+    return text.slice(0, slash) || "/";
+  },
+  // A Worker has no filesystem; host-environment.ts explains what is and
+  // is not kept in memory, and neither of these is ever a directory.
+  is_dir: () => false,
+  is_file: () => false,
+
+  // JSON decoding; json_encode is already defined above, through the same
+  // encoder the game payloads use.
+  json_decode: ([value, associative]) => {
+    try {
+      const parsed = JSON.parse(str(value)) as unknown;
+      // The original always passes true; an object without it would be a
+      // stdClass, which this port has no representation for.
+      if (!toBool(associative ?? false) && parsed !== null && typeof parsed === "object") {
+        throw new Error("json_decode without the associative flag is not supported here.");
+      }
+      return toPhpFromJson(parsed);
+    } catch {
+      return null;
+    }
+  },
+
+  uniqid: ([prefix]) => {
+    // PHP's uniqid is the current time in microseconds as 13 hex digits.
+    const microseconds = Math.floor(Date.now() * 1000);
+    return str(prefix) + microseconds.toString(16).padStart(13, "0").slice(-13);
+  },
+
+  array_merge_recursive: ([...arrays]) => {
+    const merge = (into: PhpArray, from: PhpArray): PhpArray => {
+      for (const [key, value] of from.pairs()) {
+        if (typeof key === "number") {
+          into.push(value);
+          continue;
+        }
+        const existing = into.get(key);
+        if (existing instanceof PhpArray && value instanceof PhpArray) {
+          merge(existing, value);
+        } else if (existing !== null && existing !== undefined && into.has(key)) {
+          const combined = new PhpArray();
+          combined.push(existing);
+          combined.push(value);
+          into.set(key, combined);
+        } else {
+          into.set(key, value);
+        }
+      }
+      return into;
+    };
+    const out = new PhpArray();
+    for (const value of arrays) merge(out, arr(value));
+    return out;
+  },
+
+  http_build_query: ([data]) => {
+    const source = arr(data);
+    return source.pairs()
+      .map(([key, value]) => `${encodeURIComponent(String(key))}=${encodeURIComponent(str(value))}`)
+      .join("&");
+  },
+
+  // Maths.
+  sqrt: ([value]) => Math.sqrt(num(value)),
+  pow: ([base, exponent]) => Math.pow(num(base), num(exponent)),
+  exp: ([value]) => Math.exp(num(value)),
+  log10: ([value]) => Math.log10(num(value)),
+  // PHP's fmod keeps the sign of the dividend, as JavaScript's % does.
+  fmod: ([left, right]) => num(left) % num(right),
+  hexdec: ([value]) => parseInt(str(value).replace(/[^0-9a-fA-F]/g, ""), 16) || 0,
+  is_float: ([value]) => typeof value === "number" && !Number.isInteger(value),
+
+  /**
+   * rand() and mt_rand() are the same function from PHP 7.1 on.
+   *
+   * The sequence is deliberately not reproduced. The original seeds from
+   * the system and its rolls are not replayable even against itself, so
+   * matching the generator would buy nothing; what has to match is the
+   * range, which is inclusive at both ends, and the no-argument form
+   * returning 0..mt_getrandmax().
+   */
+  rand: ([low, high]) => {
+    if (low === undefined || high === undefined) return Math.floor(Math.random() * 2147483648);
+    const from = int(low);
+    const to = int(high);
+    return from + Math.floor(Math.random() * (to - from + 1));
+  },
+
+  // Arrays.
+  array_unshift: ([target, ...values]) => {
+    const source = arr(target);
+    const moved = source.keys().map(key => [key, source.get(key)] as const);
+    source.reset();
+    for (const value of values) source.push(value ?? null);
+    // String keys keep their name; integer keys are renumbered from the
+    // new length, which is what unshift does to a mixed array.
+    for (const [key, value] of moved) {
+      if (typeof key === "string") source.set(key, value as PhpValue);
+      else source.push(value as PhpValue);
+    }
+    return source.keys().length;
+  },
+  /**
+   * Only the no-callback form, which keeps the truthy values.
+   *
+   * array_filter($a, 'f') has to call back into the interpreter, which a
+   * builtin cannot do, so the runtime binds that form over this one. If
+   * this is ever reached with a callback the runtime did not bind, it
+   * says so rather than silently filtering on truthiness and quietly
+   * changing what the original computed.
+   */
+  array_filter: ([target, callback]) => {
+    if (callback !== undefined && callback !== null) {
+      throw new Error("array_filter with a callback must be bound by the module runtime.");
+    }
+    const source = arr(target);
+    const out = new PhpArray();
+    for (const key of source.keys()) {
+      const value = source.get(key);
+      if (toBool(value ?? null)) out.set(key, value ?? null);
+    }
+    return out;
+  },
+  array_rand: ([target, count]) => {
+    const keys = arr(target).keys();
+    if (keys.length === 0) return null;
+    const wanted = count === undefined ? 1 : int(count);
+    if (wanted <= 1) return keys[Math.floor(Math.random() * keys.length)] ?? null;
+    // PHP returns the chosen keys in their original order.
+    const chosen = new Set<number>();
+    while (chosen.size < Math.min(wanted, keys.length)) {
+      chosen.add(Math.floor(Math.random() * keys.length));
+    }
+    const out = new PhpArray();
+    [...chosen].sort((a, b) => a - b).forEach(index => out.push(keys[index] as PhpValue));
+    return out;
+  },
+  array_splice: ([target, offset, length, replacement]) => {
+    const source = arr(target);
+    const entries = source.keys().map(key => [key, source.get(key)] as const);
+    const start = int(offset) < 0 ? Math.max(entries.length + int(offset), 0) : int(offset);
+    const count = length === undefined || length === null
+      ? entries.length - start
+      : int(length) < 0 ? Math.max(entries.length + int(length) - start, 0) : int(length);
+    const removed = entries.slice(start, start + count);
+    const inserted = replacement instanceof PhpArray
+      ? replacement.keys().map(key => replacement.get(key) as PhpValue)
+      : replacement === undefined || replacement === null ? [] : [replacement];
+    const kept = [...entries.slice(0, start).map(([, v]) => v), ...inserted,
+      ...entries.slice(start + count).map(([, v]) => v)];
+    source.reset();
+    for (const value of kept) source.push(value as PhpValue);
+    const out = new PhpArray();
+    for (const [, value] of removed) out.push(value as PhpValue);
+    return out;
+  },
+  array_intersect: ([first, ...rest]) => {
+    const source = arr(first);
+    const others = rest.map(value => new Set(arr(value).keys().map(key => str(arr(value).get(key)))));
+    const out = new PhpArray();
+    for (const key of source.keys()) {
+      const value = source.get(key);
+      if (others.every(set => set.has(str(value)))) out.set(key, value ?? null);
+    }
+    return out;
+  },
+  array_diff_key: ([first, ...rest]) => {
+    const source = arr(first);
+    const out = new PhpArray();
+    for (const key of source.keys()) {
+      if (!rest.some(other => arr(other).has(key))) out.set(key, source.get(key) ?? null);
+    }
+    return out;
+  },
+  array_count_values: ([target]) => {
+    const source = arr(target);
+    const out = new PhpArray();
+    for (const key of source.keys()) {
+      const value = str(source.get(key));
+      out.set(value, int(out.get(value) ?? 0) + 1);
+    }
+    return out;
+  },
+  array_combine: ([keys, values]) => {
+    const keyList = arr(keys);
+    const valueList = arr(values);
+    const out = new PhpArray();
+    const valueKeys = valueList.keys();
+    keyList.keys().forEach((key, index) => {
+      const at = valueKeys[index];
+      out.set(str(keyList.get(key)), at === undefined ? null : valueList.get(at) ?? null);
+    });
+    return out;
+  },
+  shuffle: ([target]) => {
+    const source = arr(target);
+    const values = source.keys().map(key => source.get(key) as PhpValue);
+    for (let i = values.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [values[i], values[j]] = [values[j] as PhpValue, values[i] as PhpValue];
+    }
+    // shuffle() discards the keys and renumbers from zero.
+    source.reset();
+    for (const value of values) source.push(value);
+    return true;
+  },
+  rsort: ([target]) => {
+    const source = arr(target);
+    const values = source.keys().map(key => source.get(key) as PhpValue);
+    values.sort((left, right) => compareValues(right, left));
+    source.reset();
+    for (const value of values) source.push(value);
+    return true;
+  },
+  str_split: ([value, length]) => {
+    const size = length === undefined ? 1 : Math.max(int(length), 1);
+    const bytes = utf8.encode(str(value));
+    const out = new PhpArray();
+    // PHP splits by bytes, so a multi-byte character can be cut in half;
+    // that is the behaviour, not a bug to smooth over.
+    for (let index = 0; index < bytes.length; index += size) {
+      out.push(utf8Decode.decode(bytes.slice(index, index + size)));
+    }
+    if (bytes.length === 0) out.push("");
+    return out;
+  },
+
+  // Strings.
+  strstr: ([haystack, needle, before]) => {
+    const text = str(haystack);
+    const at = text.indexOf(str(needle));
+    if (at === -1) return false;
+    return toBool(before ?? false) ? text.slice(0, at) : text.slice(at);
+  },
+  substr_count: ([haystack, needle]) => {
+    const text = str(haystack);
+    const search = str(needle);
+    if (search === "") return 0;
+    return text.split(search).length - 1;
+  },
+  substr_replace: ([subject, replacement, offset, length]) => {
+    const text = str(subject);
+    const bytes = utf8.encode(text);
+    const start = int(offset) < 0 ? Math.max(bytes.length + int(offset), 0) : Math.min(int(offset), bytes.length);
+    const count = length === undefined || length === null
+      ? bytes.length - start
+      : int(length) < 0 ? Math.max(bytes.length + int(length) - start, 0) : int(length);
+    return utf8Decode.decode(bytes.slice(0, start)) + str(replacement) +
+      utf8Decode.decode(bytes.slice(start + count));
+  },
+  // mb_substr counts characters where substr counts bytes.
+  mb_substr: ([value, start, length]) => {
+    const characters = [...str(value)];
+    const from = int(start) < 0 ? Math.max(characters.length + int(start), 0) : int(start);
+    const to = length === undefined || length === null
+      ? characters.length
+      : int(length) < 0 ? Math.max(characters.length + int(length), from) : from + int(length);
+    return characters.slice(from, to).join("");
+  },
+  stripslashes: ([value]) => str(value).replace(/\\(.)/g, "$1"),
+  htmlspecialchars_decode: ([value]) =>
+    str(value).replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
+      .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"),
+  urldecode: ([value]) => decodeURIComponent(str(value).replace(/\+/g, " ")),
+  bin2hex: ([value]) => [...utf8.encode(str(value))]
+    .map(byte => byte.toString(16).padStart(2, "0")).join(""),
+  base64_encode: ([value]) => {
+    const bytes = utf8.encode(str(value));
+    let binary = "";
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary);
+  },
+  base64_decode: ([value]) => {
+    const binary = atob(str(value));
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+    return utf8Decode.decode(bytes);
+  },
+  version_compare: ([left, right, operator]) => {
+    const parse = (value: string) => value.split(/[._\-+]/).map(part => parseInt(part, 10) || 0);
+    const a = parse(str(left));
+    const b = parse(str(right));
+    let sign = 0;
+    for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+      const diff = (a[index] ?? 0) - (b[index] ?? 0);
+      if (diff !== 0) { sign = diff > 0 ? 1 : -1; break; }
+    }
+    if (operator === undefined) return sign;
+    switch (str(operator)) {
+      case "<": case "lt": return sign < 0;
+      case "<=": case "le": return sign <= 0;
+      case ">": case "gt": return sign > 0;
+      case ">=": case "ge": return sign >= 0;
+      case "==": case "eq": return sign === 0;
+      case "!=": case "ne": case "<>": return sign !== 0;
+      default: return null;
+    }
+  },
+  ctype_space: ([value]) => {
+    const text = str(value);
+    return text.length > 0 && /^\s+$/.test(text);
+  },
 
   // Time.
   time: () => Math.floor(Date.now() / 1000),

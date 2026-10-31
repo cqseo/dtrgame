@@ -79,16 +79,107 @@ export function createFilesystemFunctions(): Map<string, HostFunction> {
   return functions;
 }
 
-/** The constants include/common.inc.php defines before any module runs. */
-export function createHostConstants(curscript: string): Map<string, PhpValue> {
-  return new Map<string, PhpValue>([
+/**
+ * The constants include/common.inc.php defines before any module runs.
+ *
+ * curscript is null when a page script is about to run: every page opens
+ * with its own define('CURSCRIPT', ...), and a constant that is already
+ * set cannot be redefined, so presetting it would make every page think
+ * it was some other page.
+ */
+export function createHostConstants(curscript: string | null): Map<string, PhpValue> {
+  const constants = new Map<string, PhpValue>([
     ["IN_GAME", true],
     ["GAME_ROOT", GAME_ROOT],
-    ["CURSCRIPT", curscript],
     ["TPLDIR", "./templates/default"],
     ["STYLEID", "1"],
-    ["TEMPLATEID", "1"]
+    ["TEMPLATEID", "1"],
+
+    // PHP's own constants, with PHP's values. These are not choices: the
+    // original reads them because the interpreter defines them, so the
+    // port defines them the same way. The set is the one an inventory of
+    // the captured source shows it actually references.
+    ["PATHINFO_DIRNAME", 1],
+    ["PATHINFO_BASENAME", 2],
+    ["PATHINFO_EXTENSION", 4],
+    ["PATHINFO_FILENAME", 8],
+    ["FILE_APPEND", 8],
+    ["FILE_IGNORE_NEW_LINES", 2],
+    ["FILE_SKIP_EMPTY_LINES", 4],
+    ["LOCK_SH", 1],
+    ["LOCK_EX", 2],
+    ["LOCK_UN", 3],
+    ["ENT_COMPAT", 3],
+    ["ENT_QUOTES", 11],
+    ["JSON_PRETTY_PRINT", 128],
+    ["JSON_UNESCAPED_SLASHES", 64],
+    ["JSON_UNESCAPED_UNICODE", 256],
+    ["PREG_PATTERN_ORDER", 1],
+    ["PREG_SET_ORDER", 2],
+    ["PREG_OFFSET_CAPTURE", 256],
+    ["MYSQLI_ASSOC", 1],
+    ["MYSQLI_NUM", 2],
+    ["MYSQLI_BOTH", 3],
+    ["MYSQLI_REPORT_OFF", 0],
+    ["SORT_REGULAR", 0],
+    ["SORT_NUMERIC", 1],
+    ["SORT_STRING", 2],
+    ["COUNT_NORMAL", 0],
+    ["COUNT_RECURSIVE", 1],
+    ["STR_PAD_RIGHT", 1],
+    ["STR_PAD_LEFT", 0],
+    ["STR_PAD_BOTH", 2],
+    ["M_PI", Math.PI],
+    ["PHP_EOL", "\n"],
+    ["PHP_INT_MAX", 9223372036854775807],
+    ["PHP_INT_MIN", -9223372036854775808],
+    ["PHP_INT_SIZE", 8],
+    ["E_ALL", 32767],
+    ["E_ERROR", 1],
+    ["E_WARNING", 2],
+    ["E_NOTICE", 8],
+    ["E_STRICT", 2048],
+    ["E_DEPRECATED", 8192],
+    ["E_USER_DEPRECATED", 16384],
+    ["E_RECOVERABLE_ERROR", 4096],
+
+    // The interpreter the original runs on, reported as it reports
+    // itself, because the source compares against it.
+    ["PHP_VERSION", "8.2.35"],
+    ["PHP_VERSION_ID", 80235],
+    // Not CLI: the original takes a different branch for the command
+    // line, and a Worker is serving a request.
+    ["PHP_SAPI", "cgi-fcgi"],
+    ["PHP_SELF", ""],
+    ["PHP_NORMAL_READ", 1],
+
+    /*
+     * The magic constants, which the original passes to gexit() to build
+     * an error trace: gexit($_ERROR['x'], __file__, __line__).
+     *
+     * PHP substitutes these per file and per line. The port does not
+     * track either through the compiled ASTs, so an error raised here
+     * names the game root and line 0 where the original would name the
+     * file and the line. That is a difference in an admin-facing error
+     * trace only -- the message itself, which is what a player sees, is
+     * the original's. Making them exact means carrying positions through
+     * the parser, which is worth doing if these ever reach a player.
+     *
+     * PHP matches these case-insensitively, and the original writes them
+     * lowercase, so both spellings are defined.
+     */
+    ["__FILE__", GAME_ROOT],
+    ["__file__", GAME_ROOT],
+    ["__LINE__", 0],
+    ["__line__", 0],
+    ["__DIR__", GAME_ROOT],
+    ["__dir__", GAME_ROOT],
+    ["__FUNCTION__", ""],
+    ["__CLASS__", ""],
+    ["__METHOD__", ""]
   ]);
+  if (curscript !== null) constants.set("CURSCRIPT", curscript);
+  return constants;
 }
 
 /** Everything above, as one map. */

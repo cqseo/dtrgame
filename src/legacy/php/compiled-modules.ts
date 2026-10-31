@@ -25,11 +25,16 @@ import { LegacyModuleRuntime, type ModuleRuntimeOptions } from "./runtime";
  * to them, so sharing a runtime between requests would leak one player's
  * state into another's.
  */
-export function createLegacyModuleRuntime(options: ModuleRuntimeOptions = {}): LegacyModuleRuntime {
+export function createLegacyModuleRuntime(
+  options: ModuleRuntimeOptions & { curscript?: string | null } = {}
+): LegacyModuleRuntime {
   // The host environment first, so a caller can still override any of it.
   const withHost: ModuleRuntimeOptions = {
     ...options,
-    constants: new Map([...createHostConstants("index"), ...(options.constants ?? [])]),
+    constants: new Map([
+      ...createHostConstants(options.curscript === undefined ? "index" : options.curscript),
+      ...(options.constants ?? [])
+    ]),
     functions: new Map([...createHostFunctions(), ...(options.functions ?? [])])
   };
   const runtime = new LegacyModuleRuntime(undefined, withHost);

@@ -7,7 +7,7 @@
  * templates rely on to see variables the caller set.
  */
 import type { Expression, Statement } from "./ast";
-import { BUILTIN_REFERENCE_PARAMETERS, PHP_BUILTINS, type HostFunction } from "./builtins";
+import { BUILTIN_REFERENCE_PARAMETERS, PHP_BUILTINS, byteLength, type HostFunction } from "./builtins";
 import { compileTemplate, type CompileOptions } from "./compile";
 import { parseTemplateProgram } from "./parser";
 import { LegacyDatabase } from "../php/database";
@@ -63,6 +63,15 @@ export interface TemplateContext {
   readonly globals?: Map<string, PhpValue> | undefined;
   /** Returns a template's source by the name template() would resolve. */
   readonly loadTemplate: (name: string) => string | undefined;
+  /**
+   * Resolves an `include`/`require` of one of the original's .php files.
+   *
+   * A template and a PHP include are not the same thing: a template is
+   * compiled by parse_template first, a .php file is PHP already.
+   * Compiling the second as the first silently mangles it, so they are
+   * resolved separately and PHP is tried first.
+   */
+  readonly loadPhp?: ((name: string) => readonly Statement[] | undefined) | undefined;
   readonly compileOptions?: CompileOptions | undefined;
 }
 
@@ -104,6 +113,7 @@ export function createTemplateContext(
     hasQualified: overrides.hasQualified,
     referenceParameters: overrides.referenceParameters,
     loadTemplate: overrides.loadTemplate,
+    loadPhp: overrides.loadPhp,
     compileOptions: overrides.compileOptions
   };
 }
@@ -146,6 +156,22 @@ export function executeCompiledFunctionProgram(
 
 class Renderer {
   output = "";
+  /**
+   * PHP's output buffering stack.
+   *
+   * command.php and register.php build their response with ob_start()
+   * and ob_clean(): they let the page produce output, throw it away, and
+   * echo only the encoded payload. Without a real stack, everything
+   * written before ob_clean() would survive into the response and the
+   * body would not be the original's.
+   */
+  readonly #buffers: string[] = [];
+
+  /** Appends to the innermost buffer, or to the response when there is none. */
+  private write(text: string): void {
+    if (this.#buffers.length === 0) this.output += text;
+    else this.#buffers[this.#buffers.length - 1] += text;
+  }
   private readonly compiledCache = new Map<string, Statement[]>();
 
   constructor(private readonly context: TemplateContext) {}
@@ -153,6 +179,12 @@ class Renderer {
   include(name: string): void {
     let program = this.compiledCache.get(name);
     if (!program) {
+      const php = this.context.loadPhp?.(name);
+      if (php) {
+        this.compiledCache.set(name, php as Statement[]);
+        this.run(php);
+        return;
+      }
       const source = this.context.loadTemplate(name);
       if (source === undefined) throw new TemplateError(`template not found: ${name}`);
       program = parseTemplateProgram(compileTemplate(source, this.context.compileOptions));
@@ -168,10 +200,10 @@ class Renderer {
   private execute(statement: Statement): void {
     switch (statement.kind) {
       case "inlineHtml":
-        this.output += statement.text;
+        this.write(statement.text);
         return;
       case "echo":
-        for (const value of statement.values) this.output += toStringValue(this.evaluate(value));
+        for (const value of statement.values) this.write(toStringValue(this.evaluate(value)));
         return;
       case "expression":
         this.evaluate(statement.expression);
@@ -201,8 +233,10 @@ class Renderer {
         return;
       }
       case "exit":
-        if (statement.value) this.output += toStringValue(this.evaluate(statement.value));
-        throw new TemplateExit(this.output);
+        if (statement.value) this.write(toStringValue(this.evaluate(statement.value)));
+        // PHP flushes any open output buffers when the script ends, so
+        // what the browser receives includes whatever was still buffered.
+        throw new TemplateExit(this.output + this.#buffers.join(""));
       case "return":
         throw new ReturnSignal(statement.value ? this.evaluate(statement.value) : null);
       case "break":
@@ -514,6 +548,44 @@ class Renderer {
       return this.context.functions.has(target) || this.context.writeFunctions?.has(target) === true ||
         PHP_BUILTINS[target.toLowerCase()] !== undefined;
     }
+    // Output buffering is about this renderer's own output, so it cannot
+    // be a plain builtin.
+    if (lowered === "ob_start") {
+      this.#buffers.push("");
+      return true;
+    }
+    if (lowered === "ob_get_contents") {
+      return this.#buffers.length === 0 ? false : this.#buffers[this.#buffers.length - 1] as string;
+    }
+    if (lowered === "ob_get_length") {
+      return this.#buffers.length === 0
+        ? false
+        : byteLength(this.#buffers[this.#buffers.length - 1] as string);
+    }
+    if (lowered === "ob_clean") {
+      if (this.#buffers.length > 0) this.#buffers[this.#buffers.length - 1] = "";
+      return true;
+    }
+    if (lowered === "ob_end_clean") {
+      if (this.#buffers.length === 0) return false;
+      this.#buffers.pop();
+      return true;
+    }
+    if (lowered === "ob_end_flush" || lowered === "ob_flush" || lowered === "flush") {
+      if (lowered !== "ob_end_flush") return true;
+      if (this.#buffers.length === 0) return false;
+      const finished = this.#buffers.pop() as string;
+      this.write(finished);
+      return true;
+    }
+    if (lowered === "ob_get_clean") {
+      if (this.#buffers.length === 0) return false;
+      return this.#buffers.pop() as string;
+    }
+    if (lowered === "ob_implicit_flush" || lowered === "ob_get_level") {
+      return lowered === "ob_get_level" ? this.#buffers.length : true;
+    }
+
     if (lowered === "constant") {
       return this.context.constants.get(toStringValue(this.evaluate(args[0] as Expression))) ?? null;
     }
@@ -522,7 +594,7 @@ class Renderer {
 
     const writer = this.context.writeFunctions?.get(name) ?? this.context.writeFunctions?.get(lowered);
     if (writer) {
-      this.output += writer(values);
+      this.write(writer(values));
       return null;
     }
 
