@@ -416,6 +416,9 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
     if (matches && typeof matches === "object" && "slot" in (matches as object)) {
       (matches as unknown as { slot: { set(value: PhpValue): void } }).slot.set(found);
     }
+    // An empty pattern: PHP warns and returns false, having written
+    // nothing to $matches.
+    if (found === false) return false;
     const first = found.get(0);
     return first instanceof PhpArray ? first.keys().length : 0;
   },

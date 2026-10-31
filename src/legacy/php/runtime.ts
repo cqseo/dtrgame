@@ -114,6 +114,14 @@ export interface ModuleRuntimeOptions {
   readonly compileOptions?: CompileOptions | undefined;
 }
 
+/**
+ * PHP's superglobals, which are in scope everywhere without `global`.
+ *
+ * $GLOBALS is not here: the renderer answers it directly from the
+ * global scope, so aliasing it would make it a copy of itself.
+ */
+const SUPERGLOBALS = ["_GET", "_POST", "_COOKIE", "_REQUEST", "_SERVER", "_FILES", "_ENV"] as const;
+
 /** What a page script needs to know about the HTTP request. */
 export interface LegacyPageRequest {
   readonly method?: string;
@@ -166,6 +174,14 @@ export class LegacyModuleRuntime {
    */
   readonly #cacheFiles = new Map<string, string>();
   readonly #cachePrograms = new Map<string, readonly Statement[]>();
+  /**
+   * `static $x` values, per function, for the life of the request.
+   *
+   * PHP keeps a static for the process, which under PHP-FPM is one
+   * request; a runtime is built per request here, so the lifetimes
+   * line up.
+   */
+  readonly #statics = new Map<string, Map<string, PhpValue | undefined>>();
   readonly #options: ModuleRuntimeOptions;
 
   constructor(store = ModuleVariableStore.fromOriginal(), options: ModuleRuntimeOptions = {}) {
@@ -422,6 +438,23 @@ export class LegacyModuleRuntime {
   ): PhpValue {
     const scope = new ModuleScope();
 
+    /*
+     * The superglobals are visible in every scope, as PHP makes them.
+     *
+     * The input module's init() opens with `if (isset($_POST))` and then
+     * promotes each key to a global. Without this the function's own
+     * scope had no $_POST at all, that test was false, and nothing was
+     * promoted -- so register.php never saw $cmd and rendered its form
+     * again instead of registering anyone.
+     *
+     * They are aliased rather than copied: $_COOKIE and $_POST are
+     * reassigned by that same init(), through gstrfilter(), and the
+     * filtered version has to be what every later scope reads.
+     */
+    for (const superglobal of SUPERGLOBALS) {
+      scope.alias(superglobal, this.#globals.slotFor(superglobal));
+    }
+
     // $chprocess holds the name of the implementation this one replaced;
     // calling it is a variable-function call in the original.
     scope.set("chprocess", chprocess);
@@ -436,6 +469,19 @@ export class LegacyModuleRuntime {
       callQualified: (name, callArgs) => this.call(name, callArgs, qualified, fn.namespace),
       hasQualified: name => this.has(name, fn.namespace),
       referenceParameters: name => this.referenceParameters(name, fn.namespace),
+      staticSlot: name => {
+        let own = this.#statics.get(qualified);
+        if (!own) {
+          own = new Map();
+          this.#statics.set(qualified, own);
+        }
+        return {
+          get: () => own.get(name) as PhpValue,
+          set: (value: PhpValue) => {
+            own.set(name, value);
+          }
+        };
+      },
       loadTemplate: this.#options.loadTemplate ?? (() => undefined),
       loadPhp: name => this.#loadPhp(name),
       compileOptions: this.#options.compileOptions

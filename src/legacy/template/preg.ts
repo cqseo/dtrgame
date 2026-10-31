@@ -36,10 +36,17 @@ const CLOSING: Record<string, string> = { "(": ")", "[": "]", "{": "}", "<": ">"
  *   D, A, S, U  have no JavaScript equivalent and do not change what
  *      these patterns match in this codebase, so they are dropped
  */
-export function parsePattern(pattern: string): ParsedPattern {
+export function parsePattern(pattern: string): ParsedPattern | null {
   const text = String(pattern);
   const delimiter = text[0];
-  if (!delimiter) throw new Error("Empty regular expression");
+  /*
+   * PHP warns and returns false for an empty pattern rather than
+   * failing. The original relies on that: gamedata/banlist.list ships
+   * with $iplimit = '', and register.php tests
+   * `preg_match($iplimit, $onlineip)` on every registration. Throwing
+   * here made every registration an error on a site that bans no IPs.
+   */
+  if (!delimiter) return null;
   const closing = CLOSING[delimiter] ?? delimiter;
 
   const end = text.lastIndexOf(closing);
@@ -69,9 +76,10 @@ export function parsePattern(pattern: string): ParsedPattern {
   return { source, flags };
 }
 
-const compile = (pattern: PhpValue, extra = ""): RegExp => {
-  const { source, flags } = parsePattern(toStringValue(pattern));
-  return new RegExp(source, flags + extra);
+const compile = (pattern: PhpValue, extra = ""): RegExp | null => {
+  const parsed = parsePattern(toStringValue(pattern));
+  if (!parsed) return null;
+  return new RegExp(parsed.source, parsed.flags + extra);
 };
 
 /** Captures as PHP reports them: an absent group is "" rather than undefined. */
@@ -98,13 +106,17 @@ function toJsReplacement(replacement: string): string {
     .replace(/\\(\d+)/g, "$$$1");
 }
 
-export const pregMatch = (pattern: PhpValue, subject: PhpValue): PhpArray | null => {
-  const match = compile(pattern).exec(toStringValue(subject));
+export const pregMatch = (pattern: PhpValue, subject: PhpValue): PhpArray | null | false => {
+  const expression = compile(pattern);
+  // An empty pattern: PHP warns and returns false.
+  if (!expression) return false;
+  const match = expression.exec(toStringValue(subject));
   return match ? captures(match) : null;
 };
 
-export const pregMatchAll = (pattern: PhpValue, subject: PhpValue): PhpArray => {
+export const pregMatchAll = (pattern: PhpValue, subject: PhpValue): PhpArray | false => {
   const expression = compile(pattern, "g");
+  if (!expression) return false;
   const text = toStringValue(subject);
   const all: RegExpExecArray[] = [];
   let match: RegExpExecArray | null;
@@ -139,7 +151,9 @@ export const pregReplace = (
     const with_ = replacements
       ? toStringValue(replacements[index] ?? "")
       : toStringValue(replacement);
-    text = text.replace(compile(one, "g"), toJsReplacement(with_));
+    const expression = compile(one, "g");
+    if (!expression) return;
+    text = text.replace(expression, toJsReplacement(with_));
   });
   return text;
 };
@@ -149,8 +163,10 @@ export const pregSplit = (
   subject: PhpValue,
   limit: PhpValue,
   flags: PhpValue
-): PhpArray => {
-  const pieces = toStringValue(subject).split(compile(pattern, "g"));
+): PhpArray | false => {
+  const expression = compile(pattern, "g");
+  if (!expression) return false;
+  const pieces = toStringValue(subject).split(expression);
   const result = new PhpArray();
   // PREG_SPLIT_NO_EMPTY is 1, and the original passes it where it matters.
   const dropEmpty = (Number(limit) === -1 || limit === null) && Number(flags) === 1;

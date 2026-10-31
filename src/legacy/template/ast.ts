@@ -80,6 +80,14 @@ export type Statement =
     }
   /** A real `global $x;`, which templates discard but modules depend on. */
   | { kind: "global"; names: readonly Expression[] }
+  /**
+   * `static $x = 0;` inside a function. The value survives between calls
+   * for the life of the request, which for PHP-FPM is one request.
+   */
+  | {
+      kind: "staticVariable";
+      declarations: readonly { name: string; init: Expression | null }[];
+    }
   | {
       kind: "for";
       initializers: readonly Expression[];

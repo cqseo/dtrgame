@@ -36,6 +36,7 @@ export class ModuleParser extends Parser {
         case "namespace": return this.parseNamespace();
         case "function": return this.parseFunctionDeclaration();
         case "global": return this.parseRealGlobal();
+        case "static": return this.parseStaticVariable();
         case "for": return this.parseFor();
         case "while": return this.parseWhile();
         case "do": return this.parseDoWhile();
@@ -134,6 +135,23 @@ export class ModuleParser extends Parser {
     } while (this.eat("punct", ","));
     this.eat("punct", ";");
     return { kind: "global", names };
+  }
+
+  /** `static $a = expr, $b;` -- a local that outlives the call. */
+  private parseStaticVariable(): Statement {
+    this.expect("name", "static");
+    const declarations: { name: string; init: Expression | null }[] = [];
+    do {
+      if (this.at("punct", ";")) break;
+      const variable = this.parsePrimary();
+      if (variable.kind !== "variable") {
+        throw new Error("static expects a plain variable name");
+      }
+      const init = this.eat("operator", "=") ? this.parseExpression() : null;
+      declarations.push({ name: variable.name, init });
+    } while (this.eat("punct", ","));
+    this.eat("punct", ";");
+    return { kind: "staticVariable", declarations };
   }
 
   private parseFor(): Statement {

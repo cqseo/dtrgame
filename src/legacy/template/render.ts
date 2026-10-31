@@ -73,6 +73,13 @@ export interface TemplateContext {
    */
   readonly loadPhp?: ((name: string) => readonly Statement[] | undefined) | undefined;
   readonly compileOptions?: CompileOptions | undefined;
+  /**
+   * A slot holding one `static $x` for the function being run.
+   *
+   * The store belongs to the caller, not to this renderer: a static
+   * outlives the call, and a new renderer is made for every call.
+   */
+  readonly staticSlot?: ((name: string) => { get(): PhpValue; set(value: PhpValue): void }) | undefined;
 }
 
 export class TemplateError extends Error {}
@@ -114,7 +121,8 @@ export function createTemplateContext(
     referenceParameters: overrides.referenceParameters,
     loadTemplate: overrides.loadTemplate,
     loadPhp: overrides.loadPhp,
-    compileOptions: overrides.compileOptions
+    compileOptions: overrides.compileOptions,
+    staticSlot: overrides.staticSlot
   };
 }
 
@@ -246,20 +254,54 @@ class Renderer {
 
       // Module statements. Compiled templates contain none of these, but
       // module functions are mostly made of them.
+      case "staticVariable": {
+        const slotFor = this.context.staticSlot;
+        for (const declaration of statement.declarations) {
+          if (!slotFor) {
+            // Without a store the value could not outlive the call, and a
+            // static silently behaving as a local would be a quiet wrong
+            // answer rather than a visible failure.
+            throw new TemplateError(
+              `static $${declaration.name} needs a per-function store, which this ` +
+                "context does not provide."
+            );
+          }
+          const slot = slotFor(declaration.name);
+          const scope = this.context.variables;
+          if (scope instanceof ModuleScope) scope.alias(declaration.name, slot);
+          // The initialiser runs once, on the first call that reaches it.
+          if (slot.get() === undefined) {
+            slot.set(declaration.init ? this.evaluate(declaration.init) : null);
+          }
+        }
+        return;
+      }
       case "global":
         // `global $x` makes the local name an alias of the global, not a
         // copy of it: include/user.func.php declares `global $db` and then
         // calls methods on it, and writes through such a name have to
         // reach the global the rest of the request shares.
-        for (const name of statement.names) {
-          if (name.kind !== "variable") continue;
+        for (const named of statement.names) {
+          // `global $$key` is how the input module promotes each request
+          // variable to a global: it is the original's register_globals
+          // emulation, and the whole of $_POST reaches the page through
+          // it. Skipping the variable-variable form left $cmd and every
+          // posted field unset, so register.php rendered its form again
+          // instead of registering anyone.
+          const name =
+            named.kind === "variable"
+              ? named.name
+              : named.kind === "variableVariable"
+                ? toStringValue(this.evaluate(named.name))
+                : undefined;
+          if (name === undefined || name === "") continue;
           const globals = this.context.globals;
           if (!globals || globals === this.context.variables) continue;
           const scope = this.context.variables;
           if (scope instanceof ModuleScope && globals instanceof ModuleScope) {
-            scope.alias(name.name, globals.slotFor(name.name));
+            scope.alias(name, globals.slotFor(name));
           } else {
-            scope.set(name.name, globals.get(name.name) ?? null);
+            scope.set(name, globals.get(name) ?? null);
           }
         }
         return;
