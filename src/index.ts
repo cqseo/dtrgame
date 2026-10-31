@@ -40,7 +40,7 @@ import {
   SupabaseLegacyMatches, SupabaseLegacyMatchStart, SupabaseLegacyRooms
 } from "./runtime/supabase";
 import { legacyCommandResponse } from "./runtime/command";
-import { hasLegacyPage, runLegacyPageResponse } from "./runtime/legacy-page-handler";
+import { hasLegacyPage, legacyPageTables, runLegacyPageResponse } from "./runtime/legacy-page-handler";
 import { SupabaseLegacyDatabase } from "./runtime/supabase-legacy-database";
 export { applyOriginalRouting } from "./original-routing";
 export { LegacyRoomDurableObject } from "./runtime/room-durable-object";
@@ -197,18 +197,24 @@ export default {
           ? new URLSearchParams(await request.clone().text()).get("username")
           : null;
         const username = posted ?? visitor.user ?? "";
+        const roomMatch = /(?:^|;\s*)[A-Za-z0-9_]*roomid=([^;]*)/.exec(request.headers.get("cookie") ?? "");
+        const parsedRoomId = Number.parseInt(roomMatch ? decodeURIComponent(roomMatch[1] as string) : "0", 10);
+        const roomId = Number.isSafeInteger(parsedRoomId) && parsedRoomId >= 0 && parsedRoomId <= 12
+          ? parsedRoomId
+          : 0;
         try {
           const database = await SupabaseLegacyDatabase.load(
             rest,
-            0,
+            roomId,
             // An empty name is an anonymous visitor, which the load
             // RPC reads as "no account rows".
             username,
-            ["game", "users"]
+            legacyPageTables(url.pathname)
           );
           const response = await runLegacyPageResponse(url.pathname, request, {
             database,
-            tablePrefix: "acbra2_"
+            tablePrefix: "acbra2_",
+            roomId: String(roomId)
           });
           if (response !== undefined) {
             await database.commit();

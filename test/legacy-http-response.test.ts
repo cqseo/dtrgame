@@ -4,6 +4,7 @@ import { createLegacyModuleRuntime } from "../src/legacy/php/compiled-modules";
 import { parseModuleFile } from "../src/legacy/php/parser";
 import { runLegacyPageResponse } from "../src/runtime/legacy-page-handler";
 import { SnapshotLegacyDatabase } from "../src/legacy/php/database";
+import { legacyRowFromJson } from "../src/legacy/php/database";
 
 describe("original PHP HTTP effects", () => {
   it("runs the compiled game logout page and preserves both deleted cookies", async () => {
@@ -59,5 +60,41 @@ describe("original PHP HTTP effects", () => {
     const result = runtime.runPageScript(parseModuleFile("<?php http_response_code(403); exit('Forbidden');"));
     expect(response.status).toBe(403);
     expect(result.output).toBe("Forbidden");
+  });
+
+  it("runs the original input and sys initializers in module load order", () => {
+    const database = new SnapshotLegacyDatabase({
+      acbra2_game: [legacyRowFromJson({
+        groomid: 2, groomstatus: 40, groomtype: 14, gamenum: 3,
+        gametype: 10, gamestate: 20, starttime: 1, afktime: 1,
+        validnum: 1, alivenum: 1, deathnum: 0, combonum: 0,
+        weather: 0, hack: 0, hdamage: 0, hplayer: "", winmode: 0,
+        winner: "", areanum: 1, areatime: 0, areawarn: 0,
+        arealist: "", noisevars: "", roomvars: "", gamevars: ""
+      })],
+      acbra2_users: [legacyRowFromJson({
+        uid: 1, username: "player1", password: "stored", groupid: 1,
+        roomid: 2, u_templateid: 0
+      })],
+      acbra2_messages: []
+    });
+    const runtime = createLegacyModuleRuntime({ database, curscript: null });
+    runtime.store.set("sys", "gtablepre", "acbra2_");
+    runtime.store.set("sys", "tablepre", "acbra2_");
+    const result = runtime.runPageScript(parseModuleFile(`<?php
+      define('CURSCRIPT', 'valid');
+      define('NO_SYS_UPDATE', true);
+      require GAME_ROOT.'./include/common.inc.php';
+      echo $cuser.':'.$cpass.':'.$room_id.':'.$room_prefix.':'.$tablepre;
+    `), {
+      method: "GET",
+      uri: "/valid.php",
+      cookies: [
+        ["acbra2_user", "player1"],
+        ["acbra2_pass", "cookiepass"],
+        ["acbra2_roomid", "2"]
+      ]
+    });
+    expect(result.output).toBe("player1:cookiepass:2:s2:acbra2_s2_");
   });
 });

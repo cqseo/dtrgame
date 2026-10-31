@@ -222,7 +222,13 @@ export function createHostConstants(curscript: string | null): Map<string, PhpVa
 export function createHostFunctions(): Map<string, HostFunction> {
   return new Map<string, HostFunction>([
     ...createLockFunctions(),
-    ...createFilesystemFunctions()
+    ...createFilesystemFunctions(),
+    // The original selects Etc/GMT at the beginning of sys\init().
+    // Workers and this interpreter already evaluate date/time builtins in
+    // UTC, so accepting that exact timezone preserves the observable clock
+    // without process-global mutable state leaking between requests.
+    ["date_default_timezone_set", values =>
+      String(values[0] ?? "") === "Etc/GMT"]
   ]);
 }
 

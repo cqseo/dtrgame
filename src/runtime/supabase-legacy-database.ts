@@ -6,9 +6,10 @@ import {
 import type { SupabaseLegacyRest } from "./supabase";
 
 const GLOBAL_PREFIX = "acbra2_";
+const GLOBAL_TABLES = ["game", "users", "messages", "del_messages"] as const;
 const ROOM_TABLES = ["chat", "log", "mapitem", "maptrap", "newsinfo", "players", "shopitem"] as const;
 
-export type LegacyDatabaseTable = "game" | "users" | typeof ROOM_TABLES[number];
+export type LegacyDatabaseTable = typeof GLOBAL_TABLES[number] | typeof ROOM_TABLES[number];
 
 interface LegacyDatabaseSnapshotRow {
   revision: number;
@@ -16,13 +17,15 @@ interface LegacyDatabaseSnapshotRow {
 }
 
 const tableName = (roomId: number, logical: LegacyDatabaseTable): string => {
-  if (logical === "game" || logical === "users") return `${GLOBAL_PREFIX}${logical}`;
+  if ((GLOBAL_TABLES as readonly string[]).includes(logical)) return `${GLOBAL_PREFIX}${logical}`;
   return `${GLOBAL_PREFIX}${roomId > 0 ? `s${roomId}_` : ""}${logical}`;
 };
 
 const primaryKey = (logical: LegacyDatabaseTable): string => ({
   game: "groomid",
   users: "uid",
+  messages: "mid",
+  del_messages: "mid",
   chat: "cid",
   log: "lid",
   mapitem: "iid",
@@ -64,7 +67,7 @@ export class SupabaseLegacyDatabase extends SnapshotLegacyDatabase {
     // before anyone has an account, and register.php runs to create one.
     if ([...username].length > 15) throw new RangeError("Invalid legacy username.");
     const unique = [...new Set(requested)];
-    if (unique.some(name => !(["game", "users", ...ROOM_TABLES] as string[]).includes(name))) {
+    if (unique.some(name => !([...GLOBAL_TABLES, ...ROOM_TABLES] as string[]).includes(name))) {
       throw new RangeError("Invalid legacy database table request.");
     }
     const rows = await rest.rpc<LegacyDatabaseSnapshotRow[]>("dtr_legacy_database_load", {

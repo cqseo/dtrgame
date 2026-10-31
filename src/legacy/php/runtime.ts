@@ -664,10 +664,13 @@ export class LegacyModuleRuntime {
       for (const module of imported) this.#importInto(scope, module);
       // The input module's init() is the original's register_globals
       // emulation: it promotes $_COOKIE, $_POST and $_REQUEST to globals.
-      // It is the one init that depends on the request, so it is the one
-      // that has to run per request rather than being represented by the
-      // captured post-load module state.
+      // sys\init() runs immediately after it in modules.list.php. It reads
+      // those promoted credentials and the room cookie, loads the matching
+      // game row, derives tablepre/ctablepre/wtablepre and publishes cuser /
+      // cpass. Both initializers are request-specific; the captured module
+      // variable defaults cannot stand in for either of them.
       if (this.has("input\\init", "")) this.call("input\\init", [], "", "");
+      if (this.has("sys\\init", "")) this.call("sys\\init", [], "", "");
       return true;
     });
 

@@ -49,6 +49,16 @@ export interface LegacyPageDependencies {
   readonly response?: LegacyHttpResponse;
 }
 
+/** Tables touched by the original bootstrap and each gameplay page. */
+export function legacyPageTables(pathname: string): readonly import("./supabase-legacy-database").LegacyDatabaseTable[] {
+  const bootstrap = ["game", "users", "messages"] as const;
+  if (pathname === "/valid.php") return [...bootstrap, "players"];
+  if (pathname === "/game.php" || pathname === "/command.php") {
+    return [...bootstrap, "chat", "log", "mapitem", "maptrap", "newsinfo", "players", "shopitem"];
+  }
+  return bootstrap;
+}
+
 /** Whether a path is one of the original's compiled page scripts. */
 export function hasLegacyPage(pathname: string): boolean {
   return LEGACY_PAGE_SCRIPTS[pathname] !== undefined;
@@ -87,9 +97,17 @@ export async function runLegacyPage(
     // redefined, so it must not be preset here.
     curscript: null
   });
+  const numericRoomId = Number.parseInt(dependencies.roomId ?? "0", 10);
+  const roomId = Number.isSafeInteger(numericRoomId) && numericRoomId >= 0 && numericRoomId <= 12
+    ? numericRoomId
+    : 0;
+  const roomPrefix = roomId > 0 ? `s${roomId}` : "";
   runtime.store.set("sys", "gtablepre", dependencies.tablePrefix);
-  runtime.store.set("sys", "tablepre", dependencies.tablePrefix);
-  runtime.store.set("sys", "room_id", dependencies.roomId ?? "0");
+  runtime.store.set("sys", "tablepre", roomId > 0 ? `${dependencies.tablePrefix}${roomPrefix}_` : dependencies.tablePrefix);
+  runtime.store.set("sys", "ctablepre", roomId > 0 ? `${dependencies.tablePrefix}${roomPrefix}_` : dependencies.tablePrefix);
+  runtime.store.set("sys", "wtablepre", roomId > 0 ? `${dependencies.tablePrefix}s` : dependencies.tablePrefix);
+  runtime.store.set("sys", "room_id", String(roomId));
+  runtime.store.set("sys", "room_prefix", roomPrefix);
   runtime.store.set("sys", "now", String(Math.floor(Date.now() / 1000)));
 
   const pageRequest: LegacyPageRequest = {
