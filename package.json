@@ -22,6 +22,7 @@
     "generate:template-language": "node scripts/generate-template-language.mjs src/generated/legacy-template-language.ts",
     "generate:module-vars": "node scripts/generate-module-vars.mjs",
     "generate:compiled-modules": "npx tsx scripts/generate-compiled-modules.mjs",
+    "generate:schema": "node scripts/generate-legacy-schema.mjs",
     "test:php-parity": "node scripts/run-php-parity.mjs",
     "sync:assets": "node scripts/sync-original-assets.mjs ../legacy-dts public",
     "golden:up": "tools/golden-tunnel up",
