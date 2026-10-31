@@ -53,7 +53,7 @@ export interface TemplateContext {
    * Which of a function's parameters are declared `&$x`, so the caller
    * passes a slot for those positions instead of a value.
    */
-  readonly referenceParameters?: ((name: string) => readonly boolean[]) | undefined;
+  readonly referenceParameters?: ((name: string) => readonly boolean[] | undefined) | undefined;
   /**
    * The true global scope, which $GLOBALS exposes. gexit() renders the error
    * template inside a function, so only the variables it imports are in

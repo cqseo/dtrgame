@@ -112,6 +112,7 @@ export interface LegacyPageRequest {
   readonly cookies?: readonly (readonly [string, string])[];
   readonly remoteAddress?: string;
   readonly userAgent?: string;
+  readonly serverPort?: string;
 }
 
 export class LegacyModuleRuntime {
@@ -227,9 +228,9 @@ export class LegacyModuleRuntime {
   }
 
   /** Which parameters of a function are declared `&$x`. */
-  referenceParameters(name: string, namespace?: string): readonly boolean[] {
+  referenceParameters(name: string, namespace?: string): readonly boolean[] | undefined {
     const fn = this.#functions.get(this.resolve(name, namespace));
-    return fn ? fn.parameters.map(parameter => parameter.byReference) : [];
+    return fn ? fn.parameters.map(parameter => parameter.byReference) : undefined;
   }
 
   /**
@@ -389,6 +390,7 @@ export class LegacyModuleRuntime {
     server.set("REQUEST_URI", request.uri ?? "/");
     server.set("REMOTE_ADDR", request.remoteAddress ?? "");
     server.set("HTTP_USER_AGENT", request.userAgent ?? "");
+    server.set("SERVER_PORT", request.serverPort ?? "80");
     this.#globals.set("_SERVER", server);
   }
 
