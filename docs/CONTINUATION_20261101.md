@@ -64,3 +64,26 @@ Do **not** run the native TypeScript 7 `tsc --noEmit` binary at full project sco
 Never modify the production PHP source or player database to make tests pass.
 Keep Supabase server secrets outside GitHub and browser bundles.
 Do not deploy unverified preview code or change the production Worker.
+
+
+## Latest tested checkpoint — 2026-11-01 19:30 Asia/Shanghai
+
+Everything listed below is **verified on the detached PR #18 worktree**, not deployed:
+- PR HEAD includes the original `help.php` runtime fix and one permanent two-case regression test.
+- Unmodified original public help page was **HTTP 500** on the existing staging deployment; Cloudflare Observability showed `Renderer.include` failure. The new local runner renders the original page (~708 KB) from compiled frozen PHP data and original skill module template sources. **The existing staging deployment is still old and the endpoint may continue returning 500 until deliberately redeployed.**
+- Regenerated included data source from the read-only original: 23 include/page files. `npx --yes tsx scripts/generate-compiled-modules.mjs --only-includes --check` passed.
+- `node scripts/generate-help-module-templates.mjs --check` passed.
+- `DTS_TEST_BATCH_SIZE=1 DTS_TEST_HEAP_MB=640 DTS_TEST_RETRY_HEAP_MB=768 npm run test:low-memory`: **73/73 files passed, exit 0**, log `/tmp/dtr-pr18-help-full.log`.
+- `npm run build`: **dry-run passed, exit 0**, 841 assets, Worker bundle 32111 KiB, log `/tmp/dtr-pr18-help-build.log`.
+- **41** original PHP 8.2 differential assertions passed over map areas, room prefix, search memory, game tick, crafting, module vars, card pack, attack format, item actions, and game result.
+- Wrangler CLI on VM-0-10 is **not authenticated**. No staged or production deployment occurred in this checkpoint.
+- Native full `tsc --noEmit` remains **unverified**; do not run on the 2 GiB VM because it previously exhausted the machine and disconnected Desktop Commander.
+- No original player records or production PHP source changed. Keep PR #18 draft and do not merge main until release gates pass.
+
+### Immediate continuation order
+
+1. Re-establish authorized preview deployment capability for `dtrgame-original-1to1-staging` without affecting production.
+2. Deploy reviewed PR code to **staging only** after confirming configuration/secrets; test `/help.php`, `/index.php`, `/register.php`, and actual test-user room and game command lifecycles.
+3. Compare actual help HTML and status against frozen PHP golden reference (successful render alone is not 1:1 proof).
+4. Test original mode/module/hook coverage comprehensively (735 enabled modules), then authenticated route fixtures.
+5. Run native type check on a larger runner, stress tests, data backup and rollback drill. Only then consider main merge or production cutover.
