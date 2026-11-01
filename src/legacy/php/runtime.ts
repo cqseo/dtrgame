@@ -678,6 +678,23 @@ export class LegacyModuleRuntime {
       // variable defaults cannot stand in for either of them.
       if (this.has("input\\init", "")) this.call("input\\init", [], "", "");
       if (this.has("sys\\init", "")) this.call("sys\\init", [], "", "");
+      // In the original common.inc.php, a command request invokes
+      // sys\\routine() after module initialization. Its first read step is
+      // sys\\load_gameinfo(): this converts the persisted comma-delimited
+      // arealist into the PHP array that map\\get_plsnum() consumes. Without
+      // it help.php -> render_page() -> command.php incorrectly reports a
+      // single map region even when the game row contains all 35.
+      // Run the read-only first step here. The original routine\'s timed
+      // game update and save remain separate unfinished parity work; do not
+      // trigger potentially mutating game ticks from informational pages.
+      // command.php defines CURSCRIPT="game" and IN_COMMAND. The original
+      // browser-facing proxy sets NO_SYS_UPDATE, then the daemon processes
+      // the command in a separate runtime. This Worker executes that server
+      // leg in-process: load the game data without running its timed tick.
+      if (curscript === "game" && this.#constants.has("IN_COMMAND") &&
+          this.has("sys\\load_gameinfo", "")) {
+        this.call("sys\\load_gameinfo", [], "", "");
+      }
       return true;
     });
 
