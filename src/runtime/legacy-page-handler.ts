@@ -13,6 +13,7 @@
  */
 import { LEGACY_PAGE_SCRIPTS } from "../generated/legacy-page-scripts";
 import { LEGACY_TEMPLATES } from "../generated/legacy-templates";
+import { LEGACY_HELP_MODULE_TEMPLATES } from "../generated/legacy-help-module-templates";
 import { createLegacyModuleRuntime } from "../legacy/php/compiled-modules";
 import type { LegacyDatabase } from "../legacy/php/database";
 import type { LegacyPageRequest } from "../legacy/php/runtime";
@@ -95,7 +96,8 @@ export async function runLegacyPage(
     functions: dependencies.response?.functions() ?? new Map(),
     database: dependencies.database,
     loadTemplate: dependencies.loadTemplate ??
-      ((name: string) => LEGACY_TEMPLATES[name] ?? LEGACY_TEMPLATES[name.replace(/^.*\/(?=templates\/)/, "./")]),
+      ((name: string) => LEGACY_HELP_MODULE_TEMPLATES[name] ??
+        LEGACY_TEMPLATES[name] ?? LEGACY_TEMPLATES[name.replace(/^.*\/(?=templates\/)/, "./")]),
     // The page defines CURSCRIPT itself, and a constant cannot be
     // redefined, so it must not be preset here.
     curscript: null
