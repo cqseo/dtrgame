@@ -746,7 +746,14 @@ export class LegacyModuleRuntime {
       // browser-facing proxy sets NO_SYS_UPDATE, then the daemon processes
       // the command in a separate runtime. This Worker executes that server
       // leg in-process: load the game data without running its timed tick.
-      if (curscript === "game" && this.#constants.has("IN_COMMAND") &&
+      // map.php is a non-daemon original page. Its common.inc.php calls
+      // sys\\routine() unless NO_SYS_UPDATE is set; the first required step
+      // loads the room map. Without that read, the map HTML silently contains
+      // empty coordinates even though acbra2_game has the area order.
+      // Do not run the timed tick or its writes from this read-only page.
+      const readMap = curscript === "map" && !this.#constants.has("NO_SYS_UPDATE") &&
+        !this.#constants.has("LOAD_CORE_ONLY");
+      if ((readMap || (curscript === "game" && this.#constants.has("IN_COMMAND"))) &&
           this.has("sys\\load_gameinfo", "")) {
         this.call("sys\\load_gameinfo", [], "", "");
       }
