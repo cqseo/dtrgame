@@ -19,7 +19,7 @@ import type { LegacyPageRequest } from "../legacy/php/runtime";
 import { LegacyHttpResponse } from "./legacy-http-response";
 
 /** Reads the request's cookies as the original's $_COOKIE. */
-function cookiesOf(request: Request): (readonly [string, string])[] {
+export function cookiesOf(request: Request): (readonly [string, string])[] {
   const header = request.headers.get("cookie") ?? "";
   const pairs: (readonly [string, string])[] = [];
   for (const part of header.split(";")) {
