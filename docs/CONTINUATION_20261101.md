@@ -87,3 +87,16 @@ Everything listed below is **verified on the detached PR #18 worktree**, not dep
 3. Compare actual help HTML and status against frozen PHP golden reference (successful render alone is not 1:1 proof).
 4. Test original mode/module/hook coverage comprehensively (735 enabled modules), then authenticated route fixtures.
 5. Run native type check on a larger runner, stress tests, data backup and rollback drill. Only then consider main merge or production cutover.
+
+
+## 2026-11-01 staging deployment after Wrangler OAuth
+
+- Wrangler OAuth confirmed on VM-0-10 as 1054935976@qq.com.
+- **Only staging** `dtrgame-original-1to1-staging` was deployed from tested commit `f43fc1a16a132e8f27f9b533e4a8744be8746ad8` with `wrangler deploy --keep-vars`; exit code 0.
+- New active staging version: `a175e415-7f3f-4964-a34d-6593dd45b73e`; deployment `3a3ed86e-7aa4-40d4-89b4-ebe3aebbd780`, 100% of **staging** traffic.
+- Previous staging rollback version: `cffdc2ac-e9ff-4250-8767-688aebccdc90`; deployment `2b1ee59b-4f3a-4684-a149-3abd5662d33a`. Versions retained on Cloudflare.
+- Verified Cloudflare version binding names after deployment: `APP_ENV`, `ASSETS`, `ROOMS`, `GAMES`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`. The secret value was **not** read or logged.
+- Live staging GET smoke: `/help.php`, `/index.php`, `/register.php`, `/rank.php`, `/itemhelp.php`, `/end.php`, `/login.php`, `/game.php`, and `/__stage_status` all returned HTTP 200.
+- The original broken staging `/help.php` changed from 500 to 200, returning 897,234 bytes; it now renders full HTML containing the original help/crafting text.
+- **Still NOT exact 1:1 parity:** read-only HTTP comparison against unmodified production `https://dts.zhangyingyin.top/help.php` returned 1,260,839 bytes versus 897,234 staging bytes. First byte difference at offset 24,753: original says 35 map areas, staging says 1. Further legacy map/module initialization and help content require parity work.
+- No production Worker, PHP source, or live player state was modified by this deployment. PR #18 remains draft and the production cutover gate remains CLOSED.
