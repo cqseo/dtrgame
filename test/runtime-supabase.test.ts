@@ -99,24 +99,25 @@ describe("Supabase legacy runtime adapter", () => {
   });
 
   it("loads and version-guards complete match snapshots through private server RPCs", async () => {
+    const matchId = 4_000_000_007;
     const requests: { path: string; body: unknown }[] = [];
     const fetchMock = vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => {
       const path = new URL(String(request)).pathname;
       const body = JSON.parse(String(init?.body));
       requests.push({ path, body });
-      if (path.endsWith("/dtr_match_load")) return Response.json([{ version: 7, state: { matchId: 9, gamestate: 10 } }]);
+      if (path.endsWith("/dtr_match_load")) return Response.json([{ version: 7, state: { matchId, gamestate: 10 } }]);
       return Response.json(true);
     }) as unknown as typeof fetch;
     const snapshots = new SupabaseMatchSnapshots<{ matchId: number; gamestate: number }>(client(fetchMock));
 
-    await expect(snapshots.load(9)).resolves.toEqual({ version: 7, state: { matchId: 9, gamestate: 10 } });
-    await expect(snapshots.save(9, 8, { matchId: 9, gamestate: 20 })).resolves.toBe(true);
+    await expect(snapshots.load(matchId)).resolves.toEqual({ version: 7, state: { matchId, gamestate: 10 } });
+    await expect(snapshots.save(matchId, 8, { matchId, gamestate: 20 })).resolves.toBe(true);
     expect(requests).toEqual([
-      { path: "/rest/v1/rpc/dtr_match_load", body: { p_match_id: 9 } },
-      { path: "/rest/v1/rpc/dtr_match_save", body: { p_match_id: 9, p_version: 8, p_state: { matchId: 9, gamestate: 20 } } }
+      { path: "/rest/v1/rpc/dtr_match_load", body: { p_match_id: matchId } },
+      { path: "/rest/v1/rpc/dtr_match_save", body: { p_match_id: matchId, p_version: 8, p_state: { matchId, gamestate: 20 } } }
     ]);
     await expect(snapshots.load(0)).resolves.toBeNull();
-    expect(() => snapshots.save(9, -1, { matchId: 9, gamestate: 20 })).toThrow("Invalid match snapshot identity");
+    expect(() => snapshots.save(matchId, -1, { matchId, gamestate: 20 })).toThrow("Invalid match snapshot identity");
   });
 
   it("runs synchronous legacy SQL over one Supabase snapshot and commits only changed rows", async () => {
