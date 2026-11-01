@@ -86,6 +86,15 @@ const INCLUDED_DATA_FILES = [
   "include/modules/extra/misc/glowbutton/module.inc.php",
   // command.php reads the module manager's config directly.
   "include/modulemng/modulemng.config.php",
+  // help.php calls render_page('command_help'), whose original PHP body
+  // dynamically includes these data-only configuration files. They must be
+  // compiled just like static include/page scripts, without exposing PHP
+  // source files as downloadable public assets.
+  "include/modules/base/itemmix/itemmix/config/itemmix.config.php",
+  "include/modules/extra/instance/instance8_proud/config/npc.data.config.php",
+  "include/modules/extra/instance/instance9_rush/config/npc.data.config.php",
+  "include/modules/base/addnpc/config/addnpc.config.php",
+  "include/modules/extra/club/skills/skill21/config/evonpc.config.php",
   // The page bodies command.php dispatches to. command_act.php is the
   // gameplay one: it calls \player\act() and the hook chains do the rest.
   ...readdirSync(join(sourceRoot, "include/pages"))
@@ -93,6 +102,23 @@ const INCLUDED_DATA_FILES = [
     .sort()
     .map(name => `include/pages/${name}`)
 ];
+
+// Config-only regeneration avoids reparsing all 735 modules when a page
+// begins requiring one more original data file. Function declarations are
+// hoisted, and this exits before the expensive whole-module traversal.
+if (process.argv.includes("--only-includes")) {
+  const artifact = generateIncludedFiles();
+  if (check) {
+    if (readFileSync(artifact.path, "utf8") !== artifact.text) {
+      console.error(`${artifact.path} does not match original data includes.`);
+      process.exit(1);
+    }
+  } else {
+    writeFileSync(artifact.path, artifact.text);
+  }
+  console.log(`Verified ${INCLUDED_DATA_FILES.length} included data/page files.`);
+  process.exit(0);
+}
 
 /**
  * The original's page scripts, compiled like everything else.
