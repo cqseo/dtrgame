@@ -11,8 +11,10 @@ import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const root = resolve(import.meta.dirname, "..");
-const batchSize = Number(process.env.DTS_TEST_BATCH_SIZE ?? 4);
-const heapMb = Number(process.env.DTS_TEST_HEAP_MB ?? 384);
+// 2 GiB test hosts cannot reliably compile four large legacy modules at once.
+// Run one file per process unless an adequately sized runner opts into batches.
+const batchSize = Number(process.env.DTS_TEST_BATCH_SIZE ?? 1);
+const heapMb = Number(process.env.DTS_TEST_HEAP_MB ?? 640);
 const retryHeapMb = Number(process.env.DTS_TEST_RETRY_HEAP_MB ?? 768);
 const legal = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
 if (!legal(batchSize, 1, 20) || !legal(heapMb, 128, 1536) || !legal(retryHeapMb, 128, 1536)) {
