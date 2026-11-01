@@ -16,6 +16,7 @@ import { LEGACY_MODULES } from "../../generated/legacy-registry";
 import { LEGACY_COMPILED_INCLUDES } from "../../generated/legacy-compiled-includes";
 import { LEGACY_PAGE_SCRIPTS } from "../../generated/legacy-page-scripts";
 import { parseModuleFile } from "./parser";
+import { legacyPublicImageExists } from "./host-environment";
 import { gdecode, gencode } from "./codec";
 import type { LegacyDatabase } from "./database";
 import type { CompiledPhpFunction } from "../module-compiler";
@@ -458,6 +459,22 @@ export class LegacyModuleRuntime {
   ): { value: PhpValue; output: string } {
     const scope = new ModuleScope();
 
+    // modules.init.template.php installs a module's top-level variables as
+    // PHP globals before its init() runs. The captured variables live in
+    // ModuleVariableStore instead, so a bare `global $skill56_npc` would
+    // otherwise alias an empty global and overwrite npcinfo[25] with NULL.
+    // Only bind names explicitly declared global by this function AND owned
+    // by its original module. Ordinary shared request globals remain intact.
+    const ownedNames = new Set(this.store.names(fn.namespace));
+    for (const statement of fn.program) {
+      if (statement.kind !== "global") continue;
+      for (const named of statement.names) {
+        if (named.kind === "variable" && ownedNames.has(named.name)) {
+          this.#globals.alias(named.name, this.store.slot(fn.namespace, named.name));
+        }
+      }
+    }
+
     /*
      * The superglobals are visible in every scope, as PHP makes them.
      *
@@ -615,6 +632,7 @@ export class LegacyModuleRuntime {
     functions.set("file_exists", values => {
       const path = toStringValue(values[0] ?? null);
       if (this.#cacheFiles.has(path)) return true;
+      if (legacyPublicImageExists(path)) return true;
       return (this.#options.loadTemplate?.(path) ??
         this.#options.loadTemplate?.(path.replace(/^.*?(?=\.\/templates\/)/, ""))) !== undefined;
     });
