@@ -47,6 +47,8 @@ export interface TemplateContext {
    * where a dynamic call cannot occur.
    */
   readonly callQualified?: ((name: string, args: (PhpValue | PhpRef)[]) => PhpValue) | undefined;
+  /** PHP functions can print HTML while returning a separate value. */
+  readonly callQualifiedWithOutput?: ((name: string, args: (PhpValue | PhpRef)[]) => { value: PhpValue; output: string }) | undefined;
   /** Whether that runtime knows a function by this name. */
   readonly hasQualified?: ((name: string) => boolean) | undefined;
   /**
@@ -117,6 +119,7 @@ export function createTemplateContext(
     functions: overrides.functions ?? new Map(),
     writeFunctions: overrides.writeFunctions,
     callQualified: overrides.callQualified,
+    callQualifiedWithOutput: overrides.callQualifiedWithOutput,
     hasQualified: overrides.hasQualified,
     referenceParameters: overrides.referenceParameters,
     loadTemplate: overrides.loadTemplate,
@@ -572,6 +575,17 @@ class Renderer {
    * reads through it, so the binding is resolved here and only
    * bindReference() keeps it.
    */
+  /** Forward a compiled PHP function\'s echo/include output into this renderer. */
+  private invokeQualified(name: string, args: (PhpValue | PhpRef)[]): PhpValue {
+    if (this.context.callQualifiedWithOutput) {
+      const result = this.context.callQualifiedWithOutput(name, args);
+      if (result.output) this.write(result.output);
+      return result.value;
+    }
+    if (!this.context.callQualified) throw new TemplateError(`Unknown PHP function ${name}.`);
+    return this.context.callQualified(name, args);
+  }
+
   private callFunction(name: string, args: readonly Expression[]): PhpValue {
     const result = this.callFunctionRaw(name, args);
     return result instanceof PhpRef ? result.slot.get() : result;
@@ -647,8 +661,8 @@ class Renderer {
     // A compiled module function, dispatched through the hook chain. Its
     // arguments are rebuilt because a by-reference parameter needs a slot
     // rather than the value already computed above.
-    if (this.context.callQualified && this.context.hasQualified?.(name)) {
-      return this.context.callQualified(name, this.callArguments(name, args));
+    if ((this.context.callQualified || this.context.callQualifiedWithOutput) && this.context.hasQualified?.(name)) {
+      return this.invokeQualified(name, this.callArguments(name, args));
     }
 
     const builtin = PHP_BUILTINS[lowered];
@@ -794,13 +808,13 @@ class Renderer {
         // dispatched by name.
         const callee = this.evaluate(expression.callee);
         const target = toStringValue(callee);
-        if (!this.context.callQualified) {
+        if (!this.context.callQualified && !this.context.callQualifiedWithOutput) {
           throw new TemplateError(
             `A dynamic call to ${target} needs the module runtime, which this context ` +
               "does not provide."
           );
         }
-        return this.context.callQualified(target, this.callArguments(target, expression.args));
+        return this.invokeQualified(target, this.callArguments(target, expression.args));
       }
       case "includeExpression": {
         // PHP returns whatever the included file returns, or 1 when it
