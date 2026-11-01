@@ -28,16 +28,19 @@ function state(): LegacyMatchState {
 
 function harness(env: Partial<Cloudflare.Env> = {}) {
   const values = new Map<string, unknown>();
+  const put = vi.fn(async (key: string, value: unknown): Promise<void> => {
+    values.set(key, structuredClone(value));
+  });
   let ready = Promise.resolve();
   const ctx = {
     storage: {
       get: async <T>(key: string): Promise<T | undefined> => values.get(key) as T | undefined,
-      put: async (key: string, value: unknown): Promise<void> => { values.set(key, structuredClone(value)); }
+      put
     },
     blockConcurrencyWhile: (callback: () => Promise<void>) => { ready = callback(); }
   } as unknown as DurableObjectState;
   const object = new LegacyGameDurableObject(ctx, env as Cloudflare.Env);
-  return { object, values, ready: () => ready };
+  return { object, values, put, ready: () => ready };
 }
 
 const post = (path: string, body: unknown) => new Request(`https://game.invalid${path}`, {
@@ -87,6 +90,36 @@ describe("legacy match Durable Object", () => {
     const rejected = await test.object.fetch(post("/command", { username: "不存在", command: "search", now: 103 }));
     expect(rejected.status).toBe(404);
     expect((test.values.get("match") as { version: number }).version).toBe(2);
+  });
+
+  it("returns an HTTP failure and keeps the previous match when storage rejects a command", async () => {
+    const test = harness();
+    await test.ready();
+    await test.object.fetch(post("/hydrate", { version: 0, state: state() }));
+    test.put.mockRejectedValueOnce(new Error("durable storage unavailable"));
+    const response = await test.object.fetch(post("/command", {
+      username: "测试者", command: "move", input: { moveto: "1" }, now: 101
+    }));
+    expect(response.status).toBe(409);
+    const stateResponse = await test.object.fetch(new Request("https://game.invalid/state"));
+    const current = await stateResponse.json<{ version: number; state: LegacyMatchState }>();
+    expect(current.version).toBe(0);
+    expect(current.state.players["测试者"]?.pls).toBe(0);
+    expect((test.values.get("match") as { version: number }).version).toBe(0);
+  });
+
+  it("does not expose a restored match when Durable Object storage fails", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json([{ version: 7, state: state() }])));
+    const test = harness({
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SECRET_KEY: "sb_secret_fixture"
+    } as Partial<Cloudflare.Env>);
+    await test.ready();
+    test.put.mockRejectedValueOnce(new Error("durable storage unavailable"));
+    const response = await test.object.fetch(post("/restore", { matchId: 9 }));
+    expect(response.status).toBe(409);
+    expect((await test.object.fetch(new Request("https://game.invalid/state"))).status).toBe(404);
+    expect(test.values.has("match")).toBe(false);
   });
 
   it("rejects malformed hydration instead of creating a partial match", async () => {
