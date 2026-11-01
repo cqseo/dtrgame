@@ -100,3 +100,18 @@ Everything listed below is **verified on the detached PR #18 worktree**, not dep
 - The original broken staging `/help.php` changed from 500 to 200, returning 897,234 bytes; it now renders full HTML containing the original help/crafting text.
 - **Still NOT exact 1:1 parity:** read-only HTTP comparison against unmodified production `https://dts.zhangyingyin.top/help.php` returned 1,260,839 bytes versus 897,234 staging bytes. First byte difference at offset 24,753: original says 35 map areas, staging says 1. Further legacy map/module initialization and help content require parity work.
 - No production Worker, PHP source, or live player state was modified by this deployment. PR #18 remains draft and the production cutover gate remains CLOSED.
+
+
+## 2026-11-01 22:45 China — Mercenary/NPC parity correction (new staging version)
+
+- Current review branch commit: `bd221992e1b9e123219026e0f4c3f5b15b6e7860`, **NOT main**.
+- Root cause of 1508 missing lines in original public help: `skill56::init()` declares `global $skill56_npc` before overwriting `$npcinfo[25]`. The interpreter kept captured module-level variables out of ordinary PHP globals, so it replaced the original 11-entry summon roster with NULL. The fix aliases only explicitly global variables that exist in the calling module's original variable store.
+- Root cause of missing NPC portraits: Worker runtime `file_exists` ignored packaged public images. Added a deterministic inventory of **820** bundled public static files and **672** image dimensions read from original GIF/PNG/JPEG headers; host `file_exists`/\`getimagesize\` can now recognize original portraits, without exposing private PHP/config files or requiring filesystem access.
+- Permanent regressions in `test/legacy-help-page.test.ts` verify summoned mercenary names and original `img/n_150.gif`/`img/n_160.gif` links. `test/legacy-public-static-assets.test.ts` verifies actual image dimensions and path restrictions.
+- `npm run test:low-memory` finished **74/74 test files passed**, exit 0; log: `/tmp/dtr-npc-full-regression.log`. This is **not** 735-module acceptance.
+- Worker dry-run reported `--dry-run: exiting now.` with 841 assets and 34,167.70 KiB Worker code. Wrapper completion marker was interrupted briefly during RAM exhaustion; the subsequent actual deployment succeeded.
+- Added a **temporary, non-persistent 2 GiB swap file** at `/swapfile-dtrgame-staging` (no fstab change), bringing swap to 3 GiB to avoid Desktop Commander disconnections while uploading. Disk had ~14 GiB free afterward.
+- Deployed **staging Worker only** with `wrangler deploy --keep-vars`, exit code 0. New active version `0a8b2d71-6a31-448b-93a2-47c8638a974f`, deployment `5287850f-d716-4d27-afeb-a90e6a74ac12`; confirmed by Cloudflare API at 100% **staging** traffic with all six original binding names preserved. Rollback: previous staging version `09705247-ce03-4875-96c8-9d3f919d8945`.
+- Post-deployment smoke: GET `/help.php`, `/index.php`, `/register.php`, `/rank.php`, `/itemhelp.php`, `/end.php`, `/login.php`, `/__stage_status` all HTTP 200.
+- Actual deployed help `1,261,666` bytes vs unmodified production PHP help `1,260,839` bytes: **5 line-level differences** remain in guest-page skill cooldown hints and enabled/disabled skill buttons. These could be stateful/cached output; do not hard-code away without an original PHP oracle that accounts for player/session/time/cache. Maps and the 11 mercenary rows/portraits now render.
+- **Production PHP site, production Worker, main branch and live player data not modified.** Draft PR #18 remains unmerged. Signed-in routing, all 735 enabled modules, real E2E multiplayer, backups/rollback exercise and native TypeScript typecheck on a larger machine remain unresolved.
