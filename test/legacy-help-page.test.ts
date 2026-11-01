@@ -48,6 +48,14 @@ describe("original help.php dynamic includes", () => {
     expect(body).toContain('<div id="fmsgboxclub1"');
     expect(body).toContain('<span>\n生命\n</span>');
     expect(body).toContain('class="skilldesc_left b3"');
+    // Skill 56's original initializer must preserve its NPC preset when
+    // referencing `global $skill56_npc` and the asset probe must resolve
+    // each NPC's real portrait filename from public/.
+    expect(body).toContain("以下是所有可能被召唤出的佣兵的列表");
+    expect(body).toContain("肥宅");
+    expect(body).toContain("春原 阳平");
+    expect(body).toContain('src="img/n_150.gif"');
+    expect(body).toContain('src="img/n_160.gif"');
     expect(database.issued.some(statement => /SELECT \* FROM acbra2_game/i.test(statement.sql))).toBe(true);
   });
 });
