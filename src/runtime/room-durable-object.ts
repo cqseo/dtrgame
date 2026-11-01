@@ -54,30 +54,34 @@ export class LegacyRoomDurableObject {
         return this.#record ? json(this.#record) : json({ error: "房间数据记录不存在。" }, 404);
       }
       if (request.method === "POST" && url.pathname === "/initialize") {
-        if (this.#record) return json(this.#record, 200);
-        const body = await request.json<InitializeBody>();
-        const founder = String(body.founder ?? "");
-        if (!founder) return json({ error: "Missing founder." }, 400);
-        const roomId = Number(body.roomId);
-        const roomType = Number(body.roomType);
-        if (!Number.isSafeInteger(roomId) || roomId < 1 || !Number.isSafeInteger(roomType)) {
-          return json({ error: "Invalid room identity." }, 400);
-        }
-        const next = createLegacyRoomRecord(roomId, roomType, founder, validTimestamp(body.now));
-        await this.ctx.storage.put("record", next);
-        this.#record = next;
-        return json(next, 201);
+        return this.#exclusive(async () => {
+          if (this.#record) return json(this.#record, 200);
+          const body = await request.json<InitializeBody>();
+          const founder = String(body.founder ?? "");
+          if (!founder) return json({ error: "Missing founder." }, 400);
+          const roomId = Number(body.roomId);
+          const roomType = Number(body.roomType);
+          if (!Number.isSafeInteger(roomId) || roomId < 1 || !Number.isSafeInteger(roomType)) {
+            return json({ error: "Invalid room identity." }, 400);
+          }
+          const next = createLegacyRoomRecord(roomId, roomType, founder, validTimestamp(body.now));
+          await this.ctx.storage.put("record", next);
+          this.#record = next;
+          return json(next, 201);
+        });
       }
       if (request.method === "POST" && url.pathname === "/hydrate") {
-        if (this.#record) return json(this.#record, 200);
-        const body = await request.json<LegacyRoomRecord>();
-        if (!Number.isSafeInteger(body.roomId) || body.roomId < 1 || !body.room || body.room.roomtype !== body.groomtype) {
-          return json({ error: "Invalid persisted room." }, 400);
-        }
-        const next = structuredClone(body);
-        await this.ctx.storage.put("record", next);
-        this.#record = next;
-        return json(next, 201);
+        return this.#exclusive(async () => {
+          if (this.#record) return json(this.#record, 200);
+          const body = await request.json<LegacyRoomRecord>();
+          if (!Number.isSafeInteger(body.roomId) || body.roomId < 1 || !body.room || body.room.roomtype !== body.groomtype) {
+            return json({ error: "Invalid persisted room." }, 400);
+          }
+          const next = structuredClone(body);
+          await this.ctx.storage.put("record", next);
+          this.#record = next;
+          return json(next, 201);
+        });
       }
       if (request.method === "POST" && url.pathname === "/replace") {
         return this.#exclusive(async () => {
