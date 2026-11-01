@@ -280,17 +280,27 @@ export class LegacyModuleRuntime {
     caller?: string,
     namespace?: string
   ): PhpValue {
+    return this.callWithOutput(name, args, caller, namespace).value;
+  }
+
+  /** Preserve stdout written by original compiled PHP functions. */
+  callWithOutput(
+    name: string,
+    args: readonly (PhpValue | PhpRef)[] = [],
+    caller?: string,
+    namespace?: string
+  ): { value: PhpValue; output: string } {
     const target = this.resolve(name, namespace);
 
     // __MODULE_NULLFUNCTION__ is what $chprocess holds when nothing was
     // overridden, and the original's version returns NULL.
-    if (target === NULL_FUNCTION.toLowerCase()) return null;
+    if (target === NULL_FUNCTION.toLowerCase()) return { value: null, output: "" };
 
     const dispatch = resolveDispatch(this.chains, target, caller);
     if (dispatch.kind === "redirect") {
       // The prologue calls the newest implementation from inside the one it
       // redirected away from, so that is the caller the newest sees.
-      return this.call(dispatch.target, args, target);
+      return this.callWithOutput(dispatch.target, args, target);
     }
 
     const fn = this.#functions.get(target);
@@ -392,6 +402,7 @@ export class LegacyModuleRuntime {
       constants: this.#constants,
       functions: this.hostFunctions(this.#globals, ""),
       callQualified: (name, callArgs) => this.call(name, callArgs, "", ""),
+      callQualifiedWithOutput: (name, callArgs) => this.callWithOutput(name, callArgs, "", ""),
       hasQualified: name => this.has(name, ""),
       referenceParameters: name => this.referenceParameters(name, ""),
       loadTemplate: this.#options.loadTemplate ?? (() => undefined),
@@ -444,7 +455,7 @@ export class LegacyModuleRuntime {
     qualified: string,
     args: readonly (PhpValue | PhpRef)[],
     chprocess: string
-  ): PhpValue {
+  ): { value: PhpValue; output: string } {
     const scope = new ModuleScope();
 
     /*
@@ -476,6 +487,7 @@ export class LegacyModuleRuntime {
       constants: this.#constants,
       functions: this.hostFunctions(scope, qualified, args),
       callQualified: (name, callArgs) => this.call(name, callArgs, qualified, fn.namespace),
+      callQualifiedWithOutput: (name, callArgs) => this.callWithOutput(name, callArgs, qualified, fn.namespace),
       hasQualified: name => this.has(name, fn.namespace),
       referenceParameters: name => this.referenceParameters(name, fn.namespace),
       staticSlot: name => {
@@ -496,7 +508,7 @@ export class LegacyModuleRuntime {
       compileOptions: this.#options.compileOptions
     });
 
-    return executeCompiledFunctionProgram(fn.program, context).value;
+    return executeCompiledFunctionProgram(fn.program, context);
   }
 
   /**
