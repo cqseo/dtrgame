@@ -9,6 +9,7 @@
     "check": "tsc --noEmit",
     "test": "vitest run",
     "test:low-memory": "node scripts/run-tests-low-memory.mjs",
+    "smoke:staging": "node scripts/check-staging-readonly.mjs",
     "audit:legacy": "node scripts/audit-legacy.mjs ../legacy-dts docs/legacy-source-manifest.json",
     "audit:templates": "node scripts/audit-template-directives.mjs ../legacy-dts",
     "audit:hooks": "node scripts/audit-hook-complexity.mjs ../legacy-dts docs/hook-complexity.json",
