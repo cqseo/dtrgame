@@ -45,6 +45,7 @@ describe("original help.php dynamic includes", () => {
       tablePrefix: "acbra2_", roomId: "0", database
     });
     expect(body).toContain("地图中共有35个区域");
+    expect(body).toContain('<div id="fmsgboxclub1"');
     expect(database.issued.some(statement => /SELECT \* FROM acbra2_game/i.test(statement.sql))).toBe(true);
   });
 });
