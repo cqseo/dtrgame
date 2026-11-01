@@ -11,7 +11,9 @@
  * so when the mechanism differs because the platform differs.
  */
 import type { HostFunction } from "../template/builtins";
-import { PhpArray, type PhpValue } from "../template/values";
+import { PhpArray, toStringValue, type PhpValue } from "../template/values";
+import { LEGACY_PUBLIC_STATIC_FILES } from "../../generated/legacy-public-static-files";
+import { LEGACY_PUBLIC_IMAGE_SIZES } from "../../generated/legacy-public-image-sizes";
 
 /**
  * The original computes GAME_ROOT from __FILE__ and uses it to build
@@ -70,6 +72,13 @@ export function createLockFunctions(): Map<string, HostFunction> {
  */
 const TEMPLATE_MTIME = 1761782400;
 
+/** Exactly which original public portraits can be served from Worker assets. */
+export function legacyPublicImageExists(path: string): boolean {
+  const name = path.startsWith("./") ? path.slice(2) : path;
+  return name.startsWith("img/") && !name.includes("..") &&
+    LEGACY_PUBLIC_STATIC_FILES.has(name);
+}
+
 export function createFilesystemFunctions(): Map<string, HostFunction> {
   const functions = new Map<string, HostFunction>();
   const refuse = (name: string): HostFunction => () => {
@@ -110,8 +119,26 @@ export function createFilesystemFunctions(): Map<string, HostFunction> {
    */
   functions.set("debug_backtrace", () => new PhpArray());
   functions.set("debug_print_backtrace", () => null);
-  // file_exists is answerable: nothing this port writes exists on a disk.
-  functions.set("file_exists", () => false);
+  // The original player\\icon_parser_file_check() checks img/n_150.gif
+  // and friends before rendering NPC portraits. These are immutable files
+  // already bundled as public Cloudflare assets; return their real presence
+  // from the generated inventory rather than pretending every file is absent.
+  // Do not treat source PHP, server configs, or arbitrary filesystem paths as
+  // public assets: those remain inaccessible in Workers.
+  functions.set("file_exists", values => legacyPublicImageExists(toStringValue(values[0] ?? null)));
+  // PHP getimagesize() is used by the original icon parser to size the
+  // optional tall portrait. Width and height come from the real image header
+  // captured at build time, never from guessed defaults.
+  functions.set("getimagesize", values => {
+    const path = toStringValue(values[0] ?? null);
+    const name = path.startsWith("./") ? path.slice(2) : path;
+    const dimensions = LEGACY_PUBLIC_IMAGE_SIZES.get(name);
+    if (!dimensions || !legacyPublicImageExists(name)) return false;
+    const info = new PhpArray();
+    info.push(dimensions[0]);
+    info.push(dimensions[1]);
+    return info;
+  });
   return functions;
 }
 
