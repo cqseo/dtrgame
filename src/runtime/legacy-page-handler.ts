@@ -27,7 +27,10 @@ function cookiesOf(request: Request): (readonly [string, string])[] {
     if (at === -1) continue;
     const name = part.slice(0, at).trim();
     if (name === "") continue;
-    const value = part.slice(at + 1).trim().replace(/\+/g, " ");
+    // PHP 8.2 treats cookie values like rawurldecode(): literal "+" remains "+".
+    // Only percent escapes are decoded; application/x-www-form-urlencoded
+    // rules (where "+" means space) must not be applied to Cookie headers.
+    const value = part.slice(at + 1).trim();
     try { pairs.push([name, decodeURIComponent(value)]); }
     catch { pairs.push([name, value]); }
   }
