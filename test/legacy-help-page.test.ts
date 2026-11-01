@@ -46,6 +46,8 @@ describe("original help.php dynamic includes", () => {
     });
     expect(body).toContain("地图中共有35个区域");
     expect(body).toContain('<div id="fmsgboxclub1"');
+    expect(body).toContain('<span>\n生命\n</span>');
+    expect(body).toContain('class="skilldesc_left b3"');
     expect(database.issued.some(statement => /SELECT \* FROM acbra2_game/i.test(statement.sql))).toBe(true);
   });
 });
