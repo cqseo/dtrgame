@@ -102,7 +102,7 @@ export class LegacyGameDurableObject {
         return this.#match ? json(this.#match) : json({ error: "游戏数据记录不存在。" }, 404);
       }
       if (request.method === "POST" && url.pathname === "/hydrate") {
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           if (this.#match) return json(this.#match);
           const body = await request.json<StoredLegacyMatch>();
           if (!this.#valid(body)) return json({ error: "Invalid match snapshot." }, 400);
@@ -111,7 +111,7 @@ export class LegacyGameDurableObject {
         });
       }
       if (request.method === "POST" && url.pathname === "/restore") {
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           if (this.#match) return json(this.#match);
           if (!this.#env.SUPABASE_URL || !this.#env.SUPABASE_SECRET_KEY) {
             return json({ error: "Supabase match persistence is not configured." }, 503);
@@ -124,14 +124,15 @@ export class LegacyGameDurableObject {
           if (!snapshot) return json({ error: "游戏数据记录不存在。" }, 404);
           const restored: StoredLegacyMatch = { version: Number(snapshot.version), state: snapshot.state };
           if (!this.#valid(restored) || restored.state.matchId !== matchId) return json({ error: "Invalid match snapshot." }, 409);
-          this.#match = structuredClone(restored);
-          await this.ctx.storage.put("match", this.#match);
-          return json(this.#match, 201);
+          const next = structuredClone(restored);
+          await this.ctx.storage.put("match", next);
+          this.#match = next;
+          return json(next, 201);
         });
       }
       if (request.method === "POST" && url.pathname === "/command") {
         const body = await request.json<GameCommandBody>();
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           if (!this.#match) return json({ error: "游戏数据记录不存在。" }, 404);
           const username = String(body.username ?? "");
           const current = this.#match.state.players[username];
@@ -175,7 +176,7 @@ export class LegacyGameDurableObject {
       }
       if (request.method === "POST" && url.pathname === "/battle") {
         const body = await request.json<GameBattleBody>();
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           if (!this.#match) return json({ error: "游戏数据记录不存在。" }, 404);
           const username = String(body.username ?? "");
           const target = String(body.target ?? "");
@@ -199,7 +200,7 @@ export class LegacyGameDurableObject {
       }
       if (request.method === "POST" && url.pathname === "/corpse") {
         const body = await request.json<GameCorpseBody>();
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           if (!this.#match) return json({ error: "游戏数据记录不存在。" }, 404);
           const username = String(body.username ?? "");
           const target = String(body.target ?? "");
@@ -263,8 +264,11 @@ export class LegacyGameDurableObject {
       const saved = await new SupabaseMatchSnapshots<LegacyMatchState>(rest).save(next.state.matchId, next.version, next.state);
       if (!saved) throw new Error("Stale match snapshot rejected.");
     }
-    this.#match = next;
+    // Only advertise a new version after all required storage writes finish.
+    // A rejected Durable Object write must leave the current in-memory
+    // snapshot intact so the caller receives an error and can retry safely.
     await this.ctx.storage.put("match", next);
+    this.#match = next;
   }
 
   #exclusive<T>(operation: () => Promise<T>): Promise<T> {
