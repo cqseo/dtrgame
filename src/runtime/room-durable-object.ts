@@ -54,7 +54,7 @@ export class LegacyRoomDurableObject {
         return this.#record ? json(this.#record) : json({ error: "房间数据记录不存在。" }, 404);
       }
       if (request.method === "POST" && url.pathname === "/initialize") {
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           if (this.#record) return json(this.#record, 200);
           const body = await request.json<InitializeBody>();
           const founder = String(body.founder ?? "");
@@ -71,7 +71,7 @@ export class LegacyRoomDurableObject {
         });
       }
       if (request.method === "POST" && url.pathname === "/hydrate") {
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           if (this.#record) return json(this.#record, 200);
           const body = await request.json<LegacyRoomRecord>();
           if (!Number.isSafeInteger(body.roomId) || body.roomId < 1 || !body.room || body.room.roomtype !== body.groomtype) {
@@ -84,7 +84,7 @@ export class LegacyRoomDurableObject {
         });
       }
       if (request.method === "POST" && url.pathname === "/replace") {
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           const body = await request.json<LegacyRoomRecord>();
           if (!Number.isSafeInteger(body.roomId) || body.roomId < 1 || !body.room || body.room.roomtype !== body.groomtype) {
             return json({ error: "Invalid persisted room." }, 400);
@@ -96,7 +96,7 @@ export class LegacyRoomDurableObject {
         });
       }
       if (request.method === "POST" && url.pathname === "/enter") {
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           if (!this.#record) return json({ error: "房间数据记录不存在。" }, 404);
           const body = await request.json<EnterBody>();
           const username = String(body.username ?? "");
@@ -114,7 +114,7 @@ export class LegacyRoomDurableObject {
         });
       }
       if (request.method === "POST" && url.pathname === "/activate") {
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           if (!this.#record) return json({ error: "房间数据记录不存在。" }, 404);
           const body = await request.json<ActivateBody>();
           const gamestate = Number(body.gamestate);
@@ -137,7 +137,7 @@ export class LegacyRoomDurableObject {
       }
       if (request.method === "POST" && url.pathname === "/command") {
         const raw = await request.json<Partial<LegacyRoomCommand>>();
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           if (!this.#record) return json({ error: "房间数据记录不存在。" }, 404);
           if (!raw.command || !COMMANDS.has(raw.command)) return json({ error: "Unknown room command." }, 400);
           const actor = String(raw.actor ?? "");
