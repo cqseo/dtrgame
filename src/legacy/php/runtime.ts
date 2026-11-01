@@ -359,7 +359,14 @@ export class LegacyModuleRuntime {
     if (/^include\/(roommng\/room|roommng\/roommng|modules\/modules)\.func\.php$/.test(path)) return [];
     // Small data files the pages include verbatim, compiled at build time.
     const data = LEGACY_COMPILED_INCLUDES[name] ?? LEGACY_COMPILED_INCLUDES[`./${path}`];
-    if (data) return data;
+    if (data) {
+      // PHP namespaces qualify functions/classes but do not create a separate
+      // variable scope for included data files. A namespaced config still
+      // assigns $mixinfo/$enpcinfo into the including page's scope.
+      return data.flatMap(statement =>
+        statement.kind === "namespace" ? statement.body ?? [] : [statement]
+      );
+    }
     // A file this request wrote to the in-memory cache and is now
     // including back, which is how the captcha corpus is kept.
     const cached = this.#cacheFiles.get(name);
