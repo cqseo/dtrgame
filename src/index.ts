@@ -57,7 +57,7 @@ export const ORIGINAL_STAGING_STATUS = {
   roomLifecycle: "partial",
   matchLifecycle: "partial",
   gameCommandTransport: "partial",
-  routeParity: "16/23 signed-out fixtures"
+  routeParity: "17/23 signed-out fixtures"
 };
 const text = (body: string, status: number): Response => new Response(body, {
   status, headers: { "content-type": "text/plain;charset=utf-8", "cache-control": "no-store" }
