@@ -672,7 +672,16 @@ export class LegacyModuleRuntime {
       // loop over gamedata/modules.list.php defines. The registry is
       // generated from that same list.
       for (const module of LEGACY_MODULES) {
-        if (module.enabled) this.#constants.set(`MOD_${module.name.toUpperCase()}`, true);
+        if (!module.enabled) continue;
+        this.#constants.set(`MOD_${module.name.toUpperCase()}`, true);
+        // Original modules.init.template.php registers each module's actual
+        // template path as a constant. Previously this loader only defined
+        // MOD_SKILL10, not MOD_SKILL10_DESC, so the original skill list
+        // silently omitted every skill description.
+        for (const template of module.templates) {
+          const key = `MOD_${module.name.toUpperCase()}_${template.toUpperCase().replaceAll("/", "_")}`;
+          this.#constants.set(key, `/./include/modules/${module.path}${template}`);
+        }
       }
       // The import list the original uses for a non-game page. game.php
       // imports more, and reaches this through CURSCRIPT.
@@ -690,6 +699,22 @@ export class LegacyModuleRuntime {
       // variable defaults cannot stand in for either of them.
       if (this.has("input\\init", "")) this.call("input\\init", [], "", "");
       if (this.has("sys\\init", "")) this.call("sys\\init", [], "", "");
+      // Only the informational command_help path currently requires skill
+      // initialization. Use each enabled skill module's compiled original
+      // init() in source load order, rather than inventing its INFO flag:
+      // these functions define MOD_SKILL*_INFO and related metadata exactly
+      // as the frozen PHP source does. Other game modes still require their
+      // own original module initialization acceptance tests.
+      const post = this.#globals.get("_POST");
+      if (curscript === "game" && this.#constants.has("IN_COMMAND") &&
+          post instanceof PhpArray && post.get("page") === "command_help") {
+        for (const module of LEGACY_MODULES) {
+          if (module.enabled && /^skill[0-9]+$/.test(module.name) &&
+              this.has(`${module.name}\\init`, "")) {
+            this.call(`${module.name}\\init`, [], "", "");
+          }
+        }
+      }
       // In the original common.inc.php, a command request invokes
       // sys\\routine() after module initialization. Its first read step is
       // sys\\load_gameinfo(): this converts the persisted comma-delimited
@@ -788,7 +813,10 @@ export class LegacyModuleRuntime {
    */
   #importInto(scope: ModuleScope, module: string): void {
     if (!this.store.has(module)) {
-      // The original throws `undefined module X` from import_module().
+      // Some enabled original modules define functions but no persistent
+      // variables. Their import expansion is empty, not a missing module.
+      // Disabled/unregistered modules must still be rejected.
+      if (LEGACY_MODULES.some(entry => entry.enabled && entry.name === module)) return;
       throw new Error(`undefined module ${module}`);
     }
     for (const name of this.store.names(module)) {
