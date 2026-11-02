@@ -31,9 +31,7 @@ interface GameCommandBody {
 }
 interface GameBattleBody {
   username: string;
-  target: string;
-  active?: boolean;
-  weatherId?: number;
+  target?: string; // legacy internal callers only; must match server-side encounter
   now: number;
 }
 interface GameRestoreBody { matchId: number; }
@@ -179,18 +177,27 @@ export class LegacyGameDurableObject {
         return await this.#exclusive(async () => {
           if (!this.#match) return json({ error: "游戏数据记录不存在。" }, 404);
           const username = String(body.username ?? "");
-          const target = String(body.target ?? "");
-          if (!username || username === target) return json({ error: "战斗目标不正确。" }, 400);
           const working = structuredClone(this.#match.state);
           const attacker = working.players[username];
-          const defender = working.players[target];
-          if (!attacker || !defender) return json({ error: "玩家数据记录不存在。" }, 404);
-          if (String(attacker.action) !== `enemy${Number(defender.pid)}`) return json({ error: "你没有遇到这个敌人，或已经离开战场。" }, 409);
+          if (!attacker) return json({ error: "玩家数据记录不存在。" }, 404);
+          // Original metman/battle targets are the pid saved by discovery in
+          // player.action. The browser form cannot select another player or
+          // override encounter state, combat weather or combat initiative.
+          const encounter = /^enemy([0-9]+)$/.exec(String(attacker.action ?? ""));
+          if (!encounter) return json({ error: "你没有遇到这个敌人，或已经离开战场。" }, 409);
+          const targetPid = Number(encounter[1]);
+          const target = Object.keys(working.players).find(candidate =>
+            candidate !== username && Number(working.players[candidate]?.pid) === targetPid);
+          const defender = target === undefined ? undefined : working.players[target];
+          if (!defender) return json({ error: "玩家数据记录不存在。" }, 404);
+          if (body.target !== undefined && body.target !== target) {
+            return json({ error: "你没有遇到这个敌人，或已经离开战场。" }, 409);
+          }
           if (Number(attacker.pls) !== Number(defender.pls)) return json({ error: "对方已经离开当前区域。" }, 409);
           if (Number(attacker.hp) <= 0 || Number(defender.hp) <= 0) return json({ error: "死亡玩家不能参与战斗。" }, 409);
           const result = executeLegacyAssault({
-            attacker, defender, active: body.active ?? true,
-            weatherId: Number(body.weatherId ?? 0), now: Number(body.now), random: cryptoLegacyRandom
+            attacker, defender, active: true,
+            weatherId: working.weatherId ?? 0, now: Number(body.now), random: cryptoLegacyRandom
           });
           if (Number(defender.hp) <= 0 && Number(attacker.hp) > 0) attacker.action = `corpse${Number(defender.pid)}`;
           const next: StoredLegacyMatch = { version: this.#match.version + 1, state: working };
