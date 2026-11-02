@@ -37,7 +37,7 @@ interface GameBattleBody {
   now: number;
 }
 interface GameRestoreBody { matchId: number; }
-interface GameCorpseBody { username: string; target: string; item: string; now: number; }
+interface GameCorpseBody { username: string; target?: string; item: string; now: number; }
 
 const json = (value: unknown, status = 200): Response => Response.json(value, { status, headers: { "cache-control": "no-store" } });
 const numberField = (player: LegacyPlayerRecord, key: keyof LegacyPlayerRecord): number => Number(player[key] ?? 0);
@@ -203,17 +203,29 @@ export class LegacyGameDurableObject {
         return await this.#exclusive(async () => {
           if (!this.#match) return json({ error: "游戏数据记录不存在。" }, 404);
           const username = String(body.username ?? "");
-          const target = String(body.target ?? "");
           const itemPosition = String(body.item ?? "");
           const working = structuredClone(this.#match.state);
           const player = working.players[username];
-          const corpse = working.players[target];
-          if (!player || !corpse) return json({ error: "玩家数据记录不存在。" }, 404);
-          if (String(player.action) !== `corpse${Number(corpse.pid)}` && String(player.action) !== `pacorpse${Number(corpse.pid)}`) {
+          if (!player) return json({ error: "玩家数据记录不存在。" }, 404);
+          if (Number(player.hp) <= 0) return json({ error: "死亡玩家不能拾取物品。" }, 409);
+          // In original corpse::getcorpse(), the corpse pid is taken from the
+          // player's saved action, not an HTTP-supplied target username.
+          const encountered = /^(?:pa)?corpse([0-9]+)$/.exec(String(player.action ?? ""));
+          if (!encountered) return json({ error: "你没有遇到这具尸体，或已经离开现场。" }, 409);
+          const pid = Number(encountered[1]);
+          const target = Object.keys(working.players).find(candidate =>
+            candidate !== username && Number(working.players[candidate]?.pid) === pid);
+          const corpse = target === undefined ? undefined : working.players[target];
+          if (!corpse) return json({ error: "玩家数据记录不存在。" }, 404);
+          if (body.target && body.target !== target) {
             return json({ error: "你没有遇到这具尸体，或已经离开现场。" }, 409);
           }
           if (Number(corpse.hp) > 0) return json({ error: "对方尚未死亡。" }, 409);
           if (Number(player.pls) !== Number(corpse.pls)) return json({ error: "对方跟你不在同一个地图。" }, 409);
+          if (!["menu", "money", "destroy", "wep", "arb", "arh", "ara", "arf", "art"].includes(itemPosition)
+              && !/^itm[1-6]$/.test(itemPosition)) {
+            return json({ error: "该物品不存在！" }, 409);
+          }
           let log = "";
           if (itemPosition === "money") {
             const amount = numberField(corpse, "money");
@@ -227,7 +239,7 @@ export class LegacyGameDurableObject {
             corpse.state = 16;
             corpse.corpse_clear_flag = 1;
             log = "尸体成功销毁！";
-          } else {
+          } else if (itemPosition !== "menu") {
             const item = takeCorpseItem(corpse, itemPosition);
             if (!item) return json({ error: "该物品不存在！" }, 409);
             writeLegacyPendingItem(player, item);
