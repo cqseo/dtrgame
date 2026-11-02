@@ -39,6 +39,33 @@ export function renderLegacyCommandPanel(snapshot: StoredLegacyMatch, username: 
       return `<span class="red b">你遭遇了 ${escape(enemy.name)}！</span><br><input type="hidden" name="target" value="${escape(enemy.name)}">${formButton("z", "攻击", "attack")} ${formButton("x", "返回", "menu")}`;
     }
   }
+  const encounteredCorpse = /^(?:pa)?corpse([0-9]+)$/.exec(action);
+  if (encounteredCorpse) {
+    const pid = Number(encounteredCorpse[1]);
+    const corpse = Object.values(snapshot.state.players).find(candidate =>
+      number(candidate, "pid") === pid && number(candidate, "hp") <= 0
+      && number(candidate, "pls") === number(player, "pls"));
+    if (corpse) {
+      const options: string[] = [formButton("x", "返回", "menu", "corpse")];
+      const money = number(corpse, "money");
+      if (money > 0) options.push(formButton("lootmoney", `拾取金钱 ${money}`, "money", "corpse"));
+      for (const slot of ["wep", "arb", "arh", "ara", "arf", "art"] as const) {
+        const name = text(corpse, slot);
+        const kind = text(corpse, `${slot}k` as keyof LegacyPlayerRecord);
+        const remaining = corpse[`${slot}s` as keyof LegacyPlayerRecord];
+        if (name && remaining && kind !== "WN" && kind !== "DN") {
+          options.push(formButton(`loot${slot}`, `拾取 ${name}`, slot, "corpse"));
+        }
+      }
+      for (let slot = 1; slot <= 6; slot++) {
+        const name = text(corpse, `itm${slot}` as keyof LegacyPlayerRecord);
+        const remaining = corpse[`itms${slot}` as keyof LegacyPlayerRecord];
+        if (name && remaining) options.push(formButton(`lootitm${slot}`, `拾取 ${name}`, `itm${slot}`, "corpse"));
+      }
+      options.push(formButton("lootdestroy", "销毁尸体", "destroy", "corpse"));
+      return `<span class="yellow b">你发现了${escape(corpse.name)}的尸体！</span><br>想要从尸体上拾取什么？<br>${options.join("<br>")}`;
+    }
+  }
   if (number(player, "state") >= 1 && number(player, "state") <= 3) {
     return `正在恢复中。<br>${formButton("z", "继续恢复", "rest", "rest")} ${formButton("x", "返回", "back", "rest")}`;
   }
