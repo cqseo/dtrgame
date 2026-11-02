@@ -7,9 +7,11 @@
  */
 import { pregMatch, pregMatchAll, pregQuote, pregReplace, pregSplit } from "./preg";
 import { md5 } from "./md5";
-import { toPhpFromJson } from "../php/codec";
+import { toPhpFromJson,phpJsonEncode } from "../php/codec";
+import { gzipSync,gunzipSync,inflateSync,deflateSync } from 'fflate';
 import {
   PhpArray,
+  PhpBytes,phpStringBytes,phpStringFromBytes,
   compareValues,
   looseEquals,
   toBool,
@@ -26,6 +28,7 @@ const num = (value: PhpValue | undefined): number => toNumber(value ?? null);
 const int = (value: PhpValue | undefined): number => toInt(value ?? null);
 const arr = (value: PhpValue | undefined): PhpArray =>
   value instanceof PhpArray ? value : new PhpArray();
+let lastUniqidMicros=0;
 
 /** PHP counts bytes, not code points, so strings convert through UTF-8. */
 const utf8 = new TextEncoder();
@@ -33,19 +36,19 @@ const utf8Decode = new TextDecoder();
 export const byteLength = (value: string): number => utf8.encode(value).length;
 
 /** PHP's substr and strpos work on byte offsets. */
-function byteSubstr(value: string, start: number, length?: number): string {
-  const bytes = utf8.encode(value);
+function byteSubstr(value: PhpValue, start: number, length?: number): string|PhpBytes {
+  const bytes = phpStringBytes(value);
   const from = start < 0 ? Math.max(bytes.length + start, 0) : Math.min(start, bytes.length);
   let to = bytes.length;
   if (length !== undefined) {
     to = length < 0 ? Math.max(bytes.length + length, from) : Math.min(from + length, bytes.length);
   }
-  return utf8Decode.decode(bytes.slice(from, to));
+  return phpStringFromBytes(bytes.slice(from, to));
 }
 
-function htmlSpecialChars(value: string, quotes = true): string {
-  let out = value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  if (quotes) out = out.replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+function htmlSpecialChars(value: string, flags=11,doubleEncode=true): string {
+  let out = value.replace(doubleEncode?/&/g:/&(?!(?:#\d+|#x[0-9a-f]+|[a-z][a-z0-9]+);)/gi, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  if(flags&2)out=out.replace(/"/g,'&quot;');if(flags&1)out=out.replace(/'/g,'&#039;');
   return out;
 }
 
@@ -140,8 +143,15 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
   // PHP's chr() works on bytes: it takes the argument modulo 256, and a
   // negative value wraps up rather than down. map_display_y2coor() builds
   // the map's column letters with it.
-  chr: ([value]) => String.fromCharCode(((Math.trunc(num(value)) % 256) + 256) % 256),
-  ord: ([value]) => str(value).charCodeAt(0) || 0,
+  chr: ([value]) => phpStringFromBytes(new Uint8Array([int(value)&255])),
+  ord: ([value]) => phpStringBytes(value??null)[0]??0,
+  pack: ([format,...values]) => {
+    // The original BMP utility uses unsigned-byte packing only. Refuse
+    // other layouts until their byte-level implementation is verified.
+    const match=/^C(\*|\d*)$/.exec(str(format));if(!match)throw new Error('Unsupported PHP pack format: '+str(format));
+    const count=match[1]==='*'?values.length:Number(match[1]||1);if(values.length<count)throw new Error('Too few PHP pack arguments.');
+    return phpStringFromBytes(Uint8Array.from(values.slice(0,count),v=>int(v)&255));
+  },
   floor: ([value]) => Math.floor(num(value)),
   ceil: ([value]) => Math.ceil(num(value)),
   abs: ([value]) => Math.abs(num(value)),
@@ -155,11 +165,11 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
   },
 
   // Strings.
-  strlen: ([value]) => byteLength(str(value)),
+  strlen: ([value]) => phpStringBytes(value??null).length,
   mb_strlen: ([value]) => [...str(value)].length,
   strpos: ([haystack, needle, offset]) => {
-    const bytes = utf8.encode(str(haystack));
-    const target = utf8.encode(str(needle));
+    const bytes = phpStringBytes(haystack??null);
+    const target = phpStringBytes(needle??null);
     const from = int(offset ?? 0);
     outer: for (let index = from < 0 ? bytes.length + from : from; index + target.length <= bytes.length; index++) {
       for (let step = 0; step < target.length; step++) {
@@ -170,7 +180,7 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
     return false;
   },
   substr: ([value, start, length]) =>
-    byteSubstr(str(value), int(start), length === undefined || length === null ? undefined : int(length)),
+    byteSubstr(value??null, int(start), length === undefined || length === null ? undefined : int(length)),
   str_replace: ([search, replace, subject]) => {
     const subjects = str(subject);
     const searches = search instanceof PhpArray ? search.values().map(str) : [str(search)];
@@ -192,8 +202,8 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
     const text = str(value);
     return text.charAt(0).toUpperCase() + text.slice(1);
   },
-  htmlspecialchars: ([value]) => htmlSpecialChars(str(value)),
-  htmlentities: ([value]) => htmlSpecialChars(str(value)),
+  htmlspecialchars: ([value,flags,_encoding,doubleEncode]) => htmlSpecialChars(str(value),flags===undefined?11:int(flags),doubleEncode===undefined?true:toBool(doubleEncode)),
+  htmlentities: ([value,flags,_encoding,doubleEncode]) => htmlSpecialChars(str(value),flags===undefined?11:int(flags),doubleEncode===undefined?true:toBool(doubleEncode)),
   strip_tags: ([value]) => str(value).replace(/<[^>]*>/g, ""),
   nl2br: ([value]) => str(value).replace(/(\r\n|\n\r|\n|\r)/g, "<br />$1"),
   urlencode: ([value]) =>
@@ -213,7 +223,7 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
   },
   join: ([glue, pieces]) => arr(pieces).values().map(str).join(str(glue)),
   sprintf: args => phpSprintf(args),
-  json_encode: ([value]) => JSON.stringify(toJson(value ?? null)),
+  json_encode: ([value,flags]) => phpJsonEncode(value??null,int(flags)),
 
   // Arrays.
   count: ([value]) => (value instanceof PhpArray ? value.size : value === null ? 0 : 1),
@@ -510,10 +520,13 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
     }
   },
 
-  uniqid: ([prefix]) => {
-    // PHP's uniqid is the current time in microseconds as 13 hex digits.
-    const microseconds = Math.floor(Date.now() * 1000);
-    return str(prefix) + microseconds.toString(16).padStart(13, "0").slice(-13);
+  uniqid: ([prefix,entropy]) => {
+    // PHP waits for the microsecond counter to advance. Workers expose a
+    // millisecond clock, so keep the unobservable sub-millisecond counter
+    // monotonic rather than accidentally merging independent solo teams.
+    const micros=Math.max(Math.floor(Date.now()*1000),lastUniqidMicros+1);lastUniqidMicros=micros;
+    const time=Math.floor(micros/1e6).toString(16).padStart(8,'0')+(micros%1e6).toString(16).padStart(5,'0');
+    return str(prefix)+time+(toBool(entropy??false)?(Math.random()*10).toFixed(8):'');
   },
 
   array_merge_recursive: ([...arrays]) => {
@@ -751,10 +764,10 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
     str(value).replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
       .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"),
   urldecode: ([value]) => decodeURIComponent(str(value).replace(/\+/g, " ")),
-  bin2hex: ([value]) => [...utf8.encode(str(value))]
+  bin2hex: ([value]) => [...phpStringBytes(value??null)]
     .map(byte => byte.toString(16).padStart(2, "0")).join(""),
   base64_encode: ([value]) => {
-    const bytes = utf8.encode(str(value));
+    const bytes = phpStringBytes(value??null);
     let binary = "";
     for (const byte of bytes) binary += String.fromCharCode(byte);
     return btoa(binary);
@@ -763,7 +776,19 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
     const binary = atob(str(value));
     const bytes = new Uint8Array(binary.length);
     for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-    return utf8Decode.decode(bytes);
+    return phpStringFromBytes(bytes);
+  },
+  gzencode: ([value,level]) => {
+    const requested=level===undefined?-1:int(level);if(requested < -1 || requested>9)throw new RangeError('Invalid PHP compression level.');
+    const actual=requested===-1?6:requested;
+    const data=gzipSync(phpStringBytes(value??null),{level:actual as 0|1|2|3|4|5|6|7|8|9,mtime:0});
+    data[8]=actual===9?2:actual===1?4:0;data[9]=3;return new PhpBytes(data);
+  },
+  gzdecode: ([value]) => phpStringFromBytes(gunzipSync(phpStringBytes(value??null))),
+  gzinflate: ([value]) => phpStringFromBytes(inflateSync(phpStringBytes(value??null))),
+  gzdeflate: ([value,level]) => {
+    const n=level===undefined?-1:int(level);if(n < -1 || n>9)throw new RangeError('Invalid PHP compression level.');
+    return new PhpBytes(deflateSync(phpStringBytes(value??null),{level:(n===-1?6:n) as 0|1|2|3|4|5|6|7|8|9}));
   },
   version_compare: ([left, right, operator]) => {
     const parse = (value: string) => value.split(/[._\-+]/).map(part => parseInt(part, 10) || 0);
@@ -792,6 +817,22 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
 
   // Time.
   time: () => Math.floor(Date.now() / 1000),
+  // sys.init() selects Etc/GMT in the original. Use UTC explicitly so
+  // host machine timezone cannot change opening times or map schedules.
+  localtime: ([timestamp, associative]) => {
+    const date=new Date((timestamp===undefined||timestamp===null?Date.now()/1000:int(timestamp))*1000);
+    const fields=[date.getUTCSeconds(),date.getUTCMinutes(),date.getUTCHours(),date.getUTCDate(),date.getUTCMonth(),date.getUTCFullYear()-1900,date.getUTCDay(),Math.floor((Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate())-Date.UTC(date.getUTCFullYear(),0,1))/86400000),0];
+    const names=['tm_sec','tm_min','tm_hour','tm_mday','tm_mon','tm_year','tm_wday','tm_yday','tm_isdst'];
+    const result=new PhpArray();fields.forEach((v,i)=>result.set(toBool(associative??false)?names[i]!:i,v));return result;
+  },
+  mktime: args => {
+    const now=new Date();
+    const defaults=[now.getUTCHours(),now.getUTCMinutes(),now.getUTCSeconds(),now.getUTCMonth()+1,now.getUTCDate(),now.getUTCFullYear()];
+    const fields=defaults.map((v,i)=>args[i]===undefined||args[i]===null?v:int(args[i]));
+    let year=fields[5]!;if(year>=0&&year<=69)year+=2000;else if(year>=70&&year<=100)year+=1900;
+    const date=new Date(0);date.setUTCFullYear(year,fields[3]!-1,fields[4]!);date.setUTCHours(fields[0]!,fields[1]!,fields[2]!,0);
+    return Math.floor(date.getTime()/1000);
+  },
   // microtime(true) gives seconds as a float; microtime() gives PHP's
   // "0.00000000 0000000000" pair. The original times its own hot paths
   // with it and warns when one runs long, so both spellings are needed.

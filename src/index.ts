@@ -11,6 +11,8 @@ export interface OriginalEnv {
   APP_ENV?: string;
   ROOMS: DurableObjectNamespace;
   GAMES: DurableObjectNamespace;
+  ORIGINAL?: DurableObjectNamespace;
+  DTS_ORIGINAL_ENGINE?:string;
   SUPABASE_URL?: string;
   SUPABASE_SECRET_KEY?: string;
 }
@@ -45,6 +47,7 @@ import { SupabaseLegacyDatabase } from "./runtime/supabase-legacy-database";
 export { applyOriginalRouting } from "./original-routing";
 export { LegacyRoomDurableObject } from "./runtime/room-durable-object";
 export { LegacyGameDurableObject } from "./runtime/game-durable-object";
+export { OriginalGameActor } from './runtime/original-game-actor';
 export const ORIGINAL_STAGING_STATUS = {
   source: "ACFUN 大逃杀 installed Baota source",
   presentation: "original asset byte parity",

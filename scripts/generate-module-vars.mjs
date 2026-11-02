@@ -22,7 +22,8 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..");
-const outputPath = resolve(repoRoot, "src/generated/legacy-module-vars.ts");
+const preinit = process.argv.includes("--preinit");
+const outputPath = resolve(repoRoot, preinit ? "src/generated/legacy-module-preinit-vars.ts" : "src/generated/legacy-module-vars.ts");
 
 const phpBin = process.env.DTS_PHP_BIN ?? resolve(repoRoot, "tools/php-remote");
 const referenceScript = resolve(repoRoot, "scripts/php-module-vars-reference.php");
@@ -58,6 +59,7 @@ const EXPECTED_WITHHELD = new Set([
 ]);
 
 function readOriginal() {
+  if (preinit) return JSON.parse(readFileSync(resolve(repoRoot,"scripts/reference/original-module-preinit-vars.json"),"utf8"));
   const stdout = execFileSync(phpBin, [referenceScript], {
     input: JSON.stringify({ root: instanceRoot }),
     maxBuffer: 256 * 1024 * 1024,
@@ -161,7 +163,7 @@ function generate(dump) {
   return lines.join("\n");
 }
 
-const generated = generate(readOriginal());
+const generated = generate(readOriginal()).replaceAll("LEGACY_MODULE_VARS", preinit ? "LEGACY_MODULE_PREINIT_VARS" : "LEGACY_MODULE_VARS");
 
 if (process.argv.includes("--check")) {
   const existing = readFileSync(outputPath, "utf8");

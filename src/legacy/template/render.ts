@@ -10,10 +10,12 @@ import type { Expression, Statement } from "./ast";
 import { BUILTIN_REFERENCE_PARAMETERS, PHP_BUILTINS, byteLength, type HostFunction } from "./builtins";
 import { compileTemplate, type CompileOptions } from "./compile";
 import { parseTemplateProgram } from "./parser";
+import {pregReplaceCallback} from './preg';
 import { LegacyDatabase } from "../php/database";
 import { ModuleScope, PhpException, PhpRef, PhpThrow } from "../php/module-store";
 import {
   PhpArray,
+  PhpBytes, phpStringBytes, phpStringFromBytes, phpConcat,
   compareValues,
   looseEquals,
   strictEquals,
@@ -56,6 +58,9 @@ export interface TemplateContext {
    * passes a slot for those positions instead of a value.
    */
   readonly referenceParameters?: ((name: string) => readonly boolean[] | undefined) | undefined;
+  readonly globalSlot?: ((name: string) => { get():PhpValue;set(value:PhpValue):void }) | undefined;
+  /** PHP output buffers are shared by the entire request, including calls. */
+  readonly outputBuffers?: string[] | undefined;
   /**
    * The true global scope, which $GLOBALS exposes. gexit() renders the error
    * template inside a function, so only the variables it imports are in
@@ -122,6 +127,8 @@ export function createTemplateContext(
     callQualifiedWithOutput: overrides.callQualifiedWithOutput,
     hasQualified: overrides.hasQualified,
     referenceParameters: overrides.referenceParameters,
+    globalSlot: overrides.globalSlot,
+    outputBuffers: overrides.outputBuffers,
     loadTemplate: overrides.loadTemplate,
     loadPhp: overrides.loadPhp,
     compileOptions: overrides.compileOptions,
@@ -176,7 +183,8 @@ class Renderer {
    * written before ob_clean() would survive into the response and the
    * body would not be the original's.
    */
-  readonly #buffers: string[] = [];
+  get #buffers(): string[] { return this.context.outputBuffers ?? this.#localBuffers; }
+  readonly #localBuffers: string[] = [];
 
   /** Appends to the innermost buffer, or to the response when there is none. */
   private write(text: string): void {
@@ -302,7 +310,7 @@ class Renderer {
           if (!globals || globals === this.context.variables) continue;
           const scope = this.context.variables;
           if (scope instanceof ModuleScope && globals instanceof ModuleScope) {
-            scope.alias(name, globals.slotFor(name));
+            scope.alias(name, this.context.globalSlot?.(name) ?? globals.slotFor(name));
           } else {
             scope.set(name, globals.get(name) ?? null);
           }
@@ -471,9 +479,12 @@ class Renderer {
     // disturb the traversal.
     for (const [key, value] of subject.pairs()) {
       if (statement.keyVariable) this.reference(statement.keyVariable).set(key);
-      this.reference(statement.valueVariable).set(
-        value instanceof PhpArray && !statement.byReference ? value.clone() : value
-      );
+      const scope=this.context.variables;
+      const name=statement.valueVariable.kind==='variable'?statement.valueVariable.name:
+        statement.valueVariable.kind==='variableVariable'?toStringValue(this.evaluate(statement.valueVariable.name)):undefined;
+      const aliased=statement.byReference && scope instanceof ModuleScope && name!==undefined;
+      if(aliased)scope.alias(name,{get:()=>subject.get(key),set:v=>subject.set(key,v)});
+      else this.reference(statement.valueVariable).set(value instanceof PhpArray && !statement.byReference ? value.clone() : value);
       try {
         this.run(statement.body);
       } catch (signal) {
@@ -487,7 +498,7 @@ class Renderer {
         }
         throw signal;
       }
-      if (statement.byReference) subject.set(key, this.reference(statement.valueVariable).get());
+      finally{if(statement.byReference && !aliased)subject.set(key,this.reference(statement.valueVariable).get());}
     }
   }
 
@@ -523,6 +534,16 @@ class Renderer {
       case "index": {
         const parent = this.reference(expression.target);
         let container = parent.get();
+        if((typeof container==='string'||container instanceof PhpBytes)&&expression.index!==null){
+          const written=this.evaluate(expression.index);
+          if(typeof written==='string'&&!/^\s*[+-]?\d+\s*$/.test(written)||written instanceof PhpArray)throw new TemplateError('Illegal PHP string offset.');
+          const bytes=phpStringBytes(container),key=toInt(written),offset=key<0?bytes.length+key:key;
+          return {get:()=>offset<0||offset>=bytes.length?'':phpStringFromBytes(bytes.slice(offset,offset+1)),set:value=>{
+            if(offset<0)throw new TemplateError('Illegal negative PHP string offset.');
+            const inserted=phpStringBytes(value);if(!inserted.length)throw new TemplateError('Cannot assign empty PHP string offset.');
+            const next=new Uint8Array(Math.max(bytes.length,offset+1));next.fill(32);next.set(bytes);next[offset]=inserted[0]!;parent.set(phpStringFromBytes(next));
+          }};
+        }
         if (!(container instanceof PhpArray)) {
           // PHP creates an array when writing through an unset or empty slot.
           container = new PhpArray();
@@ -602,7 +623,28 @@ class Renderer {
     if (lowered === "function_exists") {
       const target = toStringValue(this.evaluate(args[0] as Expression));
       return this.context.functions.has(target) || this.context.writeFunctions?.has(target) === true ||
-        PHP_BUILTINS[target.toLowerCase()] !== undefined;
+        this.context.hasQualified?.(target)===true || PHP_BUILTINS[target.toLowerCase()] !== undefined;
+    }
+    if(lowered==='extract'){
+      const array=args[0]?this.evaluate(args[0]):null;if(!(array instanceof PhpArray))return 0;
+      const flags=args[1]?toInt(this.evaluate(args[1])):0;const mode=flags&255;
+      const prefix=args[2]?toStringValue(this.evaluate(args[2])):'';let count=0;
+      for(const [key,value]of array.pairs()){
+        let name=String(key);const valid=/^[A-Za-z_\x80-\uffff][A-Za-z0-9_\x80-\uffff]*$/.test(name);
+        const exists=this.context.variables.has(name);
+        if(mode===1&&exists || mode===6&&!exists)continue;
+        if(mode===3 || mode===2&&exists || mode===4&&!valid || mode===5&&exists)name=prefix+'_'+name;
+        else if(mode===5&&!exists)continue;
+        if(!/^[A-Za-z_\x80-\uffff][A-Za-z0-9_\x80-\uffff]*$/.test(name)||name==='GLOBALS'||name==='this')continue;
+        if((flags&256)!==0&&this.context.variables instanceof ModuleScope)this.context.variables.alias(name,{get:()=>array.get(key),set:v=>array.set(key,v)});
+        else this.context.variables.set(name,value instanceof PhpArray?value.clone():value);
+        count++;
+      }return count;
+    }
+    if(lowered==='preg_replace_callback'){
+      const pattern=this.evaluate(args[0]!),callback=toStringValue(this.evaluate(args[1]!)),subject=this.evaluate(args[2]!);
+      const result=pregReplaceCallback(pattern,match=>this.invokeQualified(callback,[match]),subject,args[3]?toInt(this.evaluate(args[3])):-1);
+      if(args[4])this.reference(args[4]).set(result.count);return result.value;
     }
     // Output buffering is about this renderer's own output, so it cannot
     // be a plain builtin.
@@ -751,9 +793,12 @@ class Renderer {
         if (expression.index === null) return null;
         const key = this.evaluate(expression.index);
         if (target instanceof PhpArray) return target.get(key);
-        if (typeof target === "string") {
+        if (typeof target === "string" || target instanceof PhpBytes) {
+          if(typeof key==='string'&&!/^\s*[+-]?\d+\s*$/.test(key)||key instanceof PhpArray)throw new TemplateError('Illegal PHP string offset.');
+          const bytes=phpStringBytes(target);
           const offset = toInt(key);
-          return target[offset < 0 ? target.length + offset : offset] ?? "";
+          const index=offset<0?bytes.length+offset:offset;
+          return index<0||index>=bytes.length?'':phpStringFromBytes(bytes.slice(index,index+1));
         }
         return null;
       }
@@ -850,7 +895,11 @@ class Renderer {
       case "array": {
         const array = new PhpArray();
         for (const entry of expression.entries) {
-          if (entry.key === null) array.push(this.evaluate(entry.value));
+          if(entry.value.kind==='reference'){
+            const bound=this.bindReference(entry.value.target);
+            if(!(bound instanceof PhpRef))throw new TemplateError('Invalid array reference.');
+            if(entry.key===null)array.pushReference(bound.slot);else array.setReference(this.evaluate(entry.key),bound.slot);
+          }else if (entry.key === null) array.push(this.evaluate(entry.value));
           else array.set(this.evaluate(entry.key), this.evaluate(entry.value));
         }
         return array;
@@ -879,6 +928,16 @@ class Renderer {
   /** isset() and empty() must not raise on an undefined constant or slot. */
   private evaluateQuiet(expression: Expression): PhpValue {
     try {
+      if(expression.kind==='index'&&expression.index!==null){
+        const target=this.evaluateQuiet(expression.target),key=this.evaluate(expression.index);
+        if(target instanceof PhpArray)return target.get(key);
+        if(typeof target==='string'||target instanceof PhpBytes){
+          if(typeof key==='string'&&!/^\s*[+-]?\d+\s*$/.test(key)||key instanceof PhpArray)return null;
+          const bytes=phpStringBytes(target),offset=toInt(key),index=offset<0?bytes.length+offset:offset;
+          return index<0||index>=bytes.length?null:phpStringFromBytes(bytes.slice(index,index+1));
+        }
+        return null;
+      }
       return this.evaluate(expression);
     } catch (error) {
       if (error instanceof TemplateError) return null;
@@ -915,7 +974,7 @@ class Renderer {
     const right = this.evaluate(rightNode);
 
     switch (operator) {
-      case ".": return toStringValue(left) + toStringValue(right);
+      case ".": return phpConcat(left,right);
       case "+":
         if (left instanceof PhpArray && right instanceof PhpArray) {
           const union = left.clone();
@@ -960,6 +1019,12 @@ class Renderer {
     // an alias before any slot for it is taken.
     if (expression.operator === "=" && expression.value.kind === "reference") {
       const bound = this.bindReference(expression.value.target);
+      if(bound instanceof PhpRef && expression.target.kind==='index'){
+        const parent=this.reference(expression.target.target);let array=parent.get();
+        if(!(array instanceof PhpArray)){array=new PhpArray();parent.set(array);}
+        if(expression.target.index===null)array.pushReference(bound.slot);else array.setReference(this.evaluate(expression.target.index),bound.slot);
+        return bound.slot.get();
+      }
       if (bound instanceof PhpRef && expression.target.kind === "variable") {
         const scope = this.context.variables;
         if (scope instanceof ModuleScope) {
@@ -996,8 +1061,11 @@ class Renderer {
 
   private evaluateBinaryValues(operator: string, left: PhpValue, right: PhpValue): PhpValue {
     switch (operator) {
-      case ".": return toStringValue(left) + toStringValue(right);
-      case "+": return toNumber(left) + toNumber(right);
+      case ".": return phpConcat(left,right);
+      case "+": {
+        if(left instanceof PhpArray && right instanceof PhpArray){const union=left.clone();for(const[k,v]of right.pairs())if(!union.has(k))union.set(k,v);return union;}
+        return toNumber(left)+toNumber(right);
+      }
       case "-": return toNumber(left) - toNumber(right);
       case "*": return toNumber(left) * toNumber(right);
       case "/": return toNumber(left) / toNumber(right);

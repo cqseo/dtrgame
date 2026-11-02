@@ -16,7 +16,7 @@
  * make every save look like a change and write every column every time.
  */
 import { gunzipSync, gzipSync } from "fflate";
-import { PhpArray, type PhpValue } from "../template/values";
+import { PhpArray,PhpBytes,type PhpValue } from "../template/values";
 
 /**
  * PHP writes a fixed gzip header: no name, no modification time, XFL 0 and
@@ -38,21 +38,22 @@ const PHP_DEFAULT_LEVEL = 6;
  * rather than emitting UTF-8. Both appear constantly in this game's data —
  * image paths and Chinese text — so neither can be skipped.
  */
-export function phpJsonEncode(value: PhpValue): string {
+export function phpJsonEncode(value: PhpValue,flags=0): string {
+  if(value instanceof PhpBytes)value=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(value.bytes);
   if (value === null) return "null";
   if (typeof value === "boolean") return value ? "true" : "false";
   if (typeof value === "number") return encodeNumber(value);
-  if (typeof value === "string") return encodeString(value);
+  if (typeof value === "string") return encodeString(value,flags);
 
   if (value instanceof PhpArray) {
     const keys = value.keys();
     // PHP emits an array only for a list: integer keys 0..n-1, in order.
     const isList = keys.every((key, index) => key === index);
     if (isList) {
-      return `[${keys.map(key => phpJsonEncode(value.get(key))).join(",")}]`;
+      return `[${keys.map(key => phpJsonEncode(value.get(key),flags)).join(",")}]`;
     }
     const members = keys.map(
-      key => `${encodeString(String(key))}:${phpJsonEncode(value.get(key))}`
+      key => `${encodeString(String(key),flags)}:${phpJsonEncode(value.get(key),flags)}`
     );
     return `{${members.join(",")}}`;
   }
@@ -65,7 +66,7 @@ function encodeNumber(value: number): string {
   return String(value);
 }
 
-function encodeString(value: string): string {
+function encodeString(value: string,flags=0): string {
   let out = '"';
   for (const character of value) {
     const code = character.codePointAt(0) as number;
@@ -74,7 +75,7 @@ function encodeString(value: string): string {
       case "\\": out += "\\\\"; continue;
       // PHP escapes the forward slash unless JSON_UNESCAPED_SLASHES is set,
       // and the original never sets it.
-      case "/": out += "\\/"; continue;
+      case "/": out += flags&64?'/':"\\/"; continue;
       case "\b": out += "\\b"; continue;
       case "\f": out += "\\f"; continue;
       case "\n": out += "\\n"; continue;
@@ -86,7 +87,7 @@ function encodeString(value: string): string {
       out += `\\u${code.toString(16).padStart(4, "0")}`;
       continue;
     }
-    if (code < 0x80) {
+    if (code < 0x80 || (flags&256)!==0 && code!==0x2028&&code!==0x2029) {
       out += character;
       continue;
     }

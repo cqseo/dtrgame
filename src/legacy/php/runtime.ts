@@ -24,7 +24,9 @@ import type { Statement } from "../template/ast";
 import type { HostFunction } from "../template/builtins";
 import type { CompileOptions } from "../template/compile";
 import { TemplateExit, createTemplateContext, executeCompiledFunctionProgram } from "../template/render";
-import { PhpArray, toBool, toStringValue, type PhpValue } from "../template/values";
+import { PhpArray, PhpBytes,phpStringBytes,toBool, toStringValue, type PhpValue } from "../template/values";
+import type { LegacyVirtualFilesystem } from "./virtual-filesystem";
+import { LEGACY_FUNCTION_SOURCE_PATHS } from "../../generated/legacy-runtime-source-metadata";
 import {
   HookChains,
   NULL_FUNCTION,
@@ -92,6 +94,8 @@ export class LegacyFunctionNotCompiled extends Error {
 }
 
 export interface ModuleRuntimeOptions {
+  readonly fullGame?: boolean;
+  readonly filesystem?: LegacyVirtualFilesystem;
   /** Constants the original defines before a page runs. */
   readonly constants?: ReadonlyMap<string, PhpValue>;
   /**
@@ -150,6 +154,7 @@ export class LegacyModuleRuntime {
    * two never drift apart during a request.
    */
   readonly #globals = new ModuleScope();
+  readonly #outputBuffers: string[] = [];
   /**
    * One live constants table for the whole request.
    *
@@ -195,6 +200,14 @@ export class LegacyModuleRuntime {
     }
     for (const shared of ["db", "gtablepre", "tablepre", "room_id", "now"]) {
       this.#globals.alias(shared, this.store.slot("sys", shared));
+    }
+    // The PHP module loader publishes these prefixed globals. sys.init()
+    // explicitly reads input's mode/command through them, and the loader's
+    // generated import expansions refer to the same slots.
+    for (const module of LEGACY_MODULES) {
+      for (const name of this.store.names(module.name)) {
+        this.#globals.alias(`___LOCAL_${module.name.toUpperCase()}__VARS__${name}`,this.store.slot(module.name,name));
+      }
     }
     for (const [name, value] of options.constants ?? []) this.#constants.set(name, value);
     this.#constants.set("__MAGIC__", MAGIC);
@@ -246,7 +259,10 @@ export class LegacyModuleRuntime {
     if (written.includes("\\")) return written;
     if (namespace) {
       const scoped = qualify(namespace, written);
-      if (this.#functions.has(scoped) || this.chains.chain(written).length > 0) return scoped;
+      // PHP falls back to the global wrapper when THIS namespace has no
+      // definition. Another module owning a hook of the same bare name
+      // does not invent e.g. npc_action\save_gameinfo().
+      if (this.#functions.has(scoped) || this.chains.chain(written).includes(scoped)) return scoped;
     }
     return written;
   }
@@ -389,6 +405,8 @@ export class LegacyModuleRuntime {
       }
       return program;
     }
+    const persisted=this.#options.filesystem?.read(name);
+    if(typeof persisted==='string' && path.endsWith('.php'))return parseModuleFile(persisted);
     return undefined;
   }
 
@@ -399,6 +417,7 @@ export class LegacyModuleRuntime {
     if (request) this.#installSuperglobals(request);
     const context = createTemplateContext({
       variables: this.#globals,
+      outputBuffers: this.#outputBuffers,
       globals: this.#globals,
       constants: this.#constants,
       functions: this.hostFunctions(this.#globals, ""),
@@ -411,11 +430,16 @@ export class LegacyModuleRuntime {
       compileOptions: this.#options.compileOptions
     });
     try {
-      return executeCompiledFunctionProgram(program, context);
+      const result=executeCompiledFunctionProgram(program, context);
+      // A complete public HTTP page flushes buffers at PHP request shutdown.
+      // fullGame uses several scripts inside one daemon command and reads
+      // sys.init()'s response buffer explicitly at its transport boundary.
+      if(request&&!this.#options.fullGame){result.output+=this.#outputBuffers.join('');this.#outputBuffers.length=0;}
+      return result;
     } catch (signal) {
       // exit() and die() end a page normally in PHP; what they have
       // written is the response, not a fault.
-      if (signal instanceof TemplateExit) return { value: null, output: signal.output };
+      if (signal instanceof TemplateExit){this.#outputBuffers.length=0;return { value: null, output: signal.output };}
       throw signal;
     }
   }
@@ -500,6 +524,7 @@ export class LegacyModuleRuntime {
 
     const context = createTemplateContext({
       variables: scope,
+      outputBuffers: this.#outputBuffers,
       globals: this.#globals,
       constants: this.#constants,
       functions: this.hostFunctions(scope, qualified, args),
@@ -507,6 +532,12 @@ export class LegacyModuleRuntime {
       callQualifiedWithOutput: (name, callArgs) => this.callWithOutput(name, callArgs, qualified, fn.namespace),
       hasQualified: name => this.has(name, fn.namespace),
       referenceParameters: name => this.referenceParameters(name, fn.namespace),
+      globalSlot: name => {
+        const moduleGlobal=/^___LOCAL_([A-Z0-9_]+)__VARS__(.+)$/.exec(name);
+        if(moduleGlobal)return this.store.slot(moduleGlobal[1]!.toLowerCase(),moduleGlobal[2]!);
+        return fn.namespace!=='input' && this.store.names(fn.namespace).includes(name)
+          ? this.store.slot(fn.namespace,name) : this.#globals.slotFor(name);
+      },
       staticSlot: name => {
         let own = this.#statics.get(qualified);
         if (!own) {
@@ -525,7 +556,26 @@ export class LegacyModuleRuntime {
       compileOptions: this.#options.compileOptions
     });
 
-    return executeCompiledFunctionProgram(fn.program, context);
+    // Magic paths are scoped to the actual defining PHP file. Restore only
+    // these constants across nested calls; define() effects remain global.
+    const source=LEGACY_FUNCTION_SOURCE_PATHS[qualified];
+    const magic = new Map<string,PhpValue>([
+      ["__FILE__", source ? "/"+source : "/"], ["__file__", source ? "/"+source : "/"],
+      ["__DIR__",source ? "/"+source.slice(0,source.lastIndexOf('/')) : "/"],
+      ["__dir__",source ? "/"+source.slice(0,source.lastIndexOf('/')) : "/"],
+      ["__FUNCTION__",qualified],["__NAMESPACE__",fn.namespace]
+    ]);
+    const previous=new Map([...magic].map(([k])=>[k,this.#constants.get(k)]));
+    for(const [k,v] of magic)this.#constants.set(k,v);
+    try{return executeCompiledFunctionProgram(fn.program, context);}
+    catch(error){
+      if(this.#options.fullGame && error instanceof Error){
+        const traced=error as Error & {legacyFrames?:string[]};
+        (traced.legacyFrames??=[]).push(qualified);
+      }
+      throw error;
+    }
+    finally{for(const [k,v]of previous){if(v===undefined)this.#constants.delete(k);else this.#constants.set(k,v);}}
   }
 
   /**
@@ -553,7 +603,7 @@ export class LegacyModuleRuntime {
       if (index < args.length) {
         const supplied = args[index];
         if (supplied instanceof PhpRef) scope.alias(parameter.name, supplied.slot);
-        else scope.set(parameter.name, supplied ?? null);
+        else scope.set(parameter.name, supplied instanceof PhpArray ? supplied.clone() : supplied ?? null);
         return;
       }
 
@@ -606,6 +656,7 @@ export class LegacyModuleRuntime {
     functions.set("file_put_contents", values => {
       const path = toStringValue(values[0] ?? null);
       const data = toStringValue(values[1] ?? null);
+      if(this.#options.filesystem){const raw=values[1] instanceof PhpBytes?values[1]:data;this.#options.filesystem.write(path,raw,(Number(values[2]??0)&8)!==0);return phpStringBytes(raw).length;}
       if (!isCachePath(path)) {
         throw new Error(
           `Refusing to write ${path}: a Worker has no filesystem, and only ` +
@@ -623,6 +674,8 @@ export class LegacyModuleRuntime {
     functions.set("file_get_contents", values => {
       const path = toStringValue(values[0] ?? null);
       if (this.#cacheFiles.has(path)) return this.#cacheFiles.get(path) as string;
+      const stored=this.#options.filesystem?.read(path);
+      if(stored!==undefined && stored!==false)return this.#options.filesystem!.functions().get('file_get_contents')!(values);
       // The templates are real content the Worker has, served through the
       // same loader the include statements use.
       const template = this.#options.loadTemplate?.(path) ??
@@ -632,6 +685,7 @@ export class LegacyModuleRuntime {
     functions.set("file_exists", values => {
       const path = toStringValue(values[0] ?? null);
       if (this.#cacheFiles.has(path)) return true;
+      if(this.#options.filesystem?.exists(path))return true;
       if (legacyPublicImageExists(path)) return true;
       return (this.#options.loadTemplate?.(path) ??
         this.#options.loadTemplate?.(path.replace(/^.*?(?=\.\/templates\/)/, ""))) !== undefined;
@@ -671,7 +725,9 @@ export class LegacyModuleRuntime {
 
       // A nested run needs its own globals and constants, exactly as the
       // separate PHP process the original forks would have.
-      const nested = new LegacyModuleRuntime(this.store, this.#options);
+      const nestedStore=this.#options.fullGame ? ModuleVariableStore.fromOriginalPreinit() : this.store;
+      if(this.#options.fullGame){for(const k of ["gtablepre","tablepre","ctablepre","wtablepre","room_id","room_prefix","now"]){nestedStore.set("sys",k,this.store.get("sys",k));}}
+      const nested = new LegacyModuleRuntime(nestedStore, this.#options);
       for (const table of this.#moduleTables) nested.registerModule(table);
       return nested.runPageScript(program, {
         method: "POST",
@@ -715,8 +771,25 @@ export class LegacyModuleRuntime {
       // game row, derives tablepre/ctablepre/wtablepre and publishes cuser /
       // cpass. Both initializers are request-specific; the captured module
       // variable defaults cannot stand in for either of them.
-      if (this.has("input\\init", "")) this.call("input\\init", [], "", "");
-      if (this.has("sys\\init", "")) this.call("sys\\init", [], "", "");
+      if(this.#options.fullGame){
+        for(const module of [...LEGACY_MODULES].filter(m=>m.enabled).sort((a,b)=>a.order-b.order)){
+          if(module.name==='input'&&this.#constants.has('IN_DAEMON'))continue;
+          if(this.has(`${module.name}\\init`,""))this.call(`${module.name}\\init`,[],"","");
+          if(module.name==='input'){
+            for(const input of [this.#globals.get('_COOKIE'),this.#globals.get('_POST'),this.#globals.get('_REQUEST')]){
+              if(input instanceof PhpArray)for(const [key]of input.pairs()){
+                if(typeof key==='string'&&/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key)){
+                  this.store.set('input',key,this.#globals.get(key)??null);
+                  this.#globals.alias(`___LOCAL_INPUT__VARS__${key}`,this.store.slot('input',key));
+                }
+              }
+            }
+          }
+        }
+      }else{
+        if (this.has("input\\init", "")) this.call("input\\init", [], "", "");
+        if (this.has("sys\\init", "")) this.call("sys\\init", [], "", "");
+      }
       // Only the informational command_help path currently requires skill
       // initialization. Use each enabled skill module's compiled original
       // init() in source load order, rather than inventing its INFO flag:
@@ -724,7 +797,7 @@ export class LegacyModuleRuntime {
       // as the frozen PHP source does. Other game modes still require their
       // own original module initialization acceptance tests.
       const post = this.#globals.get("_POST");
-      if (curscript === "game" && this.#constants.has("IN_COMMAND") &&
+      if (!this.#options.fullGame && curscript === "game" && this.#constants.has("IN_COMMAND") &&
           post instanceof PhpArray && post.get("page") === "command_help") {
         for (const module of LEGACY_MODULES) {
           if (module.enabled && /^skill[0-9]+$/.test(module.name) &&
@@ -810,6 +883,10 @@ export class LegacyModuleRuntime {
       const name = toStringValue(values[0] ?? null);
       const module = toStringValue(values[1] ?? null);
       if (!name || !this.store.has(module)) return null;
+      if(module.toLowerCase()==='input'&&this.#constants.has('IN_DAEMON')&&this.store.get('input',name)===null){
+        const input=this.store.get('input','INPUT_VAR_LIST');
+        if(input instanceof PhpArray&&input.has(name))return new PhpRef({get:()=>input.get(name),set:v=>input.set(name,v)}) as unknown as PhpValue;
+      }
       return new PhpRef(this.store.slot(module, name)) as unknown as PhpValue;
     });
 
@@ -837,6 +914,12 @@ export class LegacyModuleRuntime {
    * defines, so these are bindings and a write reaches the module.
    */
   #importInto(scope: ModuleScope, module: string): void {
+    if(module.toLowerCase()==='input'&&this.#constants.has('IN_DAEMON')){
+      const input=this.store.get('input','INPUT_VAR_LIST');
+      if(input instanceof PhpArray)for(const [key]of input.pairs()){
+        const name=String(key);if(scope.get(name)===undefined||scope.get(name)===null)scope.alias(name,{get:()=>input.get(key),set:v=>input.set(key,v)});
+      }
+    }
     if (!this.store.has(module)) {
       // Some enabled original modules define functions but no persistent
       // variables. Their import expansion is empty, not a missing module.
@@ -845,6 +928,7 @@ export class LegacyModuleRuntime {
       throw new Error(`undefined module ${module}`);
     }
     for (const name of this.store.names(module)) {
+      if(module.toLowerCase()==='input'&&scope.get(name)!==undefined&&scope.get(name)!==null)continue;
       scope.alias(name, this.store.slot(module, name));
     }
   }

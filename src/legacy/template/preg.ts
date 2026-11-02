@@ -95,6 +95,24 @@ function captures(match: RegExpExecArray): PhpArray {
   return array;
 }
 
+export function pregReplaceCallback(pattern:PhpValue,replace:(match:PhpArray)=>PhpValue,subject:PhpValue,limit=-1):{value:PhpValue;count:number}{
+  let count=0;
+  const one=(value:PhpValue):string=>{
+    let text=toStringValue(value);
+    for(const pat of pattern instanceof PhpArray?pattern.values():[pattern]){
+      const regex=compile(pat,'g');if(!regex)throw new Error('Invalid callback regular expression.');
+      let replaced=0,offset=0,out='',match:RegExpExecArray|null;
+      while((match=regex.exec(text))!==null&&(limit<0||replaced<limit)){
+        out+=text.slice(offset,match.index)+toStringValue(replace(captures(match)));offset=match.index+match[0].length;replaced++;count++;
+        if(!match[0].length)regex.lastIndex++;
+      }
+      text=out+text.slice(offset);
+    }return text;
+  };
+  if(subject instanceof PhpArray){const out=new PhpArray();for(const [k,v]of subject.pairs())out.set(k,one(v));return {value:out,count};}
+  return {value:one(subject),count};
+}
+
 /**
  * Replacement references: PHP writes `$1`, `\1` and `${1}`, JavaScript
  * only `$1`. Backslash form and braces are converted; `$0` is the whole

@@ -19,6 +19,7 @@ docs/hook-complexity.json
 tools/.php-remote-stamps/
 .tmp/
 supabase/.temp/
+__pycache__/
 
 # Supabase access token and secret key. This repository is public; these
 # must never be committed. Read by tooling through the environment only.

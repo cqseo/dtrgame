@@ -17,6 +17,7 @@
  * to a slot owned by somewhere else.
  */
 import { LEGACY_MODULE_VARS } from "../../generated/legacy-module-vars";
+import { LEGACY_MODULE_PREINIT_VARS } from "../../generated/legacy-module-preinit-vars";
 import { PhpArray, type PhpValue } from "../template/values";
 
 /** A readable, writable location: a module variable, or a caller's local. */
@@ -71,8 +72,22 @@ export class ModuleVariableStore {
    * arrays, so one request's writes cannot leak into the next.
    */
   static fromOriginal(): ModuleVariableStore {
+    return this.#from(LEGACY_MODULE_VARS);
+  }
+
+  static fromOriginalPreinit(): ModuleVariableStore {
+    const store=this.#from(LEGACY_MODULE_PREINIT_VARS);
+    // Declare globals created by init(), including the 124 player columns,
+    // without importing their old post-init values into a new request.
+    for(const [module,vars]of Object.entries(LEGACY_MODULE_VARS)){
+      for(const name of Object.keys(vars))if(!store.names(module).includes(name))store.set(module,name,null);
+    }
+    return store;
+  }
+
+  static #from(source: Readonly<Record<string, Readonly<Record<string, PhpValue>>>>): ModuleVariableStore {
     const store = new ModuleVariableStore();
-    for (const [module, variables] of Object.entries(LEGACY_MODULE_VARS)) {
+    for (const [module, variables] of Object.entries(source)) {
       const scope = new Map<string, PhpValue>();
       for (const [name, value] of Object.entries(variables)) {
         scope.set(name, value instanceof PhpArray ? value.clone() : value);

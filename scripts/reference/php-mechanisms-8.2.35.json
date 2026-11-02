@@ -1,0 +1,70 @@
+{
+  "php": "8.2.35",
+  "results": [
+    {
+      "name": "foreach reference survives break",
+      "value": "[8,2]",
+      "output": ""
+    },
+    {
+      "name": "explicit reference survives array copy",
+      "value": "[7,{\"r\":7,\"v\":2},{\"r\":7,\"v\":9}]",
+      "output": ""
+    },
+    {
+      "name": "array union assignment keeps left keys",
+      "value": "{\"2\":\"x\",\"a\":1,\"0\":\"y\",\"b\":4}",
+      "output": ""
+    },
+    {
+      "name": "extract default copies and reference flag binds",
+      "value": "[[{\"x\":1},2],{\"x\":3},3]",
+      "output": ""
+    },
+    {
+      "name": "byte offsets preserve arbitrary bytes",
+      "value": "[3,\"ff8041\",\"80\",255,\"\\/4BB\"]",
+      "output": ""
+    },
+    {
+      "name": "base64 round trip preserves text and binary",
+      "value": "[\"e4b8ade69687ff00\",8]",
+      "output": ""
+    },
+    {
+      "name": "gzip preserves arbitrary bytes",
+      "value": "e4b8ade69687ff00",
+      "output": ""
+    },
+    {
+      "name": "UTC localtime and mktime normalize overflow",
+      "value": "[[0,40,0,2,10,126,1,305,0],{\"tm_sec\":0,\"tm_min\":40,\"tm_hour\":0,\"tm_mday\":2,\"tm_mon\":10,\"tm_year\":126,\"tm_wday\":1,\"tm_yday\":305,\"tm_isdst\":0},1796263260,3124224000,0]",
+      "output": ""
+    },
+    {
+      "name": "ordinary array arguments copy, explicit references stay shared",
+      "value": "[[1,7],[9,7],7]",
+      "output": ""
+    },
+    {
+      "name": "nested output functions share buffer",
+      "value": "[\"parentchild\",\"parentchild\"]",
+      "output": ""
+    },
+    {
+      "name": "isset on invalid and missing string offsets",
+      "value": "[false,true,false,true,\"C\"]",
+      "output": ""
+    },
+    {
+      "name": "named preg callback respects limit and count reference",
+      "value": "[\"ONE TWO three\",2]",
+      "output": ""
+    },
+    {
+      "name": "HTML quote flags and existing entities",
+      "value": "[\"'&quot;&lt;&amp;\",\"&#039;&quot;&lt;&amp;\",\"&amp;\"]",
+      "output": ""
+    }
+  ]
+}

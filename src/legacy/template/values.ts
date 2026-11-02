@@ -9,11 +9,31 @@
  */
 
 export type PhpKey = string | number;
-export type PhpValue = null | boolean | number | string | PhpArray;
+export type PhpValue = null | boolean | number | string | PhpArray | PhpBytes;
+
+/** A PHP string may contain arbitrary bytes (gzip, image or partial UTF-8).
+ * Keep those bytes out of JavaScript's Unicode decoding until text is used. */
+export class PhpBytes {
+  constructor(readonly bytes:Uint8Array) {}
+}
+export function phpStringBytes(value:PhpValue):Uint8Array {
+  return value instanceof PhpBytes?value.bytes:new TextEncoder().encode(toStringValue(value));
+}
+export function phpStringFromBytes(bytes:Uint8Array):string|PhpBytes {
+  try{return new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);}catch{return new PhpBytes(bytes);}
+}
+export function phpConcat(left:PhpValue,right:PhpValue):string|PhpBytes {
+  if(!(left instanceof PhpBytes)&&!(right instanceof PhpBytes))return toStringValue(left)+toStringValue(right);
+  const a=phpStringBytes(left),b=phpStringBytes(right),result=new Uint8Array(a.length+b.length);result.set(a);result.set(b,a.length);return phpStringFromBytes(result);
+}
+function byteComparable(value:string|PhpBytes):string{
+  const bytes=phpStringBytes(value);let result='';for(let i=0;i<bytes.length;i+=8192)result+=String.fromCharCode(...bytes.subarray(i,i+8192));return result;
+}
 
 /** PHP's array: an ordered map with the integer-key rules it applies. */
 export class PhpArray {
   private readonly entries = new Map<PhpKey, PhpValue>();
+  private readonly references = new Map<PhpKey,{get():PhpValue;set(value:PhpValue):void}>();
   private nextIndex = 0;
 
   static from(source: Iterable<PhpValue> | Record<string, PhpValue>): PhpArray {
@@ -30,6 +50,7 @@ export class PhpArray {
 
   /** PHP casts "7" to 7 for keys, but leaves "07" and "1.5" as strings. */
   static normalizeKey(key: PhpValue): PhpKey {
+    if(key instanceof PhpBytes)return toStringValue(key);
     if (typeof key === "number") return Number.isInteger(key) ? key : Math.trunc(key);
     if (typeof key === "boolean") return key ? 1 : 0;
     if (key === null) return "";
@@ -50,16 +71,24 @@ export class PhpArray {
   }
 
   get(key: PhpValue): PhpValue {
-    return this.entries.get(PhpArray.normalizeKey(key)) ?? null;
+    const normalized=PhpArray.normalizeKey(key);
+    return this.references.get(normalized)?.get() ?? this.entries.get(normalized) ?? null;
   }
 
   set(key: PhpValue, value: PhpValue): void {
     const normalized = PhpArray.normalizeKey(key);
+    if(this.references.has(normalized)){this.references.get(normalized)!.set(value);return;}
     this.entries.set(normalized, value);
     if (typeof normalized === "number" && normalized >= this.nextIndex) {
       this.nextIndex = normalized + 1;
     }
   }
+
+  setReference(key:PhpValue,slot:{get():PhpValue;set(value:PhpValue):void}):void{
+    const normalized=PhpArray.normalizeKey(key);
+    this.references.delete(normalized);this.set(normalized,null);this.references.set(normalized,slot);
+  }
+  pushReference(slot:{get():PhpValue;set(value:PhpValue):void}):void{this.setReference(this.nextIndex,slot);}
 
   push(value: PhpValue): void {
     this.entries.set(this.nextIndex, value);
@@ -67,6 +96,7 @@ export class PhpArray {
   }
 
   delete(key: PhpValue): void {
+    this.references.delete(PhpArray.normalizeKey(key));
     this.entries.delete(PhpArray.normalizeKey(key));
   }
 
@@ -75,11 +105,11 @@ export class PhpArray {
   }
 
   values(): PhpValue[] {
-    return [...this.entries.values()];
+    return this.keys().map(k=>this.get(k));
   }
 
   pairs(): [PhpKey, PhpValue][] {
-    return [...this.entries.entries()];
+    return this.keys().map(k=>[k,this.get(k)]);
   }
 
   /**
@@ -90,13 +120,16 @@ export class PhpArray {
    */
   reset(): void {
     this.entries.clear();
+    this.references.clear();
     this.nextIndex = 0;
   }
 
   clone(): PhpArray {
     const copy = new PhpArray();
     for (const [key, value] of this.entries) {
-      copy.set(key, value instanceof PhpArray ? value.clone() : value);
+      const ref=this.references.get(key);
+      if(ref)copy.setReference(key,ref);
+      else copy.set(key, value instanceof PhpArray ? value.clone() : value);
     }
     copy.nextIndex = this.nextIndex;
     return copy;
@@ -105,6 +138,7 @@ export class PhpArray {
 
 /** PHP's leading-numeric-prefix rule, used by arithmetic on strings. */
 export function toNumber(value: PhpValue): number {
+  if(value instanceof PhpBytes)return toNumber(toStringValue(value));
   if (value === null) return 0;
   if (typeof value === "boolean") return value ? 1 : 0;
   if (typeof value === "number") return value;
@@ -123,6 +157,7 @@ export function toInt(value: PhpValue): number {
 }
 
 export function toStringValue(value: PhpValue): string {
+  if(value instanceof PhpBytes)return new TextDecoder().decode(value.bytes);
   if (value === null) return "";
   if (typeof value === "boolean") return value ? "1" : "";
   if (typeof value === "string") return value;
@@ -136,6 +171,7 @@ export function toStringValue(value: PhpValue): string {
 
 /** PHP's falsy set: false, 0, 0.0, "", "0", null and the empty array. */
 export function toBool(value: PhpValue): boolean {
+  if(value instanceof PhpBytes)return value.bytes.length>0&&!(value.bytes.length===1&&value.bytes[0]===48);
   if (value === null || value === false) return false;
   if (value === true) return true;
   // NAN is truthy in PHP because it is not equal to zero; -0.0 is falsy.
@@ -152,6 +188,10 @@ const isNumericString = (value: string): boolean =>
  * strings, which reversed PHP 7's behaviour and decides real branches here.
  */
 export function looseEquals(left: PhpValue, right: PhpValue): boolean {
+  if(left instanceof PhpBytes||right instanceof PhpBytes){
+    if(typeof left==='string'||left instanceof PhpBytes)left=byteComparable(left);
+    if(typeof right==='string'||right instanceof PhpBytes)right=byteComparable(right);
+  }
   if (left === null && right === null) return true;
   if (typeof left === "boolean" || typeof right === "boolean") return toBool(left) === toBool(right);
   if (left === null) return typeof right === "string" ? right === "" : !toBool(right);
@@ -178,6 +218,7 @@ export function looseEquals(left: PhpValue, right: PhpValue): boolean {
 }
 
 export function strictEquals(left: PhpValue, right: PhpValue): boolean {
+  if(left instanceof PhpBytes||right instanceof PhpBytes)return (typeof left==='string'||left instanceof PhpBytes)&&(typeof right==='string'||right instanceof PhpBytes)&&byteComparable(left)===byteComparable(right);
   if (left instanceof PhpArray && right instanceof PhpArray) {
     const a = left.pairs();
     const b = right.pairs();
@@ -193,6 +234,10 @@ export function strictEquals(left: PhpValue, right: PhpValue): boolean {
 
 /** PHP's <, >, <= and >= with the same numeric-string handling as ==. */
 export function compareValues(left: PhpValue, right: PhpValue): number {
+  if(left instanceof PhpBytes||right instanceof PhpBytes){
+    if(typeof left==='string'||left instanceof PhpBytes)left=byteComparable(left);
+    if(typeof right==='string'||right instanceof PhpBytes)right=byteComparable(right);
+  }
   if (typeof left === "string" && typeof right === "string") {
     if (isNumericString(left) && isNumericString(right)) {
       const a = toNumber(left);

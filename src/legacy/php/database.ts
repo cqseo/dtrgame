@@ -125,6 +125,24 @@ export abstract class LegacyDatabase {
   abstract insert_id(): number;
   abstract affected_rows(): number;
 
+  /** Original mysqli batch CASE update; fields omitted from another row
+   * deliberately receive SQL NULL, as the original CASE without ELSE does. */
+  multi_update(table:string,data:PhpValue,conditionField:string,singleQuery=''):string {
+    if(!(data instanceof PhpArray))return '';
+    const fields=new Map<string,string[]>(),range:string[]=[];
+    for(const row of data.values()){
+      if(!(row instanceof PhpArray))continue;
+      const condition=this.escape(row.get(conditionField));range.push(`'${condition}'`);
+      for(const [key,value]of row.pairs()){
+        if(String(key)===conditionField)continue;
+        const cases=fields.get(String(key))??[];cases.push(`WHEN '${condition}' THEN '${this.escape(value)}'`);fields.set(String(key),cases);
+      }
+    }
+    if(!fields.size)return '';
+    const sql=`UPDATE ${table} SET ${[...fields].map(([field,cases])=>`${field} = (CASE ${conditionField} ${cases.join(' ')} END)`).join(',')}${singleQuery?','+singleQuery:''} WHERE ${conditionField} IN (${range.join(',')})`;
+    this.query(sql);return sql;
+  }
+
   queries(statements: PhpValue): void {
     const list = statements instanceof PhpArray ? statements.values() : [statements];
     for (const statement of list) this.query(String(statement));
