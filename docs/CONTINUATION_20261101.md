@@ -308,3 +308,40 @@ not a release, not full gameover parity, no real payout enabled.**
 - Initial disabled staging build `8648404` deployed successfully as
   `e13fc2dc-2180-4651-8972-3adaf93cf954` (100% staging, all six bindings);
   follow-up deployment results are recorded below after confirmation.
+
+### Final staging deployment and acceptance — 2026-11-02
+
+- Runtime source commit: **`10a665a13e49dfb5fc2706697f0e1156a183d48a`**.
+  Canonical isolated VM checkout: **`/opt/dts-work/dtrgame-pr18`**, detached
+  at that tested commit; review branch remains `work/original-parity-20261101`.
+  Do not confuse `/opt/dts-work/dtrgame` (older dirty worktree) with this one.
+- Final native typecheck and Worker dry-run both exit 0. Final regression:
+  **84/84 files, zero failures/retries; 362 assertions passed, 62 optional
+  PHP-oracle assertions skipped** in the ordinary runner. The separate
+  original PHP reward run is the 2-suite / 5-test result documented above.
+- Deployed only `dtrgame-original-1to1-staging` with `--keep-vars`, exit 0.
+  Active Worker version **`ef243859-788d-40c3-9b17-8d2372be346a`**; deployment
+  **`151a9eb7-fdf2-4212-b21e-1c65fbaddc6f`**. Cloudflare read-back confirms
+  **100% staging traffic** and all six original bindings. There is NO
+  `DTS_SETTLEMENT_EXPERIMENTAL` binding. No secret values were inspected.
+  Bundle 34,185.04 KiB, 841 assets; log
+  `/tmp/dtr-final-fence-staging-deploy.log` on VM-0-10.
+- The pre-task staging rollback version is
+  `a2c57804-579e-45d3-9beb-33cfee0ecfa6`; the intermediate disabled build
+  `e13fc2dc-2180-4651-8972-3adaf93cf954` is retained too. With BOTH switches
+  off and zero receipts this rollback does not require any account/data
+  restoration. Never drop a ledger or roll back to code unaware of pending
+  markers after enabling the experiment; that needs its own accepted drill.
+- Both SQL migrations installed only in isolated project
+  `qtjcjmpapjsgrrgtfica`. Final read-back: **enabled=false, receipts=0**;
+  anon/authenticated cannot call settlement or reconciliation, service_role
+  can call those gated APIs, and the retired unsafe RPC is not executable.
+- Preview: https://dtrgame-original-1to1-staging.dearpassengerscrew-new.workers.dev/
+- Public HTTP smoke result is appended after completion below. No live
+  registration/login/match mutation was attempted. Production PHP site,
+  production Worker/player data and GitHub main remain unchanged.
+- Final live `npm run smoke:staging`: **12/12 GET-only checks passed**, exit 0,
+  `/tmp/dtr-final-fence-staging-smoke.log` on VM-0-10. Help, map, index,
+  registration page, ranks, item help, anonymous game/room responses,
+  installer refusal, forbidden command GET and status were checked. Status
+  explicitly still reports `backendParity=false` and `playable=false`.

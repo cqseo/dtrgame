@@ -75,19 +75,6 @@ Project: `qtjcjmpapjsgrrgtfica`, not the production PHP data server.
    execution from PUBLIC, anon and authenticated; use a fixed empty
    `search_path` in privileged functions and qualify every relation.
 
-## Prior reward-only checkpoint (superseded below)
-
-- PHP 8.2 credit/gold differential: **tested**.
-- Pure outcome and reward projections: **implemented**.
-- Private DO settlement plan read: **implemented**.
-- Atomic account/history transaction, idempotency ledger and SQL rollback:
-  **NOT IMPLEMENTED OR DEPLOYED**.
-- DO postcommit crash reconciliation, real isolated dual-user E2E,
-  replay/rating/achievement hooks and other 735-module parity:
-  **NOT ACCEPTED**.
-- **No migration and no payout writes were made as part of this checkpoint.**
-- Production PHP/game, player data, and GitHub main are unchanged.
-
 ## Current checkpoint — 2026-11-02
 
 The transaction and crash-recovery implementation is now in
