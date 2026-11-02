@@ -262,3 +262,77 @@ and writer-fence items above; broad acceptance gates remain open.
   player-data modification has been performed in this continuation. Real
   browser/visual acceptance, complete all-mode/item/card/achievement coverage,
   remaining source/runtime compatibility and staging cutover are still open.
+
+## Validation, real browsers and Cloudflare startup continuation
+
+- Integer coercion triggers were made lazy per written table. TypeScript and
+  SQL/full-engine checks passed (38 tests). Fresh complete serial regression
+  then reported **96/96 test-file checks, zero retries/failures**. External PHP
+  suites remain optional/skipped. Three optional reference suites now avoid
+  reading missing source directories before their existing skip conditions.
+  Actual top-level PHP page parsing was rerun against the remote frozen tree:
+  2 tests passed. Do not count skipped suites as new PHP differential evidence.
+- The --browser path in tools/verify-original-fullstack.mjs uses two isolated
+  Chromium contexts and original visible controls. Original login forms and
+  cookies, SOLO creation, entering/seating, live lobby updates and original
+  JavaScript chat passed. **Ready-to-game transition did not pass.** The 2 GiB
+  test host had only 43 MiB available and its 1 GiB swap was full, then became
+  unresponsive during initialization. Stop request for our QA session 9775
+  timed out without confirmation. Device 8a0c5429-384b-412a-b8dd-05da3011606a
+  is offline. Do not retry its side-effecting session while recovery is
+  uncertain; do not kill unrelated processes or alter production PHP.
+- Read-only connected preflight: isolated Supabase qtjcjmpapjsgrrgtfica still
+  has five accounts and no full-engine RPCs/control tables. It has 66 public
+  acbra2_* tables before provisioning. No migration or account write occurred.
+- Cloudflare API staging preflight: script dtrgame-original-1to1-staging,
+  migration v2, GAMES and ROOMS namespaces, no ORIGINAL binding, complete-engine
+  switch absent/off. CPU ceiling 120000 ms. The active source is still old
+  runtime 10a665a / version ef243859-788d-40c3-9b17-8d2372be346a.
+- A checksummed unminified cf0f271 build (39,394,016 JS bytes, original pinned
+  SQLite Wasm 685,235 bytes) was prepared. Separate unreferenced artifact
+  commit b269cc9e823d2c53562b83beee4ab5d1eb822446 contains only the temporary
+  deployment tar; **never merge its payload-only tree into the source branch**.
+  Raw GitHub fetch through the Cloudflare tool returned 403; inline transport
+  exceeded that tool's 4 MiB limit. Three temporary KV chunks then verified the
+  archive and both part SHA-256 values. This namespace was never game-bound
+  and has been deleted after the rejected upload.
+- Cloudflare API upload reached real validation and was rejected with **10021:
+  Script startup exceeded CPU time limit**. Subsequent checks confirmed the
+  prior migration v2, etag bd0c17c22a2c039ab979f9c25d3046776f550666cdc1d43dafdaedc6c414b42d
+  and timestamp were unchanged. No new Worker or DO migration was activated.
+  Retain the existing staged version; do not describe a dry build as deployed.
+- Added a lossless compiler representation: lazy JSON bodies with a bounded
+  immutable-syntax cache, preserving every original function's metadata and
+  body. The source compiler and one-time repacker share an emitter. The 736
+  tables / 6,152 functions (enabled modules plus global functions) match their
+  before-conversion SHA-256 digests in original-function-ast-digests.json.
+  No module, card, item, skill, timing or gameplay value was removed.
+- On the local executor before it disconnected: TypeScript and build passed;
+  affected AST/full-engine/account/transaction tests passed **65 tests across
+  four files**. Build 37,492.17 KiB raw / 4,237.75 KiB gzip. This representation
+  has **not** yet passed Cloudflare startup validation, a fresh complete serial
+  regression or the native workerd whole-match drill.
+- The local executor then became unavailable. Recovered the representation
+  deterministically through GitHub from fixed cf0f271, all 736 tables / 6,152
+  functions, retaining the same digest manifest and tested runtime helper.
+  ASCII and Unicode digest results were independently checked against native
+  Web Crypto while recovering. The checkpoint is not a new acceptance result.
+
+Next work, in order:
+1. Restore an execution environment and rerun typecheck, the digest/engine
+   checks, all test files and the native --finish-match drill on this commit.
+   The current lifecycle drill's attack-command condition can fail if a match
+   ends with only natural NPC encounters; distinguish lifecycle evidence from
+   actual lethal PvP rather than inferring hits from submitted commands.
+2. Rebuild and retry Cloudflare startup validation. Prefer first uploading code
+   with the existing v2 bindings and full engine disabled, preserving an easy
+   rollback; add the ORIGINAL binding/migration only with a rehearsed cutover.
+   The previous deployment archive describes the older eager representation.
+3. Complete browser ready/start, complete matches, resource/replay delivery,
+   full visual/PHP comparisons, remaining all-mode/card/item/skill/achievement
+   interactions, then connected schema installation and isolated staged rollout.
+   The installed original nginx really blocks non-CSS gamedata/replays paths;
+   resolve compatibility explicitly without exposing private game files.
+4. Production PHP, real player data, GitHub main and the public complete-engine
+   gate remain unchanged. The user's original 1:1 acceptance standard remains
+   unmet; no simplification or production completion is claimed.

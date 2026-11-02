@@ -22,6 +22,7 @@ import { compilePhpModuleFile } from "../src/legacy/module-compiler.ts";
 import { ENTRY_POINTS, closureFrom, readModuleTree } from "./lib/module-closure.mjs";
 import { LEGACY_MODULES } from "../src/generated/legacy-registry.ts";
 import { parseModuleFile } from "../src/legacy/php/parser.ts";
+import {renderCompiledFunction} from './lib/render-compiled-function.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..");
@@ -314,12 +315,13 @@ function generate(module) {
     `// ${functions.length} functions.`,
     "",
     'import type { CompiledPhpFunction } from "../legacy/module-compiler";',
+    'import {lazyOriginalFunction} from "../legacy/php/lazy-original-function";',
     "",
     `export const ${constant}: Record<string, CompiledPhpFunction> = {`
   ];
 
   for (const fn of functions) {
-    lines.push(`  ${JSON.stringify(fn.name)}: ${render(fn)},`);
+    lines.push(`  ${JSON.stringify(fn.name)}: ${renderCompiledFunction(fn)},`);
   }
   lines.push("};", "");
   return { path: resolve(repoRoot, `src/generated/legacy-compiled-${module}.ts`), text: lines.join("\n") };
@@ -382,10 +384,11 @@ function generateGlobals() {
     `// ${functions.length} global functions.`,
     "",
     'import type { CompiledPhpFunction } from "../legacy/module-compiler";',
+    'import {lazyOriginalFunction} from "../legacy/php/lazy-original-function";',
     "",
     "export const LEGACY_COMPILED_GLOBALS: Record<string, CompiledPhpFunction> = {"
   ];
-  for (const fn of functions) lines.push(`  ${JSON.stringify(fn.name)}: ${render(fn)},`);
+  for (const fn of functions) lines.push(`  ${JSON.stringify(fn.name)}: ${renderCompiledFunction(fn)},`);
   lines.push("};", "");
   return { path: resolve(repoRoot, "src/generated/legacy-compiled-globals.ts"), text: lines.join("\n") };
 }

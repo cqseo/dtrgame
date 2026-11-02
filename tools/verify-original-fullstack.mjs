@@ -8,6 +8,7 @@ import {Miniflare,Response,convertV4MiniflareOptions} from 'miniflare';
 import {PGlite} from '@electric-sql/pglite';
 import {legacyCookiePassword,legacyStoredPassword} from '../src/original-auth.ts';
 import {legacyDecode} from '../src/original-protocol.ts';
+import {verifyOriginalBrowserOpening} from './original-browser-qa.mjs';
 
 const root=process.cwd(),db=new PGlite(),password='synthetic-local-only';
 let mf;
@@ -63,6 +64,11 @@ try{
     serviceBindings:{ASSETS:assets},outboundService:postgrest
   }]}));
   await mf.ready;
+  if(process.argv.includes('--browser')){
+    const result=await verifyOriginalBrowserOpening({mf,db,password});
+    assert.deepEqual(rpcFailures,[]);
+    console.log(JSON.stringify({ok:true,syntheticOnly:true,workerd:true,canonicalSql:true,...result}));
+  }else{
   for(const name of cookies.keys()){
     const login=await request(name,'/login.php',{username:name,password});assert.equal(login.response.status,302,login.body);assert.equal(login.response.headers.get('location'),'index.php');
     assert(cookies.get(name).has('acbra2_pass'));
@@ -147,6 +153,7 @@ try{
   }
   assert.deepEqual(rpcFailures,[],'Canonical SQL must not hide deterministic conversion failures behind command retries.');
   console.log(JSON.stringify({ok:true,syntheticOnly:true,workerd:true,canonicalSql:true,browser:false,completeMatch}));
+  }
 }finally{
   if(mf)await mf.dispose();await db.close();
 }
