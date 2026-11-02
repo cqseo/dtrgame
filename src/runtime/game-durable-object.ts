@@ -3,6 +3,7 @@ import type { LegacyMapItem } from "../legacy/item";
 import { LEGACY_INFINITE_DURABILITY, emptyLegacyItem, isLegacyItemEmpty, type LegacyItem } from "../legacy/item";
 import { executeLegacyAssault } from "../legacy/battle-runtime";
 import { decideLegacyGameover } from "../legacy/gameover-decision";
+import { projectLegacySettlement } from "../legacy/settlement-plan";
 import { cryptoLegacyRandom } from "../legacy/random";
 import { readLegacyPlayerInventory, writeLegacyPendingItem } from "../legacy/player-inventory";
 import { runLegacyPlayerCommand } from "../legacy/command-runtime";
@@ -107,6 +108,16 @@ export class LegacyGameDurableObject {
         return this.#match
           ? json(decideLegacyGameover(this.#match.state.players,
               this.#match.state.gametype, this.#match.state.gamestate))
+          : json({ error: "游戏数据记录不存在。" }, 404);
+      }
+      if (request.method === "GET" && url.pathname === "/settlement-plan") {
+        // Only a projection; includes the original PHP's personal account
+        // credit/gold/validgames/wingames deltas, never commits them.
+        return this.#match
+          ? json({ matchId: this.#match.state.matchId, version: this.#match.version,
+              plan: projectLegacySettlement(this.#match.state.players,
+                this.#match.state.gametype, this.#match.state.gamestate,
+                Math.floor(Date.now() / 1000)) })
           : json({ error: "游戏数据记录不存在。" }, 404);
       }
       if (request.method === "POST" && url.pathname === "/hydrate") {
