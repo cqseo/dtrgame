@@ -177,6 +177,19 @@ describe("legacy match Durable Object", () => {
     });
     expect(test.values.get("match")).toEqual(beforePreview);
     expect((test.values.get("match") as { version: number }).version).toBe(1);
+    const rewardResponse = await test.object.fetch(new Request("https://game.invalid/settlement-plan"));
+    expect(rewardResponse.status).toBe(200);
+    const rewards = await rewardResponse.json<{ matchId: number; version: number; plan: {
+      winner: string; rewards: Array<{ username: string; credits: number; gold: number; wingames: number }>
+    } }>();
+    expect(rewards.matchId).toBe(stored.state.matchId);
+    expect(rewards.version).toBe(1);
+    expect(rewards.plan.winner).toBe("测试者");
+    expect(rewards.plan.rewards).toMatchObject([
+      { username: "测试者", gold: 120, credits: 214, wingames: 1 },
+      { username: "敌人", gold: 10, credits: 14, wingames: 0 }
+    ]);
+    expect(test.values.get("match")).toEqual(beforePreview);
   });
 
   it("binds attacks to saved enemy pid and refuses forged targets without mutating the match", async () => {
