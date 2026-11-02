@@ -1,7 +1,7 @@
-# Atomic settlement cutover gate — NOT ACTIVE
+# Atomic settlement cutover gate — EXPERIMENTAL / DISABLED
 
 This is a release-blocking contract for the original PHP to TypeScript port.
-**No account reward writes or gameover RPC are enabled by this branch.**
+**No account reward writes are enabled. An experimental server-only RPC now exists behind disabled switches.**
 The new `GET /settlement-plan` is a private, read-only Durable Object route.
 
 ## Confirmed from original PHP
@@ -75,7 +75,7 @@ Project: `qtjcjmpapjsgrrgtfica`, not the production PHP data server.
    execution from PUBLIC, anon and authenticated; use a fixed empty
    `search_path` in privileged functions and qualify every relation.
 
-## Release state
+## Prior reward-only checkpoint (superseded below)
 
 - PHP 8.2 credit/gold differential: **tested**.
 - Pure outcome and reward projections: **implemented**.
@@ -87,3 +87,24 @@ Project: `qtjcjmpapjsgrrgtfica`, not the production PHP data server.
   **NOT ACCEPTED**.
 - **No migration and no payout writes were made as part of this checkpoint.**
 - Production PHP/game, player data, and GitHub main are unchanged.
+
+## Current checkpoint — 2026-11-02
+
+The transaction and crash-recovery implementation is now in
+`20261102023311_atomic_settlement_ledger.sql`, `runtime/settlement.ts` and
+`runtime/game-durable-object.ts`. It is installed ONLY in isolated Supabase
+`qtjcjmpapjsgrrgtfica`, with `settlement_control.enabled=false` and zero
+receipts confirmed. The Worker capability is also disabled and has no browser
+route. Older arbitrary-award `dtr_match_commit` is no longer executable by
+service_role. No balances, games or result histories were changed on install.
+
+35 local targeted tests cover the transaction, rollback and DO recovery.
+Actual multi-session PostgreSQL locking is NOT proven by the single-session
+PGlite engine. Native full typecheck, Worker build and the 84-file regression
+runner pass. Frozen PHP 8.2.35 reward oracle passes separately.
+
+This is BASE settlement only; original module hooks, resurrection/special
+endings, physical player-table updates, replay/rating/achievements and
+news/chat remain incomplete. Do not enable or merge the experiment until
+those release gates are accepted. See the latest section of
+`CONTINUATION_20261101.md` for evidence and exact limits.

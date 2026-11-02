@@ -8,6 +8,7 @@ import { cryptoLegacyRandom } from "../legacy/random";
 import { readLegacyPlayerInventory, writeLegacyPendingItem } from "../legacy/player-inventory";
 import { runLegacyPlayerCommand } from "../legacy/command-runtime";
 import { SupabaseLegacyRest, SupabaseMatchSnapshots } from "./supabase";
+import { SupabaseLegacySettlement } from "./settlement";
 
 export interface LegacyMatchState {
   matchId: number;
@@ -19,10 +20,14 @@ export interface LegacyMatchState {
   areaNames: string[];
   mapItems?: LegacyMapItem[];
   weatherId?: number;
+  settlement?: { historyGid: number; endedAt: number; winmode: number; winner: string; hooksPending: true };
 }
 
 export interface StoredLegacyMatch { version: number; state: LegacyMatchState; }
-interface LegacyGameObjectEnv extends Cloudflare.Env { SUPABASE_URL?: string; SUPABASE_SECRET_KEY?: string; }
+interface LegacyGameObjectEnv extends Cloudflare.Env {
+  SUPABASE_URL?: string; SUPABASE_SECRET_KEY?: string;
+  DTS_SETTLEMENT_EXPERIMENTAL?: string;
+}
 interface GameCommandBody {
   username: string;
   mode?: string;
@@ -86,18 +91,55 @@ function takeCorpseItem(corpse: LegacyPlayerRecord, position: string): LegacyIte
 export class LegacyGameDurableObject {
   #match: StoredLegacyMatch | undefined;
   #queue: Promise<void> = Promise.resolve();
+  #ready: Promise<void>;
+  #settlementPending: number | undefined;
   readonly ctx: DurableObjectState;
   readonly #env: LegacyGameObjectEnv;
 
   constructor(ctx: DurableObjectState, env: LegacyGameObjectEnv) {
     this.ctx = ctx;
     this.#env = env;
-    ctx.blockConcurrencyWhile(async () => { this.#match = await ctx.storage.get<StoredLegacyMatch>("match"); });
+    this.#ready = ctx.blockConcurrencyWhile(async () => {
+      this.#match = await ctx.storage.get<StoredLegacyMatch>("match");
+      this.#settlementPending = await ctx.storage.get<number>("settlement-pending");
+    });
   }
 
   async fetch(request: Request): Promise<Response> {
+    await this.#ready;
+    return this.#exclusive(() => this.#fetch(request));
+  }
+
+  async #fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
     try {
+      await this.#reconcileSettlement();
+      if (request.method === "POST" && url.pathname === "/settle") {
+        // Internal capability only; no index.ts or browser command route
+        // exposes this endpoint. Both Worker and SQL switches default OFF.
+        if (this.#env.DTS_SETTLEMENT_EXPERIMENTAL !== "enabled") return json({ error: "Experimental settlement disabled." }, 503);
+        if (!this.#match) return json({ error: "游戏数据记录不存在。" }, 404);
+        if (this.#match.state.settlement) return json(this.#match);
+        if (!this.#env.SUPABASE_URL || !this.#env.SUPABASE_SECRET_KEY) return json({ error: "Supabase match persistence is not configured." }, 503);
+        const now = Math.floor(Date.now() / 1000);
+        if (!projectLegacySettlement(this.#match.state.players, this.#match.state.gametype, this.#match.state.gamestate, now)) {
+          return json({ error: "游戏尚未达到结算条件。" }, 409);
+        }
+        // This durable marker survives an SQL-committed/DO-crashed window,
+        // including a lost RPC response. Fail closed until DB is reachable.
+        this.#settlementPending = this.#match.state.matchId;
+        await this.ctx.storage.put("settlement-pending", this.#settlementPending);
+        const receipt = await new SupabaseLegacySettlement(this.#rest()).settle(this.#match, now);
+        await this.ctx.storage.put("match", receipt.snapshot);
+        this.#match = structuredClone(receipt.snapshot);
+        await this.ctx.storage.put("settlement-pending", 0);
+        this.#settlementPending = undefined;
+        return json(this.#match);
+      }
+      if (request.method === "POST" && ["/command", "/battle", "/corpse"].includes(url.pathname)
+          && this.#match && (this.#match.state.gamestate < 5 || this.#match.state.settlement)) {
+        return json({ error: "游戏已经结束，请返回大厅查看结果。" }, 409);
+      }
       if (request.method === "GET" && url.pathname === "/state") {
         return this.#match ? json(this.#match) : json({ error: "游戏数据记录不存在。" }, 404);
       }
@@ -121,16 +163,16 @@ export class LegacyGameDurableObject {
           : json({ error: "游戏数据记录不存在。" }, 404);
       }
       if (request.method === "POST" && url.pathname === "/hydrate") {
-        return await this.#exclusive(async () => {
+        return await (async () => {
           if (this.#match) return json(this.#match);
           const body = await request.json<StoredLegacyMatch>();
           if (!this.#valid(body)) return json({ error: "Invalid match snapshot." }, 400);
           await this.#commit(structuredClone(body));
           return json(this.#match, 201);
-        });
+        })();
       }
       if (request.method === "POST" && url.pathname === "/restore") {
-        return await this.#exclusive(async () => {
+        return await (async () => {
           if (this.#match) return json(this.#match);
           if (!this.#env.SUPABASE_URL || !this.#env.SUPABASE_SECRET_KEY) {
             return json({ error: "Supabase match persistence is not configured." }, 503);
@@ -147,11 +189,11 @@ export class LegacyGameDurableObject {
           await this.ctx.storage.put("match", next);
           this.#match = next;
           return json(next, 201);
-        });
+        })();
       }
       if (request.method === "POST" && url.pathname === "/command") {
         const body = await request.json<GameCommandBody>();
-        return await this.#exclusive(async () => {
+        return await (async () => {
           if (!this.#match) return json({ error: "游戏数据记录不存在。" }, 404);
           const username = String(body.username ?? "");
           const current = this.#match.state.players[username];
@@ -191,11 +233,11 @@ export class LegacyGameDurableObject {
           const next: StoredLegacyMatch = { version: this.#match.version + 1, state: working };
           await this.#commit(next);
           return json({ version: next.version, mode: output.mode, log: output.log, cmd: output.cmd, action: output.action, player: output.player, craftResult: output.craftResult, encounter: output.encounter, battleResult });
-        });
+        })();
       }
       if (request.method === "POST" && url.pathname === "/battle") {
         const body = await request.json<GameBattleBody>();
-        return await this.#exclusive(async () => {
+        return await (async () => {
           if (!this.#match) return json({ error: "游戏数据记录不存在。" }, 404);
           const username = String(body.username ?? "");
           const working = structuredClone(this.#match.state);
@@ -224,11 +266,11 @@ export class LegacyGameDurableObject {
           const next: StoredLegacyMatch = { version: this.#match.version + 1, state: working };
           await this.#commit(next);
           return json({ version: next.version, result, attacker, defender });
-        });
+        })();
       }
       if (request.method === "POST" && url.pathname === "/corpse") {
         const body = await request.json<GameCorpseBody>();
-        return await this.#exclusive(async () => {
+        return await (async () => {
           if (!this.#match) return json({ error: "游戏数据记录不存在。" }, 404);
           const username = String(body.username ?? "");
           const itemPosition = String(body.item ?? "");
@@ -284,7 +326,7 @@ export class LegacyGameDurableObject {
           const next: StoredLegacyMatch = { version: this.#match.version + 1, state: working };
           await this.#commit(next);
           return json({ version: next.version, log, player, corpse });
-        });
+        })();
       }
       return json({ error: "Not found." }, 404);
     } catch (error) {
@@ -296,6 +338,25 @@ export class LegacyGameDurableObject {
     return Number.isSafeInteger(value?.version) && value.version >= 0
       && Number.isSafeInteger(value?.state?.matchId) && value.state.matchId > 0
       && typeof value.state.players === "object" && value.state.players !== null;
+  }
+
+  #rest(): SupabaseLegacyRest {
+    if (!this.#env.SUPABASE_URL || !this.#env.SUPABASE_SECRET_KEY) throw new Error("Supabase match persistence is not configured.");
+    return new SupabaseLegacyRest({ url: this.#env.SUPABASE_URL, secretKey: this.#env.SUPABASE_SECRET_KEY });
+  }
+
+  async #reconcileSettlement(): Promise<void> {
+    if (!this.#settlementPending) return;
+    const matchId = this.#settlementPending;
+    const restored = await new SupabaseMatchSnapshots<LegacyMatchState>(this.#rest()).load(matchId);
+    if (!restored || !this.#valid(restored) || restored.state.matchId !== matchId
+        || (this.#match && restored.version < this.#match.version)) {
+      throw new Error("Cannot reconcile pending settlement.");
+    }
+    await this.ctx.storage.put("match", restored);
+    this.#match = structuredClone(restored);
+    await this.ctx.storage.put("settlement-pending", 0);
+    this.#settlementPending = undefined;
   }
 
   async #commit(next: StoredLegacyMatch): Promise<void> {

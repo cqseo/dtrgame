@@ -70,6 +70,13 @@ export function renderLegacyDeathPanel(snapshot: StoredLegacyMatch, username: st
 export function renderLegacyCommandPanel(snapshot: StoredLegacyMatch, username: string): string {
   const player = snapshot.state.players[username];
   if (!player) return "玩家数据记录不存在。";
+  if (snapshot.state.gamestate < 5 || snapshot.state.settlement) {
+    const result = snapshot.state.settlement;
+    return `<br><div class="subtitle">本局游戏已结束</div><br>
+      ${result ? `<div>${result.winner ? `优胜者：${escape(result.winner)}` : result.winmode === 4 ? "本局无人参加。" : "本局无人幸存。"}</div>
+      <div>第 ${escape(result.historyGid)} 局</div><br>` : ""}
+      <a href="index.php">返回大厅 / 房间列表</a>`;
+  }
   if (number(player, "hp") <= 0) return renderLegacyDeathPanel(snapshot, username);
   const action = text(player, "action");
   if (/^enemy\d+$/.test(action)) {

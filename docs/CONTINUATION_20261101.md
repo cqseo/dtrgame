@@ -206,3 +206,85 @@ Everything listed below is **verified on the detached PR #18 worktree**, not dep
 - Code deployed **staging Worker only** from reviewed source commit `21e0cff622db11337d7c2825996899f5f5813639` via `wrangler deploy --keep-vars`, exit 0. New active version **`a2c57804-579e-45d3-9beb-33cfee0ecfa6`**, deployment `c7cfe636-be02-4267-ad2a-6f0ca4dc474c`, Cloudflare confirmed 100% staging traffic; rollback version **`6a28b953-622b-42c6-925f-4704c4249445`**.
 - Confirmed existing `APP_ENV`, `ASSETS`, `GAMES`, `ROOMS`, `SUPABASE_URL` and `SUPABASE_SECRET_KEY` bindings intact; no secret value read. Real GET-only `npm run smoke:staging` **12/12 passed**, exit 0, `/tmp/dtr-settlement-staging-smoke.log`. Original `backendParity:false` and `playable:false` remain intentional.
 - Production PHP/game and player DB, GitHub `main`, and existing prod Worker unchanged. No account credit, payout, history, migration, or snapshot gameover writes occurred in this checkpoint. PR #18 remains draft.
+
+## 2026-11-02 — Atomic base settlement and DO recovery checkpoint
+
+The prior reward-only checkpoint is superseded by this section. **STAGING ONLY;
+not a release, not full gameover parity, no real payout enabled.**
+
+- Added `20261102023311_atomic_settlement_ledger.sql` and server-only
+  `src/runtime/settlement.ts`. SQL locks the existing match and room, rejects
+  stale/recycled/malformed state, recomputes base reward deltas from the saved
+  snapshot, locks all accounts in sorted order, allocates the original shared
+  subroom history gid under a table lock, writes compressed original history
+  fields supplied by the server, updates accounts/game/snapshot, and records
+  one immutable receipt keyed by match ID in the **same transaction**.
+- Terminal snapshots cannot be overwritten by `dtr_match_save`, even with a
+  higher version. An older installed `dtr_match_commit` accepting arbitrary
+  award JSON is retired from service-role execution; current runtime had no
+  callers of it. Other player/account fields are untouched by the new RPC.
+- Added private `POST /settle` to the game DO. It is not routed from index.ts
+  or any browser command and ignores any supplied winner/award fields. Both
+  `DTS_SETTLEMENT_EXPERIMENTAL=enabled` and DB control are required; neither
+  is enabled on staging. Ordinary commands do not auto-finalize games.
+- Before sending SQL the DO durably records a pending marker. Lost response,
+  SQL-committed/DO-write-failed and marker-clear-failed windows recover from
+  the authoritative DB snapshot. While recovery cannot reach DB all state
+  reads and actions fail closed. Restart recovery also works with the
+  experimental Worker flag removed. All reads and writes are serialized.
+- Ended snapshots render an escaped game result and lobby link; movement,
+  battle and corpse commands return 409, including when raced after settlement.
+- A stable ended-game mapping prevents a history gid collision from changing
+  the match DO identity. A reused, active room derives its new match identity.
+
+### Verified
+
+- **35/35 new targeted tests**: 28 SQL tests in ephemeral PGlite (actual
+  PostgreSQL WASM engine) and 7 DO recovery tests. Tests only create local
+  synthetic fixture rows; no deployed users or accounts are registered.
+- SQL tests include original winner/loser/team/mode/cap/rounding components,
+  all-dead and no-entry outcomes, immutable duplicate receipts, stale/new-room
+  refusals, missing accounts, malformed roster/history, browser-role denial,
+  and injected failures at second-account update, history insert, ledger
+  insert, snapshot update and room/game update. Every failure rolls back all
+  state, balances and history. PGlite serializes sessions: **this does not
+  constitute multi-session PostgreSQL lock/race acceptance**.
+- Full low-memory runner: **84/84 test files with no failures**, zero retries
+  on final run. Optional PHP-oracle suites are skipped in this ordinary runner;
+  they are not counted as PHP parity. First local run lacked the frozen source
+  fixture directory; after mounting it read-only the complete run passed.
+  Log `/tmp/dtr-84-full-final-20261102.log` in the current Work environment.
+- Fresh frozen **PHP 8.2.35** oracle on VM-0-10: `game-result settlement-credit`,
+  **2 suites / 5 tests passed**, including the 22 reward comparisons. Log
+  `/tmp/dtr-atomic-php-oracle-20261102.log` on the VM. This revalidates the pure
+  projection used by SQL fixture comparisons, not every module hook.
+- Full native **`npm run check` now passes** on a larger isolated runner.
+  Fixed two pre-existing test-only unknown JSON type errors with an explicit
+  `LegacyRoomRecord` generic. Do not run full tsc on the 2 GiB VM.
+- Worker dry-run build passed: 841 assets, 34,184.39 KiB Worker bundle.
+  Log `/tmp/dtr-atomic-build-20261102.log`.
+- Applied migration **only to isolated Supabase `qtjcjmpapjsgrrgtfica`**.
+  Read-back: control `enabled=false`, ledger receipts **0**, anon/authenticated
+  cannot execute, service role can execute, retired old RPC service privilege
+  is false. Installation does not write any account rewards or game/history
+  outcomes. Security advisors: no new warnings; the two new private tables
+  correctly have RLS/no browser policies. Existing unrelated Auth leaked
+  password warning remains; no Auth settings changed.
+
+### Still required before enabling or merging
+
+- Original resurrection / special winmode hooks, original player-table mirror,
+  achievements, news/chat archive, replay/rating, main-room restart scheduling
+  and room recycling must be reconciled. Receipts explicitly say
+  `hooksPending=true`; experimental SQL only accepts subrooms 1–12.
+- Server-generated compressed history payloads are trusted internal encodings;
+  SQL independently derives balances/outcome from its snapshot but does not
+  decompress gzip to verify those two archive strings.
+- Real multi-session PostgreSQL race and crash verification, deployed
+  authenticated multi-browser game, all 735-module/hook acceptance, backups
+  and rollback exercise remain required. A previous real staging-account
+  registration was blocked by tool policy; not repeated or bypassed here.
+- No production PHP, production Worker, live player database or GitHub main
+  changes. Keep `backendParity=false`, `playable=false` and PR #18 draft.
+- Worker deployment outcome and rollback version are recorded below once
+  confirmed. Never infer a deployment from a dry-run build.

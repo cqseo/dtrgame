@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createLegacyRoomRecord } from "../src/legacy/room";
+import { createLegacyRoomRecord, type LegacyRoomRecord } from "../src/legacy/room";
 import { LegacyRoomDurableObject } from "../src/runtime/room-durable-object";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -22,7 +22,7 @@ async function roomHarness(options: { empty?: boolean } = {}) {
   const room = new LegacyRoomDurableObject(ctx, env);
   await initialized;
   const state = async () =>
-    (await room.fetch(new Request("https://room.internal/state"))).json();
+    (await room.fetch(new Request("https://room.internal/state"))).json<LegacyRoomRecord>();
   const post = (path: string, body: object) =>
     room.fetch(new Request(`https://room.internal/${path}`, {
       method: "POST",
