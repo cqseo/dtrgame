@@ -122,19 +122,21 @@ try{
     }
     const ended=(await db.query('select gamestate from public.acbra2_game where groomid=1')).rows[0];
     assert.equal(ended.gamestate,0,'Original synthetic match did not finish within the QA turn limit.');
-    // Original exploration can resolve an automatic attack without leaving
-    // action=enemy<pid>. Its retained kill news is authoritative evidence.
+    // The original match can end with an NPC kill. Only recorded death news
+    // naming the other player as killer proves a lethal PvP result.
     const combatNews=(await db.query("select news,a,b,c from public.acbra2_s1_newsinfo where news like 'death%' and a in ('Alpha','Beta') and c in ('Alpha','Beta') and a<>c")).rows;
-    console.log('MATCH DEATH NEWS',JSON.stringify((await db.query("select news,a,b,c,d from public.acbra2_s1_newsinfo where news like 'death%' and a in ('Alpha','Beta')")).rows));
-    assert(pvpAttacks>0||combatNews.length>0,'No actual player-vs-player encounter was exercised.');
+    const deathNews=(await db.query("select news,a,b,c,d from public.acbra2_s1_newsinfo where news like 'death%' and a in ('Alpha','Beta')")).rows;
+    console.log('MATCH DEATH NEWS',JSON.stringify(deathNews));
+    assert(deathNews.length>0,'No original lethal encounter was recorded.');
+    if(process.argv.includes('--require-pvp'))assert(combatNews.length>0,'No lethal player-vs-player result was exercised.');
     const history=(await db.query('select winner from public.acbra2_shistory order by gid desc limit 1')).rows[0];
     assert(['Alpha','Beta'].includes(history.winner));
     for(const name of cookies.keys()){
       const endedPage=await request(name,'/end.php');assert.equal(endedPage.response.status,200,endedPage.body);assert(endedPage.body.includes('ACFUN'));
     }
     const rewards=(await db.query('select username,gold,validgames,wingames from public.acbra2_users order by uid')).rows;
-    console.log('MATCH COMPLETE',JSON.stringify({manualPvpAttacks:pvpAttacks,combatNews,winner:history.winner,rewards}));
-    completeMatch=true;pass('original player encounters, lethal battle, canonical settlement and both original end pages');
+    console.log('MATCH COMPLETE',JSON.stringify({manualPvpAttackCommands:pvpAttacks,lethalPvpConfirmed:combatNews.length>0,combatNews,winner:history.winner,rewards}));
+    completeMatch=true;pass('original lethal encounter, canonical settlement and both original end pages');
     const beforeRepeat=JSON.stringify(rewards);
     await request('Alpha','/end.php');await request('Beta','/end.php');
     assert.equal(JSON.stringify((await db.query('select username,gold,validgames,wingames from public.acbra2_users order by uid')).rows),beforeRepeat);

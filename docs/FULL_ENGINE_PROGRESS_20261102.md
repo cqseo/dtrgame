@@ -336,3 +336,35 @@ Next work, in order:
 4. Production PHP, real player data, GitHub main and the public complete-engine
    gate remain unchanged. The user's original 1:1 acceptance standard remains
    unmet; no simplification or production completion is claimed.
+
+## Continuation: Cloudflare startup verified and staging code updated
+
+- User clarified the immediate goal: the original game should run and be
+  playable on Cloudflare; visual styling can be changed separately later.
+  Preserve the game's original behavior and values while prioritizing a real
+  end-to-end playable deployment.
+- On source 516636f, TypeScript, dry build and 65 AST/full-engine/account/SQL
+  tests passed. A fresh native workerd run with disposable PGlite and two
+  synthetic accounts completed the original match, settlement, idempotent
+  end-page reload, room recycling and next-match initialization. In this run
+  the lethal encounter was an NPC kill, not a confirmed PvP kill; ordinary
+  lifecycle QA no longer mistakes a submitted attack for PvP evidence. The
+  optional --require-pvp assertion requires recorded human-on-human death.
+- The actual Cloudflare startup validation passed at 176 ms for API version
+  c27e22a0-3367-463d-8333-93a092341758; this validation-only version had no
+  assets binding and must not be promoted. A separately uploaded version
+  b89ea275-09d4-49fb-89a5-82fb9104fb3b is now deployed to the existing staging
+  Worker at 100%, with original static assets, secrets, ROOMS/GAMES namespaces,
+  migration tag v2 and the full-engine flag explicitly disabled. Its reported
+  startup time was 120 ms. Previous active version for rollback:
+  ef243859-788d-40c3-9b17-8d2372be346a.
+- Cloudflare settings and deployment bindings were read back, and the assets
+  manifest contained 820 existing files with no upload required. Independent
+  HTTP smoke requests could not reach workers.dev from the available network;
+  a proxy-generated 403 is not evidence that the staging Worker returned 403.
+  Browser readiness, assets and a deployed match remain unverified.
+- The complete engine is still disabled and the new canonical transaction
+  migrations are not installed in the connected isolated Supabase project.
+  Before enabling it, verify and rehearse the database migration, ORIGINAL DO
+  binding, old-writer fence, rollback and a genuine two-browser online match.
+  No production PHP site, real player data or GitHub main was changed.
