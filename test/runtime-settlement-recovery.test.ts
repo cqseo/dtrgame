@@ -39,7 +39,10 @@ function database() {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const path = new URL(String(input)).pathname;
     if (offline) throw new Error("database offline");
-    if (path.endsWith("dtr_match_load")) return Response.json([stored]);
+    if (path.endsWith("dtr_match_reconcile")) {
+      expect(JSON.parse(String(init?.body))).toEqual({ p_match_id: matchId, p_expected_version: 8 });
+      return Response.json([stored]);
+    }
     if (path.endsWith("dtr_match_settle")) {
       calls++;
       const args = JSON.parse(String(init?.body));
@@ -102,7 +105,7 @@ describe("Durable Object settlement commit and recovery", () => {
     const db = database(); const test = harness(); db.loseResponse();
     expect((await test.object.fetch(post("/settle"))).status).toBe(409);
     expect(db.calls()).toBe(1);
-    expect(test.values.get("settlement-pending")).toBe(matchId);
+    expect(test.values.get("settlement-pending")).toEqual({ matchId, version: 8 });
     expect((test.values.get("match") as StoredLegacyMatch).state.gamestate).toBe(40);
     db.setOffline(true);
     expect((await test.object.fetch(post("/command", { username: "Alpha", command: "search", now: 210 }))).status).toBe(409);
@@ -124,7 +127,7 @@ describe("Durable Object settlement commit and recovery", () => {
     });
     expect((await old.object.fetch(post("/settle"))).status).toBe(409);
     expect(db.calls()).toBe(1);
-    expect(old.values.get("settlement-pending")).toBe(matchId);
+    expect(old.values.get("settlement-pending")).toEqual({ matchId, version: 8 });
     const restarted = harness(old.values, false);
     expect((await restarted.object.fetch(post("/battle", { username: "Alpha", now: 220 }))).status).toBe(409);
     expect(await (await restarted.object.fetch(get())).json()).toEqual(db.receipt()?.snapshot);
@@ -137,6 +140,24 @@ describe("Durable Object settlement commit and recovery", () => {
     test.put.mockRejectedValueOnce(new Error("cannot save pending marker"));
     expect((await test.object.fetch(post("/settle"))).status).toBe(409);
     expect(db.calls()).toBe(0);
+  });
+
+  it("resumes an uncommitted match only from the database's fenced version", async () => {
+    const fenced = snapshot(); fenced.version=9;
+    const mock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).endsWith("dtr_match_reconcile")) return Response.json([fenced]);
+      if (String(input).endsWith("dtr_match_save")) {
+        expect(JSON.parse(String(init?.body)).p_version).toBe(10);
+        return Response.json(true);
+      }
+      throw new Error("Unexpected RPC during fenced recovery");
+    });
+    vi.stubGlobal("fetch", mock);
+    const values = new Map<string, unknown>([["match",snapshot()],["settlement-pending",{matchId,version:8}]]);
+    const restarted = harness(values);
+    expect((await restarted.object.fetch(post("/command", { username: "Alpha", command: "pose5", mode: "special", now: 202 }))).status).toBe(200);
+    expect((values.get("match") as StoredLegacyMatch).version).toBe(10);
+    expect(mock).toHaveBeenCalledTimes(2);
   });
 
   it("keeps terminal state when clearing the pending marker fails", async () => {

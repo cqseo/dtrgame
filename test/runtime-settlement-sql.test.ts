@@ -64,6 +64,7 @@ describe("atomic settlement against actual isolated PostgreSQL", () => {
         gstime bigint,getime bigint,gtime bigint,areanum bigint,deathnum bigint,alivenum bigint,hdmg bigint,hdp text,
         hkill bigint,hkp text,winnernum bigint,"winnerteamID" text,winnerlist text,winnerpdata text,validlist text);`);
     await db.exec(readFileSync("supabase/migrations/20261102023311_atomic_settlement_ledger.sql", "utf8"));
+    await db.exec(readFileSync("supabase/migrations/20261102024727_settlement_recovery_fence.sql", "utf8"));
     // Migration must install inert, before the fixture explicitly enables it.
     expect((await db.query("select enabled from dtr_runtime.settlement_control")).rows).toEqual([{ enabled: false }]);
   }, 30_000);
@@ -105,6 +106,25 @@ describe("atomic settlement against actual isolated PostgreSQL", () => {
     const saved = await db.query<{ saved: boolean }>("select public.dtr_match_save($1,999,$2) saved", [matchId, snapshot.state]);
     expect(saved.rows[0]?.saved).toBe(false);
     expect(await loadSnapshot()).toEqual(receipt.snapshot);
+  });
+
+  it("fences an uncommitted response-lost attempt before a delayed settlement can write rewards", async () => {
+    const before = await balances();
+    const result = await db.query<StoredLegacyMatch>("select * from public.dtr_match_reconcile($1,$2)", [matchId, 8]);
+    expect(result.rows[0]).toEqual({ ...snapshot, version: 9 });
+    expect(await balances()).toEqual(before);
+    await expect(settle(8)).rejects.toThrow("stale settlement version");
+    expect((await db.query("select * from public.acbra2_shistory")).rows).toEqual([]);
+    // A recovery retry must not continue incrementing the same fence.
+    expect((await db.query<StoredLegacyMatch>("select * from public.dtr_match_reconcile($1,$2)", [matchId,8])).rows[0]?.version).toBe(9);
+    expect((await settle(9)).snapshot.version).toBe(10);
+  });
+
+  it("recovery after a committed request returns the exact terminal snapshot without a new payout", async () => {
+    const receipt = await settle(); const paid = await balances();
+    expect((await db.query<StoredLegacyMatch>("select * from public.dtr_match_reconcile($1,$2)", [matchId,8])).rows[0]).toEqual(receipt.snapshot);
+    expect(await balances()).toEqual(paid);
+    await expect(db.query("select * from public.dtr_match_reconcile($1,999)", [matchId])).rejects.toThrow("older than pending");
   });
 
   it("allocates shared subroom history gids and preserves identity across room reuse", async () => {
@@ -186,6 +206,7 @@ describe("atomic settlement against actual isolated PostgreSQL", () => {
       try {
         await expect(settle()).rejects.toThrow(/permission denied/);
         await expect(db.query("select * from dtr_runtime.match_settlements")).rejects.toThrow(/permission denied/);
+        await expect(db.query("select * from public.dtr_match_reconcile($1,8)", [matchId])).rejects.toThrow(/permission denied/);
       } finally { await db.exec("reset role"); }
     }
     expect((await db.query("select prosecdef,proconfig from pg_proc where proname='dtr_match_settle'")).rows)

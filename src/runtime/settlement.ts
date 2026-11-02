@@ -31,6 +31,16 @@ export async function legacySettlementHistory(snapshot: StoredLegacyMatch, now: 
 export class SupabaseLegacySettlement {
   constructor(readonly rest: SupabaseLegacyRest) {}
 
+  async reconcile(matchId: number, expectedVersion: number): Promise<StoredLegacyMatch> {
+    const rows = await this.rest.rpc<StoredLegacyMatch[]>("dtr_match_reconcile", {
+      p_match_id: matchId, p_expected_version: expectedVersion
+    });
+    const snapshot = rows[0];
+    if (!snapshot || snapshot.state?.matchId !== matchId || !Number.isSafeInteger(snapshot.version)
+        || snapshot.version < expectedVersion) throw new Error("Cannot reconcile pending settlement.");
+    return snapshot;
+  }
+
   async settle(snapshot: StoredLegacyMatch, now: number): Promise<LegacySettlementReceipt> {
     const history = await legacySettlementHistory(snapshot, now);
     const receipt = await this.rest.rpc<LegacySettlementReceipt>("dtr_match_settle", {

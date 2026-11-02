@@ -98,7 +98,7 @@ receipts confirmed. The Worker capability is also disabled and has no browser
 route. Older arbitrary-award `dtr_match_commit` is no longer executable by
 service_role. No balances, games or result histories were changed on install.
 
-35 local targeted tests cover the transaction, rollback and DO recovery.
+38 local targeted tests cover the transaction, rollback and DO recovery.
 Actual multi-session PostgreSQL locking is NOT proven by the single-session
 PGlite engine. Native full typecheck, Worker build and the 84-file regression
 runner pass. Frozen PHP 8.2.35 reward oracle passes separately.
@@ -108,3 +108,8 @@ endings, physical player-table updates, replay/rating/achievements and
 news/chat remain incomplete. Do not enable or merge the experiment until
 those release gates are accepted. See the latest section of
 `CONTINUATION_20261101.md` for evidence and exact limits.
+
+Recovery also requires `20261102024727_settlement_recovery_fence.sql`: it
+locks the snapshot and advances an unchanged active version to fence late
+RPC execution after a network error. A plain `dtr_match_load` is insufficient
+for this response-lost/in-flight window. No real payout switch is enabled.

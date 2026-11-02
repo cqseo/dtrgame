@@ -239,8 +239,8 @@ not a release, not full gameover parity, no real payout enabled.**
 
 ### Verified
 
-- **35/35 new targeted tests**: 28 SQL tests in ephemeral PGlite (actual
-  PostgreSQL WASM engine) and 7 DO recovery tests. Tests only create local
+- **38/38 new targeted tests**: 30 SQL tests in ephemeral PGlite (actual
+  PostgreSQL WASM engine) and 8 DO recovery tests. Tests only create local
   synthetic fixture rows; no deployed users or accounts are registered.
 - SQL tests include original winner/loser/team/mode/cap/rounding components,
   all-dead and no-entry outcomes, immutable duplicate receipts, stale/new-room
@@ -268,8 +268,7 @@ not a release, not full gameover parity, no real payout enabled.**
   cannot execute, service role can execute, retired old RPC service privilege
   is false. Installation does not write any account rewards or game/history
   outcomes. Security advisors: no new warnings; the two new private tables
-  correctly have RLS/no browser policies. Existing unrelated Auth leaked
-  password warning remains; no Auth settings changed.
+  correctly have RLS/no browser policies. Existing unrelated [Auth leaked password warning](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) remains; no Auth settings changed.
 
 ### Still required before enabling or merging
 
@@ -288,3 +287,24 @@ not a release, not full gameover parity, no real payout enabled.**
   changes. Keep `backendParity=false`, `playable=false` and PR #18 draft.
 - Worker deployment outcome and rollback version are recorded below once
   confirmed. Never infer a deployment from a dry-run build.
+
+### Follow-up: fence the response-lost/in-flight request window
+
+- `20261102024727_settlement_recovery_fence.sql` adds service-only
+  `dtr_match_reconcile`. A plain MVCC load can read precommit state while a
+  lost RPC is still executing; recovery now locks the snapshot and advances
+  an unchanged active version. A late request retaining the old expected
+  version must fail. No account, history, game or receipt changes occur in
+  this recovery function. Repeated recovery with the same expected version
+  does not keep advancing the fence. Terminal snapshots return unchanged.
+- DO pending markers now save both match ID and expected version. New code
+  accepts the older numeric experimental marker when hydrating.
+- Two additional real-engine SQL tests prove late-request rejection and
+  exact terminal recovery; one extra DO test verifies subsequent commands
+  start at the fenced version. Final targeted result **38/38 passed**.
+- Final verification logs after this change: `/tmp/dtr-final-38-targeted.log`,
+  `/tmp/dtr-final-fence-full.log`, `/tmp/dtr-final-fence-typecheck.log`,
+  `/tmp/dtr-final-fence-build.log`. All are in the current Work environment.
+- Initial disabled staging build `8648404` deployed successfully as
+  `e13fc2dc-2180-4651-8972-3adaf93cf954` (100% staging, all six bindings);
+  follow-up deployment results are recorded below after confirmation.

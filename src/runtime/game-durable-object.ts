@@ -92,7 +92,7 @@ export class LegacyGameDurableObject {
   #match: StoredLegacyMatch | undefined;
   #queue: Promise<void> = Promise.resolve();
   #ready: Promise<void>;
-  #settlementPending: number | undefined;
+  #settlementPending: { matchId: number; version: number } | undefined;
   readonly ctx: DurableObjectState;
   readonly #env: LegacyGameObjectEnv;
 
@@ -101,7 +101,11 @@ export class LegacyGameDurableObject {
     this.#env = env;
     this.#ready = ctx.blockConcurrencyWhile(async () => {
       this.#match = await ctx.storage.get<StoredLegacyMatch>("match");
-      this.#settlementPending = await ctx.storage.get<number>("settlement-pending");
+      const pending = await ctx.storage.get<number | { matchId: number; version: number }>("settlement-pending");
+      // Accept the earlier experimental marker format during rollback/reload.
+      this.#settlementPending = typeof pending === "number"
+        ? pending > 0 ? { matchId: pending, version: this.#match?.version ?? 0 } : undefined
+        : pending;
     });
   }
 
@@ -127,7 +131,7 @@ export class LegacyGameDurableObject {
         }
         // This durable marker survives an SQL-committed/DO-crashed window,
         // including a lost RPC response. Fail closed until DB is reachable.
-        this.#settlementPending = this.#match.state.matchId;
+        this.#settlementPending = { matchId: this.#match.state.matchId, version: this.#match.version };
         await this.ctx.storage.put("settlement-pending", this.#settlementPending);
         const receipt = await new SupabaseLegacySettlement(this.#rest()).settle(this.#match, now);
         await this.ctx.storage.put("match", receipt.snapshot);
@@ -347,8 +351,11 @@ export class LegacyGameDurableObject {
 
   async #reconcileSettlement(): Promise<void> {
     if (!this.#settlementPending) return;
-    const matchId = this.#settlementPending;
-    const restored = await new SupabaseMatchSnapshots<LegacyMatchState>(this.#rest()).load(matchId);
+    const { matchId, version } = this.#settlementPending;
+    // A plain MVCC read could see precommit state while the lost RPC is
+    // still executing. This RPC locks the row and advances an uncommitted
+    // version, fencing any settlement request which arrives late.
+    const restored = await new SupabaseLegacySettlement(this.#rest()).reconcile(matchId, version);
     if (!restored || !this.#valid(restored) || restored.state.matchId !== matchId
         || (this.#match && restored.version < this.#match.version)) {
       throw new Error("Cannot reconcile pending settlement.");
