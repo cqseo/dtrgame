@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createLegacyPlayerRecord } from "../src/generated/legacy-registry";
 import type { LegacyPlayerRecord } from "../src/legacy/player";
 import { LegacyGameDurableObject, type LegacyMatchState } from "../src/runtime/game-durable-object";
+import { renderLegacyCommandPanel } from "../src/runtime/game-render";
 
 function player(): LegacyPlayerRecord {
   const value = createLegacyPlayerRecord();
@@ -158,8 +159,16 @@ describe("legacy match Durable Object", () => {
     expect(response.status).toBe(200);
     const stored = test.values.get("match") as { version: number; state: LegacyMatchState };
     expect(stored.version).toBe(1);
-    expect(stored.state.players["敌人"]).toMatchObject({ hp: 0, state: 22, bid: 1 });
+    expect(stored.state.players["敌人"]).toMatchObject({ hp: 0, state: 22, bid: 1, endtime: 123 });
     expect(stored.state.players["测试者"]).toMatchObject({ killnum: 1, action: "corpse2" });
+    // A fatal combat transaction must feed the original PHP death details,
+    // rather than leaving the victim with an empty or playable command UI.
+    const deadView = renderLegacyCommandPanel(stored, "敌人");
+    expect(deadView).toContain("战败身亡");
+    expect(deadView).toContain("凶手：测试者");
+    expect(deadView).toContain("死亡时间：");
+    expect(deadView).toContain("本次生命已结束");
+    expect(deadView).not.toContain("现在想要做什么？");
   });
 
   it("binds attacks to saved enemy pid and refuses forged targets without mutating the match", async () => {
