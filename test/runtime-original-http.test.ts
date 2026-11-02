@@ -13,6 +13,7 @@ describe('original public PHP wrappers over actor transport',()=>{
       const response=await handleOriginalEngineHttp(new Request('https://game.test'+path+'?mode=quit',{method:'POST',body:'username=Alpha&password=test-only'}),fixture.namespace);
       expect(response?.status).toBe(302);expect(response?.headers.getSetCookie()).toHaveLength(1);
       expect(fixture.calls.at(-1)?.page).toBe('public:'+path);
+      expect(fixture.fetch.mock.calls.at(-1)?.[0].redirect).toBe('manual');
     }
   });
   it('forwards room polling timestamps and original cookie credentials to the room actor',async()=>{

@@ -66,8 +66,10 @@ const MAGIC = "__DTS_MAGIC_PROLOGUE__";
 function buildChainsFromManifest(only?:ReadonlySet<string>): HookChains {
   const chains = new HookChains();
   for (const [name, entries] of Object.entries(LEGACY_HOOK_CHAINS)) {
-    const ordered = [...entries].sort((left, right) => left.order - right.order);
-    for (const entry of ordered)if(!only||only.has(entry.module))chains.register(entry.module, name);
+    const coreOrder=only?new Map([...only].map((module,index)=>[module,index])):undefined;
+    const ordered = entries.filter(entry=>!only||only.has(entry.module)).sort((left,right)=>
+      (coreOrder?.get(left.module)??left.order)-(coreOrder?.get(right.module)??right.order));
+    for (const entry of ordered)chains.register(entry.module, name);
   }
   return chains;
 }
@@ -548,7 +550,13 @@ export class LegacyModuleRuntime {
       referenceParameters: name => this.referenceParameters(name, fn.namespace),
       globalSlot: name => {
         const moduleGlobal=/^___LOCAL_([A-Z0-9_]+)__VARS__(.+)$/.exec(name);
-        if(moduleGlobal)return this.store.slot(moduleGlobal[1]!.toLowerCase(),moduleGlobal[2]!);
+        if(moduleGlobal){
+          const slot=this.store.slot(moduleGlobal[1]!.toLowerCase(),moduleGlobal[2]!);
+          // Globals first created inside a compiled function must also be
+          // visible at page scope. COOKIE_VAR_LIST is created this way when
+          // entering a room; it is absent from a clean pre-init capture.
+          this.#globals.alias(name,slot);return slot;
+        }
         return fn.namespace!=='input' && this.store.names(fn.namespace).includes(name)
           ? this.store.slot(fn.namespace,name) : this.#globals.slotFor(name);
       },
@@ -792,7 +800,10 @@ export class LegacyModuleRuntime {
       // cpass. Both initializers are request-specific; the captured module
       // variable defaults cannot stand in for either of them.
       if(this.#options.fullGame){
-        for(const module of [...enabledModules].sort((a,b)=>a.order-b.order)){
+        const coreOnly=this.#constants.has('LOAD_CORE_ONLY');
+        const coreOrder=new Map([...ORIGINAL_CORE_MODULES].map((name,index)=>[name,index]));
+        for(const module of [...enabledModules].sort((a,b)=>coreOnly?
+            coreOrder.get(a.name)!-coreOrder.get(b.name)!:a.order-b.order)){
           if(module.name==='input'&&this.#constants.has('IN_DAEMON'))continue;
           if(this.has(`${module.name}\\init`,""))this.call(`${module.name}\\init`,[],"","");
           if(module.name==='input'){

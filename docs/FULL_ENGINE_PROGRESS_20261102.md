@@ -208,3 +208,57 @@ and writer-fence items above; broad acceptance gates remain open.
   remaining all-mode/skill/card/item/achievement interactions (including skill
   427), full real-browser multiplayer matches and visual/source differential
   checks, generated replay/resource delivery and a rehearsed staging cutover.
+
+## Later continuation: native Worker match, transport and MySQL coercions
+
+- Core-only hook chains and initialization now follow the original core list
+  insertion order. Function-created prefixed module globals alias page globals
+  too; this fixes room cookie delivery when COOKIE_VAR_LIST was absent from the
+  clean pre-init capture.
+- Internal Durable Object fetch preserves original redirects with
+  `redirect: manual`. Native workerd previously followed a successful login's
+  `index.php` redirect inside the private actor and returned its transport 404.
+- Original non-strict MySQL sparse batch CASE updates coerce NULL to the
+  column's implicit default, and empty strings in integer fields become zero
+  at each working-copy write. Both behaviors were checked through PHP 8.2.35
+  against disposable MySQL temporary tables using the original connection
+  configuration. No existing table or player row was changed. Broader numeric
+  ranges, decimal conversion and collation still require differential checks.
+- All twelve configured room-type entry paths now have source-engine checks,
+  including the real future opening time that keeps room type 12 unavailable.
+  These are entry checks, not complete playthroughs of all modes. Original
+  skill 427 was exercised through two lethal battles, full-health revivals and
+  skill 424 stack reductions from 3 to 1 to 0.
+- Added `tools/verify-original-fullstack.mjs` and a local-only Worker entry.
+  The runner uses native Miniflare/workerd, the production actor, SQLite Wasm,
+  actual canonical SQL transaction functions and a disposable PGlite protocol
+  endpoint. Synthetic accounts only; no replaced game logic, stat inflation or
+  database edits after initial seeding. Run from the repository root:
+
+  ```sh
+  ./node_modules/.bin/esbuild tools/verify-original-fullstack.mjs --bundle --platform=node --packages=external --format=esm --outfile=tools/.original-fullstack-runner.mjs
+  node tools/.original-fullstack-runner.mjs --finish-match
+  ```
+
+  Remove the temporary bundled runner afterwards; it is not source.
+- Two independent account logins, room creation/join/seating, full original
+  lobby HTML, long-poll wake by the other account's chat, both ready, complete
+  world/NPC initialization and concurrent player commands passed in native
+  workerd. A whole match then ended naturally with original NPC encounters and
+  player attack commands, history, both end pages, victory/participation counts,
+  duplicate-end-page idempotency, room recycling and the same accounts entering
+  a new match with an advanced game number. The second complete run had zero
+  RPC errors; the runner now rejects hidden deterministic SQL failures.
+- The last human death was caused by an original NPC. This is not evidence of
+  a player-vs-player lethal result, every reward category or visual/browser
+  acceptance. It uses PostgreSQL-compatible PGlite; the prior eleven native
+  PostgreSQL drills are separate evidence.
+- The original server became available again. Read-only source inspection
+  confirmed that daemon idle wakeups only manage daemon lifetime; they do not
+  imply a new thirty-second gameplay tick. The installed nginx configuration
+  really blocks `/gamedata/replays/` along with other non-CSS gamedata paths;
+  replay/resource delivery needs an explicit compatibility decision and tests.
+- No connected Supabase migration, deployment, production PHP change or live
+  player-data modification has been performed in this continuation. Real
+  browser/visual acceptance, complete all-mode/item/card/achievement coverage,
+  remaining source/runtime compatibility and staging cutover are still open.

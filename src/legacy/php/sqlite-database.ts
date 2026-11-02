@@ -60,6 +60,9 @@ const ORIGINAL_CREATE_TEMPLATES=new Set(Object.entries(LEGACY_RUNTIME_DATA_FILES
 export class SqliteLegacyDatabase extends LegacyDatabase {
   readonly #before: Record<string, PhpArray[]>;
   readonly #keys: Record<string,string> = {};
+  readonly #nullDefaults:Record<string,Record<string,string>>={};
+  readonly #integerColumns:Record<string,string[]>={};
+  readonly #integerWritePrepared=new Set<string>();
   #affected=0;
   #insertId=0;
   constructor(readonly connection: LegacySqliteConnection, tables: Readonly<Record<string, readonly PhpArray[]>>,counters:Readonly<Record<string,number>>={}) {
@@ -70,6 +73,16 @@ export class SqliteLegacyDatabase extends LegacyDatabase {
       if (!schema) throw new Error(`Unknown original table: ${name}`);
       this.#keys[name]=schema.primaryKey;
       connection.exec(schema.ddl);
+      const columns=connection.exec(`PRAGMA table_info("${name}")`)[0]?.values??[];
+      this.#nullDefaults[name]=Object.fromEntries(columns
+        .filter(column=>Number(column[3])===1).map(column=>[String(column[1]),String(column[2]).toUpperCase()==='TEXT'?"''":'0']));
+      // SQLite's INTEGER affinity retains an empty string as text. The
+      // original non-strict MySQL connection stores it as zero, including
+      // inside batch inserts and CASE updates. Apply this at each write,
+      // before subsequent original queries can observe the wrong value.
+      // Keep this narrow: other MySQL numeric/range coercions need separate
+      // parity evidence and must not be approximated by a generic CAST.
+      this.#integerColumns[name]=columns.filter(column=>String(column[2]).toUpperCase()==='INTEGER').map(column=>String(column[1]));
       this.#before[name]=rows.map(r=>r.clone());
       for (const row of rows) {
         const keys=row.keys().map(String);
@@ -132,6 +145,9 @@ export class SqliteLegacyDatabase extends LegacyDatabase {
       .replace(/\bIF\s*\(/gi,'IIF(').replace(/\bGREATEST\s*\(/gi,'MAX(').replace(/\bLEAST\s*\(/gi,'MIN(');
     const conflict=sql.search(/\bON CONFLICT DO UPDATE SET\b/i);
     if(conflict>=0)sql=sql.slice(0,conflict)+sql.slice(conflict).replace(/\bVALUES\s*\(\s*(`?[A-Za-z0-9_]+`?)\s*\)/gi,'excluded.$1');
+    sql=this.#coerceNonNullUpdates(sql);
+    const written=/^(?:UPDATE\s+|(?:INSERT|REPLACE)\s+(?:INTO\s+)?)`?(acbra2_[A-Za-z0-9_]+)`?/i.exec(sql)?.[1];
+    if(written)this.#prepareIntegerWrites(written);
     const result=this.connection.exec(sql,params);
     if(/^SELECT\b/i.test(sql)) {
       const set=result[0];
@@ -140,6 +156,45 @@ export class SqliteLegacyDatabase extends LegacyDatabase {
     const meta=this.connection.exec('SELECT changes(),last_insert_rowid()')[0]?.values[0];
     this.#affected=Number(meta?.[0]??0); this.#insertId=Number(meta?.[1]??0);
     return true;
+  }
+
+  #prepareIntegerWrites(name:string){
+    // Most requests touch only one or two of the hundred canonical tables.
+    // Loading a valid PostgreSQL snapshot needs no coercion triggers; install
+    // them only before the first original write to that particular table.
+    if(this.#integerWritePrepared.has(name))return;
+    const integers=this.#integerColumns[name];if(!integers?.length)return;
+    const when=integers.map(column=>`NEW."${column}"=''`).join(' OR ');
+    const assignments=integers.map(column=>`"${column}"=CASE WHEN NEW."${column}"='' THEN 0 ELSE NEW."${column}" END`).join(',');
+    for(const event of ['INSERT','UPDATE'])this.connection.exec(`CREATE TRIGGER "${name}_empty_integer_${event}" AFTER ${event} ON "${name}" WHEN ${when} BEGIN UPDATE "${name}" SET ${assignments} WHERE "${this.#keys[name]}" IS NEW."${this.#keys[name]}"; END`);
+    this.#integerWritePrepared.add(name);
+  }
+
+  #coerceNonNullUpdates(sql:string):string{
+    const update=/^UPDATE\s+`?(acbra2_[A-Za-z0-9_]+)`?\s+SET\s+/i.exec(sql);
+    if(!update)return sql;
+    const defaults=this.#nullDefaults[update[1]!]??{};
+    // Original mysqli explicitly uses sql_mode=''. A sparse batch CASE
+    // yields SQL NULL for rows with no WHEN; MySQL converts that to the
+    // column type's implicit default (not its old value). SQLite instead
+    // rejects NOT NULL, which broke the original 荣耀 NPC pickup/reset path.
+    const body=sql.slice(update[0].length),parts:string[]=[];
+    let depth=0,quote='',start=0,end=body.length;
+    for(let i=0;i<body.length;i++){
+      const c=body[i]!;
+      if(quote){if(c===quote)quote='';continue;}
+      if(c==='`'||c==='"'){quote=c;continue;}
+      if(c==='(')depth++;else if(c===')')depth--;
+      if(depth===0&&/^WHERE\b/i.test(body.slice(i))&&(i===0||/\s/.test(body[i-1]!))){end=i;break;}
+      if(depth===0&&c===','){parts.push(body.slice(start,i));start=i+1;}
+    }
+    parts.push(body.slice(start,end));
+    const adapted=parts.map(part=>{
+      const assignment=/^(\s*`?([A-Za-z0-9_]+)`?\s*=\s*)([\s\S]*?)\s*$/.exec(part);
+      const fallback=assignment&&defaults[assignment[2]!];
+      return assignment&&fallback!==undefined?assignment[1]+`COALESCE((${assignment[3]}),${fallback})`:part;
+    }).join(',');
+    return update[0]+adapted+(end<body.length?' '+body.slice(end):'');
   }
 
   rows(table: string): PhpArray[] {

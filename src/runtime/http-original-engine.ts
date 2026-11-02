@@ -51,7 +51,10 @@ export async function handleOriginalEngineHttp(request:Request,namespace:Durable
   if(pathname!=='/roomupdate.php'&&!publicPage&&!direct&&!PAGES.has(page))return new Response('Invalid original page.',{status:400});
   const roomId=roomOf(forwarded),command:OriginalActorCommand={roomId,page,request:forwarded};
   const actor=namespace.get(namespace.idFromName('original-room:'+roomId));
-  const response=await actor.fetch(new Request('https://original.internal/execute',{method:'POST',body:JSON.stringify(command),headers:{'content-type':'application/json'}}));
+  // The original public redirect belongs to the player's browser. Native
+  // DO fetch otherwise follows it against /index.php inside the actor and
+  // turns a successful original login into the actor's internal 404.
+  const response=await actor.fetch(new Request('https://original.internal/execute',{method:'POST',body:JSON.stringify(command),headers:{'content-type':'application/json'},redirect:'manual'}));
   if(pathname==='/command.php'||pathname==='/roomupdate.php'||publicPage)return request.method==='HEAD'?new Response(null,response):response;
   // A transport/storage failure has no committed original page to render.
   if(response.status>=500)return response;

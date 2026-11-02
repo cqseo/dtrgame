@@ -16,6 +16,7 @@ import { PhpArray,phpStringBytes } from '../src/legacy/template/values';
 import { LEGACY_SQLITE_SHADOW_SCHEMA } from '../src/generated/legacy-sqlite-shadow-schema';
 import {createOriginalRoomUpdateEngine} from '../src/runtime/original-room-update';
 import {createOriginalPublicPageEngine} from '../src/runtime/original-public-page-engine';
+import {LEGACY_ROOM_CONFIGURATION} from '../src/generated/legacy-room-types';
 let SQL:Awaited<ReturnType<typeof initSqlJs>>;
 beforeAll(async()=>{SQL=await initSqlJs({wasmBinary:readFileSync('node_modules/sql.js/dist/sql-wasm-browser.wasm')});});
 const now=1793580000;
@@ -37,6 +38,46 @@ function harness(gametype=0,roomId=0){
   return {db,engine:createOriginalGameEngine({database:db,roomId,now})};
 }
 describe('complete original module execution chain',()=>{
+  it.each(Object.entries(LEGACY_ROOM_CONFIGURATION.roomTypes))('creates the original configured room type %s through its full room entry path',async(roomType,config)=>{
+    const {db,engine}=harness();
+    try{
+      const result=engine.run('command_roomcmd',{method:'POST',post:[['command','newroom'],['para1',roomType]],cookies:[['acbra2_user','Alpha'],['acbra2_pass',pass]]},{tick:false});
+      const available=config.available&&(!('available-start' in config)||now>=Number(config['available-start']));
+      if(!available){
+        expect((await legacyDecode<Record<string,unknown>>(result)).url).toBe('error.php');
+        expect(db.rows('acbra2_game')).toHaveLength(1);return;
+      }
+      expect(result).toMatch(/^redirect:(index|game)\.php$/);
+      const room=db.rows('acbra2_game').find(r=>r.get('groomid')==='1');
+      expect(room?.get('groomtype')).toBe(roomType);expect(room?.get('gametype')).toBe(String(config.gtype));
+      expect(engine.filesystem.exists('gamedata/tmp/rooms/1.txt')).toBe(true);
+      expect(engine.response.headers.getSetCookie().some(cookie=>cookie.startsWith('acbra2_roomid=1;')||cookie==='acbra2_roomid=1')).toBe(true);
+      if(config['without-ready'])expect(Number(room?.get('gamestate'))).toBeGreaterThanOrEqual(20);
+      else expect(room?.get('groomstatus')).toBe('10');
+    }catch(error){console.error({roomType,error,frames:(error as Error&{legacyFrames?:string[]}).legacyFrames,queries:db.issued.slice(-3)});throw error;}
+    finally{db.close();}
+  },120_000);
+  it('repeats original skill427 revival and reduces skill424 stacks to a floor of zero',async()=>{
+    const {db,engine}=harness(1);
+    const roll=vi.spyOn(Math,'random').mockReturnValue(0);
+    try{
+      const codec=createLegacyModuleRuntime();
+      const values=codec.call('skillbase\\skillbase_save_process',[toPhpFromJson({424:1,427:1}),toPhpFromJson({'424_lvl':'3'})]) as PhpArray;
+      db.array_update('acbra2_players',legacyRowFromJson({nskill:values.get(0),nskillpara:values.get(1)}),"pid='2'");
+      let fs=engine.filesystem;
+      for(const [round,stacks]of [1,0].entries()){
+        db.array_update('acbra2_players',legacyRowFromJson({action:'enemy2',wep:'调色刀',wepk:'WK',wepe:99999,weps:'∞',wk:99999}),"pid='1'");
+        fs=new LegacyVirtualFilesystem(originalRuntimeFiles(),fs.snapshot(),now+round,{directories:fs.directories,readonlyPaths:LEGACY_PUBLIC_STATIC_FILES});
+        const next=createOriginalGameEngine({database:db,roomId:0,now:now+round,filesystem:fs});
+        await legacyDecode(next.run('command_act',{method:'POST',post:[['command','attack'],['mode','combat']],cookies:[['acbra2_user','Alpha'],['acbra2_pass',pass]]},{tick:false}));
+        const defender=db.rows('acbra2_players').find(p=>p.get('name')==='Beta')!;
+        expect(defender.get('hp')).toBe(defender.get('mhp'));
+        const decoded=codec.call('skillbase\\skillbase_load_process',[defender.get('nskill'),defender.get('nskillpara')]) as PhpArray;
+        expect(Number((decoded.get(1) as PhpArray).get('424_lvl'))).toBe(stacks);
+      }
+    }catch(error){console.error({error,frames:(error as Error&{legacyFrames?:string[]}).legacyFrames,queries:db.issued.slice(-3)});throw error;}
+    finally{roll.mockRestore();db.close();}
+  },120_000);
   it('creates original room slot 7 even though it did not exist in the captured installation',()=>{
     const {db,engine}=harness();
     try{
@@ -145,7 +186,7 @@ describe('complete original module execution chain',()=>{
       expect([...activeLobby.scheduledRooms]).toContain(1);
     }catch(error){console.error({error,frames:(error as Error & {legacyFrames?:string[]}).legacyFrames,queries:db.issued.slice(-4)});throw error;}
     finally{db.close();}
-  });
+  },120_000);
   it('preserves original gexit errors from the daemon without performing an action',async()=>{
     const {db,engine}=harness();
     try{

@@ -41,7 +41,10 @@ export class OriginalGameActor {
   }
   async #fetch(request:Request):Promise<Response>{
     if(this.env.DTS_ORIGINAL_ENGINE!=='enabled')return new Response('Original engine is disabled.',{status:503});
-    if(request.method!=='POST'||new URL(request.url).pathname!=='/execute')return new Response('Not Found',{status:404});
+    if(request.method!=='POST'||new URL(request.url).pathname!=='/execute'){
+      console.warn('Unexpected original actor transport.',request.method,new URL(request.url).pathname);
+      return new Response('Not Found',{status:404});
+    }
     if(!this.env.SUPABASE_URL||!this.env.SUPABASE_SECRET_KEY)return new Response('Original persistence is unavailable.',{status:503});
     const store=originalRequestStore(new SupabaseLegacyRest({url:this.env.SUPABASE_URL,secretKey:this.env.SUPABASE_SECRET_KEY}));
     try{

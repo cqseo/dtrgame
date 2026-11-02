@@ -12,6 +12,18 @@ const users=[{uid:1,username:'Alpha',gold:10,credits:20},{uid:2,username:'Beta',
 function database(){return new SqliteLegacyDatabase(new SQL.Database(),{acbra2_users:users.map(legacyRowFromJson)});}
 
 describe('request-local original SQL',()=>{
+  it('stores empty integer fields as original non-strict MySQL zero before the next query',()=>{
+    const db=database();
+    try{
+      db.query("UPDATE acbra2_users SET gold='' WHERE uid=1");
+      expect(db.affected_rows()).toBe(1);
+      db.query("INSERT INTO acbra2_users(username,gold) VALUES('Gamma','')");
+      expect(db.insert_id()).toBe(3);
+      const result=db.query('SELECT username,gold FROM acbra2_users WHERE gold=0 ORDER BY uid') as LegacyQueryResult;
+      expect(result.rows.map(row=>[row.get('username'),row.get('gold')])).toEqual([['Alpha','0'],['Gamma','0']]);
+      expect(db.mutations()).toHaveLength(2);
+    }finally{db.close();}
+  });
   it('inserts original ordered row batches and updates duplicate rows through VALUES(column)',()=>{
     const db=database();
     try{
@@ -20,6 +32,14 @@ describe('request-local original SQL',()=>{
       const updates=new PhpArray();updates.push(legacyRowFromJson({uid:3,username:'Gamma',gold:70}));updates.push(legacyRowFromJson({uid:4,username:'Delta',gold:80}));
       db.array_insert('acbra2_users',updates,1,'uid');
       expect(db.rows('acbra2_users').map(row=>row.get('gold'))).toEqual(['10','30','70','80']);
+    }finally{db.close();}
+  });
+  it('preserves original non-strict MySQL implicit defaults in sparse batch CASE updates',()=>{
+    const db=database();
+    try{
+      const changes=new PhpArray();changes.push(legacyRowFromJson({uid:1,motto:'changed'}));changes.push(legacyRowFromJson({uid:2,gold:7}));
+      db.multi_update('acbra2_users',changes,'uid');
+      expect(db.rows('acbra2_users').map(row=>[row.get('motto'),row.get('gold')])).toEqual([['changed','0'],['','7']]);
     }finally{db.close();}
   });
   it('evaluates numeric predicates, ordering, projection, count and limits',()=>{
