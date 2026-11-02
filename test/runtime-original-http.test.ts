@@ -7,6 +7,14 @@ function namespace(body:string,status=200,headers:HeadersInit={}){
   return {calls,fetch,namespace:{idFromName:(name:string)=>name,get:()=>({fetch})} as unknown as DurableObjectNamespace};
 }
 describe('original public PHP wrappers over actor transport',()=>{
+  it('routes original login, registration and recovery through canonical account transactions',async()=>{
+    const fixture=namespace('',302,{'location':'index.php','set-cookie':'acbra2_user=Alpha; Path=/'});
+    for(const path of ['/login.php','/register.php','/recovery.php']){
+      const response=await handleOriginalEngineHttp(new Request('https://game.test'+path+'?mode=quit',{method:'POST',body:'username=Alpha&password=test-only'}),fixture.namespace);
+      expect(response?.status).toBe(302);expect(response?.headers.getSetCookie()).toHaveLength(1);
+      expect(fixture.calls.at(-1)?.page).toBe('public:'+path);
+    }
+  });
   it('forwards room polling timestamps and original cookie credentials to the room actor',async()=>{
     const fixture=namespace('original-room-update');
     const response=await handleOriginalEngineHttp(new Request('https://game.test/roomupdate.php',{method:'POST',body:'timestamp=27',headers:{cookie:'acbra2_user=Alpha; acbra2_pass=token; acbra2_roomid=3'}}),fixture.namespace);

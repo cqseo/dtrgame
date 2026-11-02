@@ -21,6 +21,12 @@ if(roomWait<0||roomWake<0||roomAuthEnd<0)throw new Error('Original room polling 
 // Only the socket creation and blocking wait are replaced by DO waiting.
 const roomPrepare=parseModuleFile(roomUpdate.slice(0,roomWait)+'return $room_id_r;');
 const roomAfterWake=parseModuleFile(roomUpdate.slice(0,roomAuthEnd)+'$room_id_r=$u_roomid; $room_id=$u_roomid;\n'+roomUpdate.slice(roomWake));
+const coreList=readFileSync(root+'/include/modules/core/core.list.php','utf8');
+const coreModules=coreList.trim().split(/\r?\n/).map(line=>line.trim().split(',')).filter(row=>row[2]?.trim()==='1').map(row=>row[0]);
+const directStart=source.indexOf("if('area_timing_refresh' == $command)");
+const directEnd=source.indexOf("}elseif('maintain' == $command)",directStart);
+if(directStart<0||directEnd<0)throw new Error('Original direct command markers changed.');
+const directCommands=parseModuleFile('<?php '+source.slice(directStart,directEnd)+'}');
 const output='// Generated from original command.php replay recording leg. Transport only.\n'+
   'import type {Statement} from "../legacy/template/ast";\n'+
   'export const ORIGINAL_TRANSPORT_SOURCE_SHA256='+JSON.stringify(createHash('sha256').update(source).digest('hex'))+';\n'+
@@ -28,6 +34,8 @@ const output='// Generated from original command.php replay recording leg. Trans
   'export const ORIGINAL_DAEMON_PREPARE_INPUT:readonly Statement[]='+JSON.stringify(prepare)+';\n'+
   'export const ORIGINAL_ROOM_UPDATE_SOURCE_SHA256='+JSON.stringify(createHash('sha256').update(roomUpdate).digest('hex'))+';\n'+
   'export const ORIGINAL_ROOM_UPDATE_PREPARE:readonly Statement[]='+JSON.stringify(roomPrepare)+';\n'+
-  'export const ORIGINAL_ROOM_UPDATE_AFTER_WAKE:readonly Statement[]='+JSON.stringify(roomAfterWake)+';\n';
+  'export const ORIGINAL_ROOM_UPDATE_AFTER_WAKE:readonly Statement[]='+JSON.stringify(roomAfterWake)+';\n'+
+  'export const ORIGINAL_CORE_MODULES:ReadonlySet<string>=new Set('+JSON.stringify(coreModules)+');\n'+
+  'export const ORIGINAL_DAEMON_DIRECT_COMMANDS:readonly Statement[]='+JSON.stringify(directCommands)+';\n';
 const path='src/generated/legacy-original-transport-steps.ts';
 if(process.argv.includes('--check')){if(readFileSync(path,'utf8')!==output)throw new Error('Original transport steps changed.');}else writeFileSync(path,output);

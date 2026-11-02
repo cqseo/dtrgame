@@ -148,7 +148,7 @@ declare
   control dtr_runtime.original_control%rowtype;
   receipt dtr_runtime.original_request_receipts%rowtype;
   document jsonb; change jsonb; meta record; columns text; assignments text; column_count integer;
-  entry record; room_before jsonb; room_after jsonb; n bigint; maximum_id bigint;
+  entry record; room_before jsonb; room_after jsonb; n bigint; maximum_id bigint; previous_write_flag text;
 begin
   select * into strict control from dtr_runtime.original_control where singleton for update;
   select * into receipt from dtr_runtime.original_request_receipts where request_id=p_request_id;
@@ -179,6 +179,8 @@ begin
     if jsonb_typeof(entry.value) is distinct from 'string' or (entry.value#>>'{}') !~ '^gamedata(/(tmp|bak|javascript|replays|cache)(/.*)?)?$'
       or (entry.value#>>'{}') ~ '(^|/)[.][.](/|$)' then raise exception 'invalid original state directory';end if;
   end loop;
+  previous_write_flag:=current_setting('dtr.original_write',true);
+  perform set_config('dtr.original_write','on',true);
   for change in select value from jsonb_array_elements(p_changes) loop
     select * into meta from dtr_runtime.original_tables where table_name=change->>'table';
     if not found then raise exception 'original table is not allowed';end if;
@@ -198,6 +200,7 @@ begin
       execute format('insert into public.%I(%s) select %s from jsonb_populate_record(null::public.%I,$1) on conflict(%I) do update set %s',meta.table_name,columns,columns,meta.table_name,meta.primary_key,assignments) using change->'row';
     else raise exception 'original mutation operation is not allowed';end if;
   end loop;
+  perform set_config('dtr.original_write',coalesce(previous_write_flag,''),true);
   -- Keep exact MySQL identity state transactionally, including a DROP/CREATE
   -- resetting it. PostgreSQL nextval/setval are intentionally NOT used: their
   -- changes escape rollback. The original engine always allocates in its

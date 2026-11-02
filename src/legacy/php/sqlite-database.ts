@@ -130,6 +130,8 @@ export class SqliteLegacyDatabase extends LegacyDatabase {
     sql=sql.replace(/\bON\s+DUPLICATE\s+KEY\s+UPDATE\b/i,'ON CONFLICT DO UPDATE SET')
       .replace(/\bRAND\s*\(\s*\)/gi,'(abs(random()) / 9223372036854775808.0)')
       .replace(/\bIF\s*\(/gi,'IIF(').replace(/\bGREATEST\s*\(/gi,'MAX(').replace(/\bLEAST\s*\(/gi,'MIN(');
+    const conflict=sql.search(/\bON CONFLICT DO UPDATE SET\b/i);
+    if(conflict>=0)sql=sql.slice(0,conflict)+sql.slice(conflict).replace(/\bVALUES\s*\(\s*(`?[A-Za-z0-9_]+`?)\s*\)/gi,'excluded.$1');
     const result=this.connection.exec(sql,params);
     if(/^SELECT\b/i.test(sql)) {
       const set=result[0];

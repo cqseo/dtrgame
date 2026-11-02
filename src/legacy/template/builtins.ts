@@ -7,6 +7,7 @@
  */
 import { pregMatch, pregMatchAll, pregQuote, pregReplace, pregSplit } from "./preg";
 import { md5 } from "./md5";
+import {shaDigest} from './hash';
 import { toPhpFromJson,phpJsonEncode } from "../php/codec";
 import { gzipSync,gunzipSync,inflateSync,deflateSync } from 'fflate';
 import {
@@ -76,6 +77,11 @@ function formatDate(format: string, timestamp: number, utc: boolean): string {
       case "j": out += String(get.j()); break;
       case "H": out += pad(get.G()); break;
       case "G": out += String(get.G()); break;
+      case "h": out += pad(get.G()%12||12); break;
+      case "g": out += String(get.G()%12||12); break;
+      case "a": out += get.G()<12?'am':'pm'; break;
+      case "A": out += get.G()<12?'AM':'PM'; break;
+      case "w": out += String(utc?date.getUTCDay():date.getDay()); break;
       case "i": out += pad(get.i()); break;
       case "s": out += pad(get.s()); break;
       case "\\": index += 1; out += format[index] ?? ""; break;
@@ -441,6 +447,22 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
   // Hashing. The original's accounts are MD5; see md5.ts for why that
   // is a compatibility requirement rather than a choice.
   md5: ([value]) => md5(str(value)),
+  random_bytes: ([size])=>{
+    const n=Number(size);if(!Number.isSafeInteger(n)||n<1)throw new RangeError('random_bytes length must be positive.');
+    const bytes=new Uint8Array(n);for(let i=0;i<n;i+=65536)crypto.getRandomValues(bytes.subarray(i,Math.min(i+65536,n)));
+    return new PhpBytes(bytes);
+  },
+  hash:([algorithm,value,binary])=>{
+    const name=str(algorithm).toLowerCase();if(name!=='sha1'&&name!=='sha256')throw new Error('Original hash algorithm not implemented: '+name);
+    const bytes=shaDigest(name,phpStringBytes(value??''));return toBool(binary??false)?new PhpBytes(bytes):[...bytes].map(n=>n.toString(16).padStart(2,'0')).join('');
+  },
+  sha1:([value,binary])=>{
+    const bytes=shaDigest('sha1',phpStringBytes(value??''));return toBool(binary??false)?new PhpBytes(bytes):[...bytes].map(n=>n.toString(16).padStart(2,'0')).join('');
+  },
+  hash_equals:([known,supplied])=>{
+    const a=phpStringBytes(known??''),b=phpStringBytes(supplied??'');if(a.length!==b.length)return false;
+    let difference=0;for(let i=0;i<a.length;i++)difference|=a[i]!^b[i]!;return difference===0;
+  },
 
   /**
    * var_export, in PHP's own layout.
@@ -843,7 +865,7 @@ export const PHP_BUILTINS: Readonly<Record<string, HostFunction>> = {
     return `${(seconds - whole).toFixed(8)} ${whole}`;
   },
   date: ([format, timestamp]) =>
-    formatDate(str(format), timestamp === undefined || timestamp === null ? Math.floor(Date.now() / 1000) : int(timestamp), false),
+    formatDate(str(format), timestamp === undefined || timestamp === null ? Math.floor(Date.now() / 1000) : int(timestamp), true),
   gmdate: ([format, timestamp]) =>
     formatDate(str(format), timestamp === undefined || timestamp === null ? Math.floor(Date.now() / 1000) : int(timestamp), true)
 };

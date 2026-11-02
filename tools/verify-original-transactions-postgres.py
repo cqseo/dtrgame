@@ -4,13 +4,16 @@ No network credentials, production database URL, registration or real accounts.
 """
 import concurrent.futures
 import json
+import os
+import re
 import subprocess
 import sys
 import time
 from pathlib import Path
 
 CONTAINER = 'dtr-settlement-qa-20261102'
-DATABASE = 'dtr_original_full_qa_20261102'
+DATABASE = os.environ.get('DTR_QA_DATABASE','dtr_original_full_qa_20261102')
+if not re.fullmatch(r'dtr_original_[a-z0-9_]+',DATABASE):raise SystemExit('Only disposable dtr_original_* QA database names are accepted.')
 ROOT = Path(__file__).resolve().parents[1]
 DIGEST = 'a' * 64
 REQUEST = '00000000-0000-4000-8000-000000000001'
@@ -77,6 +80,7 @@ for role in ['anon','authenticated','service_role']:
     command("do $$begin if not exists(select from pg_roles where rolname='"+role+"') then create role "+role+";end if;end$$;")
 command((ROOT/'src/generated/legacy-schema.sql').read_text())
 command((ROOT/'supabase/migrations/20261102171000_original_full_request_transactions.sql').read_text())
+command((ROOT/'supabase/migrations/20261102183000_original_room_slots.sql').read_text())
 assert scalar('select enabled from dtr_runtime.original_control;')=='f'
 passed('migration installs disabled on PostgreSQL '+scalar('show server_version;'))
 
@@ -124,4 +128,36 @@ if restored.returncode:raise RuntimeError(restored.stderr.decode()[:600])
 assert gold()==10 and receipt_count()==0 and load()==snapshot
 passed('pg_dump/pg_restore restores the exact pre-commit full snapshot and identity state')
 command('update dtr_runtime.original_control set enabled=false;')
-print(json.dumps({'ok':True,'database':DATABASE,'cases':7,'gate_after_drill':'disabled','real_player_data':False}),flush=True)
+command((ROOT/'supabase/migrations/20261102190000_original_writer_cutover.sql').read_text())
+assert command("select public.dtr_original_set_mode('original');",check=False).returncode!=0
+scalar("select public.dtr_original_set_mode('paused');")
+for sql in ["update public.acbra2_users set gold=999","delete from public.acbra2_users","truncate public.acbra2_users"]:
+    result=command(sql,check=False)
+    assert result.returncode!=0 and b'complete transaction boundary' in result.stderr
+passed('real PostgreSQL paused cutover blocks old update/delete/truncate writers')
+
+scalar("select public.dtr_original_set_mode('original');")
+snapshot=load();assert json.loads(scalar(commit_sql(snapshot)))['ok'] and gold()==130
+command("create function public.dtr_qa_old_writer()returns void language sql security definer set search_path='' as $$update public.acbra2_users set gold=999$$;")
+assert command('select public.dtr_qa_old_writer();',check=False).returncode!=0
+passed('complete commit succeeds; an older SECURITY DEFINER RPC remains fenced')
+
+snapshot=load();row={**snapshot['tables']['acbra2_users'][0],'uid':5,'username':'Gamma'}
+changes=[{'operation':'upsert','table':'acbra2_users','key':{'uid':5},'row':row}]
+counters={**snapshot['counters'],'acbra2_users':9}
+sql='select public.dtr_original_commit('+','.join([
+    "'"+OTHER+"'","'"+DIGEST+"'",str(snapshot['revision']),"'"+snapshot['signature']+"'",
+    quote(changes),quote(snapshot['files']),quote(snapshot['directories']),quote(counters),quote({'status':200,'headers':[],'body':'synthetic account allocation'})])+');'
+assert json.loads(scalar(sql))['ok']
+scalar("select public.dtr_original_set_mode('paused');")
+scalar("select public.dtr_original_set_mode('legacy');")
+assert scalar("insert into public.acbra2_users(username)values('Delta')returning uid;")=='10'
+passed('rollback to legacy restores allocator high-water mark, including unused original ids')
+
+scalar("select public.dtr_original_set_mode('paused');")
+scalar("select public.dtr_original_set_mode('original');")
+assert load()['counters']['acbra2_users']==10
+scalar("select public.dtr_original_set_mode('paused');")
+assert scalar('select enabled from dtr_runtime.original_control;')=='f'
+passed('re-entering original mode recollects later legacy identities; final state paused')
+print(json.dumps({'ok':True,'database':DATABASE,'cases':11,'gate_after_drill':'disabled','writer_mode_after_drill':'paused','real_player_data':False}),flush=True)

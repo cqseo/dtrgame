@@ -17,7 +17,7 @@
  *     when it runs out, which is what every `while ($row = ...)` in the
  *     original depends on.
  */
-import { PhpArray, type PhpValue } from "../template/values";
+import { PhpArray,toStringValue, type PhpValue } from "../template/values";
 
 /** A result handle, which the original passes back into fetch_array(). */
 export class LegacyQueryResult {
@@ -109,13 +109,18 @@ export abstract class LegacyDatabase {
     return sql;
   }
 
-  array_insert(table: string, data: PhpValue, onDuplicateUpdate: PhpValue = 0): string {
+  array_insert(table: string, data: PhpValue, onDuplicateUpdate: PhpValue = 0,keyColumn=''): string {
     const fields = data instanceof PhpArray ? data : new PhpArray();
-    const keys = fields.keys().map(String);
-    const values = fields.keys().map(key => `'${this.escape(fields.get(key))}'`);
-    let sql = `INSERT INTO ${table} (${keys.join(",")}) VALUES (${values.join(",")})`;
-    if (onDuplicateUpdate) {
-      const updates = keys.map((key, index) => `${key} = ${values[index]}`);
+    if(!fields.size)return '';
+    const first=fields.values()[0],batch=first instanceof PhpArray;
+    const keys=(batch?first:fields).keys().map(String);
+    const rows=batch?fields.values().filter((row):row is PhpArray=>row instanceof PhpArray&&row.size>0):[fields];
+    // Original mysqli array_insert uses the first row's field order and
+    // every later row's value order, including deleted-message archives.
+    const values=rows.map(row=>'('+row.values().map(value=>`'${this.escape(value)}'`).join(',')+')');
+    let sql = `INSERT INTO ${table} (${keys.join(",")}) VALUES ${values.join(',')}`;
+    if (onDuplicateUpdate&&keyColumn) {
+      const updates = keys.filter(key=>key!==keyColumn).map(key => `\`${key}\`=VALUES(\`${key}\`)`);
       sql += ` ON DUPLICATE KEY UPDATE ${updates.join(",")}`;
     }
     this.query(sql);
@@ -150,7 +155,7 @@ export abstract class LegacyDatabase {
 
   /** Escapes a value for a single-quoted SQL literal, as the original does. */
   protected escape(value: PhpValue): string {
-    return String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    return toStringValue(value).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
   }
 }
 

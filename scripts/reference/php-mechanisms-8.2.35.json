@@ -65,6 +65,11 @@
       "name": "HTML quote flags and existing entities",
       "value": "[\"'&quot;&lt;&amp;\",\"&#039;&quot;&lt;&amp;\",\"&amp;\"]",
       "output": ""
+    },
+    {
+      "name": "original date formats preserve weekday and 12-hour captcha seed inputs",
+      "value": "[\"00,40,00,2,11,2026,1\",\"2026-11-2 12:40am\",\"12 12 am AM\",\"12 12 pm PM\"]",
+      "output": ""
     }
   ]
 }

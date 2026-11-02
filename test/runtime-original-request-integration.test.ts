@@ -29,6 +29,7 @@ describe('original command through complete PostgreSQL commit boundary',()=>{
     await db.exec('create role anon;create role authenticated;create role service_role;');
     await db.exec(readFileSync('src/generated/legacy-schema.sql','utf8'));
     await db.exec(readFileSync('supabase/migrations/20261102171000_original_full_request_transactions.sql','utf8'));
+    await db.exec(readFileSync('supabase/migrations/20261102183000_original_room_slots.sql','utf8'));
   },30_000);
   afterAll(async()=>{await db.close();});
   beforeEach(async()=>{
@@ -54,6 +55,18 @@ describe('original command through complete PostgreSQL commit boundary',()=>{
     expect(snapshot.files['gamedata/tmp/replay/_/1/replay.php']?.content).toContain('response/0_/');
     expect((await db.query('select count(*)::int as n from dtr_runtime.original_request_receipts')).rows).toEqual([{n:1}]);
     expect(pending).toBeUndefined();
+  });
+  it('commits original login effects and redirect cookies in the same receipt',async()=>{
+    const response=await executeOriginalCommand({store:baseStore,requestId:id,requestDigest:digest,roomId:0,now,page:'public:/login.php',
+      request:{method:'POST',post:[['username','Alpha'],['password','synthetic-only']],remoteAddress:'192.0.2.40'},
+      createShadow:async(tables,counters)=>new SqliteLegacyDatabase(new SQL.Database(),tables,counters),
+      beforeCommit:async p=>{pending=p;},afterResolved:async()=>{pending=undefined;}});
+    expect(response.status).toBe(302);
+    expect(response.headers.filter(([name])=>name==='set-cookie')).toHaveLength(3);
+    const snapshot=await baseStore.load();
+    expect(snapshot.tables.acbra2_users![0]!.ip).toBe('192.0.2.40');
+    expect(snapshot.tables.acbra2_users![0]!.lastvisit).toBe(now);
+    expect((await db.query<{response:unknown}>('select response from dtr_runtime.original_request_receipts')).rows[0]!.response).toEqual(response);
   });
   it('recovers a committed action whose HTTP acknowledgement was lost',async()=>{
     const store:OriginalRequestStore={...baseStore,commit:async p=>{await baseStore.commit(p);throw new Error('synthetic lost acknowledgement');}};

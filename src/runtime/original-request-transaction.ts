@@ -7,12 +7,13 @@ import type {LegacyPageRequest} from '../legacy/php/runtime';
 import {createOriginalGameEngine,originalRuntimeFiles} from './original-game-engine';
 import type {SupabaseLegacyRest} from './supabase';
 import {createOriginalRoomUpdateEngine} from './original-room-update';
+import {createOriginalPublicPageEngine} from './original-public-page-engine';
 
 export interface OriginalSnapshot {
   revision:number;signature:string;tables:Record<string,Array<Record<string,unknown>>>;
   files:Record<string,LegacyVirtualFile>;directories:string[];counters:Record<string,number>;
 }
-export interface OriginalResponse {status:number;headers:Array<[string,string]>;body:string}
+export interface OriginalResponse {status:number;headers:Array<[string,string]>;body:string;scheduledRooms?:number[]}
 export type OriginalCommitReply={ok:true;revision:number;response:OriginalResponse;replayed:boolean}|{ok:false;conflict:true;revision:number};
 export interface OriginalPendingRequest {requestId:string;requestDigest:string;expectedRevision:number}
 export interface OriginalCommit extends OriginalPendingRequest {
@@ -55,14 +56,23 @@ export async function executeOriginalCommand(input:{
     let commit:OriginalCommit;
     try{
       const filesystem=new LegacyVirtualFilesystem(originalRuntimeFiles(),snapshot.files,input.now,{directories:snapshot.directories,readonlyPaths:LEGACY_PUBLIC_STATIC_FILES});
-      const polling=input.page==='roomupdate'||input.page==='roomupdate_wake';
-      const engine=polling?createOriginalRoomUpdateEngine({database,filesystem,now:input.now}):createOriginalGameEngine({database,filesystem,roomId:input.roomId,now:input.now,requestId:input.requestId});
-      const body=polling?(engine as ReturnType<typeof createOriginalRoomUpdateEngine>).run(input.request,input.page==='roomupdate_wake'):
-        (engine as ReturnType<typeof createOriginalGameEngine>).run(input.page,input.request);
-      const headers:Array<[string,string]>=[...engine.response.headers].filter(([name])=>name!=='set-cookie');
-      for(const cookie of engine.response.headers.getSetCookie())headers.push(['set-cookie',cookie]);
+      let response:import('./legacy-http-response').LegacyHttpResponse,body:string;
+      let scheduledRooms:number[]=[];
+      if(input.page==='roomupdate'||input.page==='roomupdate_wake'){
+        const engine=createOriginalRoomUpdateEngine({database,filesystem,now:input.now});
+        response=engine.response;body=engine.run(input.request,input.page==='roomupdate_wake');
+      }else if(input.page.startsWith('public:')){
+        const engine=createOriginalPublicPageEngine({database,filesystem,now:input.now});
+        response=engine.response;body=engine.run(input.page.slice(7),input.request);
+        scheduledRooms=[...engine.scheduledRooms];
+      }else{
+        const engine=createOriginalGameEngine({database,filesystem,roomId:input.roomId,now:input.now,requestId:input.requestId});
+        response=engine.response;body=engine.run(input.page,input.request);
+      }
+      const headers:Array<[string,string]>=[...response.headers].filter(([name])=>name!=='set-cookie');
+      for(const cookie of response.headers.getSetCookie())headers.push(['set-cookie',cookie]);
       commit={requestId:input.requestId,requestDigest:input.requestDigest,expectedRevision:snapshot.revision,signature:snapshot.signature,
-        changes:database.mutations(),...filesystem.state(),counters:database.counters(),response:{status:engine.response.status,headers,body}};
+        changes:database.mutations(),...filesystem.state(),counters:database.counters(),response:{status:response.status,headers,body,...(scheduledRooms.length?{scheduledRooms}:{})}};
     }finally{database.close();}
     const pending={requestId:input.requestId,requestDigest:input.requestDigest,expectedRevision:snapshot.revision};
     await input.beforeCommit(pending);

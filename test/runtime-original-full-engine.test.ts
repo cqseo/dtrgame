@@ -15,6 +15,7 @@ import { toPhpFromJson } from '../src/legacy/php/codec';
 import { PhpArray,phpStringBytes } from '../src/legacy/template/values';
 import { LEGACY_SQLITE_SHADOW_SCHEMA } from '../src/generated/legacy-sqlite-shadow-schema';
 import {createOriginalRoomUpdateEngine} from '../src/runtime/original-room-update';
+import {createOriginalPublicPageEngine} from '../src/runtime/original-public-page-engine';
 let SQL:Awaited<ReturnType<typeof initSqlJs>>;
 beforeAll(async()=>{SQL=await initSqlJs({wasmBinary:readFileSync('node_modules/sql.js/dist/sql-wasm-browser.wasm')});});
 const now=1793580000;
@@ -36,6 +37,25 @@ function harness(gametype=0,roomId=0){
   return {db,engine:createOriginalGameEngine({database:db,roomId,now})};
 }
 describe('complete original module execution chain',()=>{
+  it('creates original room slot 7 even though it did not exist in the captured installation',()=>{
+    const {db,engine}=harness();
+    try{
+      for(let room=1;room<=6;room++)db.array_insert('acbra2_game',legacyRowFromJson({groomid:room,groomstatus:40,groomtype:0}));
+      const result=engine.run('command_roomcmd',{method:'POST',post:[['command','newroom'],['para1','0']],cookies:[['acbra2_user','Alpha'],['acbra2_pass',pass]]},{tick:false});
+      expect(result).toBe('redirect:index.php');expect(db.rows('acbra2_game').find(r=>r.get('groomid')==='7')?.get('groomstatus')).toBe('10');
+      expect(db.rows('acbra2_s7_players')).toHaveLength(0);
+      expect(engine.filesystem.exists('gamedata/tmp/rooms/7.txt')).toBe(true);
+    }finally{db.close();}
+  });
+  it('runs original area timing refresh and fire-and-forget room routine command legs',async()=>{
+    const {db,engine}=harness();
+    try{
+      const timing=await legacyDecode<Record<string,unknown>>(engine.run('command_transport',{method:'POST',post:[['command','area_timing_refresh']]},{tick:false}));
+      expect(timing.timing).toBeDefined();
+      const next=createOriginalGameEngine({database:db,roomId:0,now});
+      expect(next.run('command_transport',{method:'POST',post:[['command','room_routine_single']]},{tick:false})).toBe('');
+    }finally{db.close();}
+  });
   it('applies skill58 full-health revival and stat gains only on the first lethal battle',async()=>{
     const {db,engine}=harness();
     const roll=vi.spyOn(Math,'random').mockReturnValue(0);
@@ -109,6 +129,9 @@ describe('complete original module execution chain',()=>{
       const update=await legacyDecode<Record<string,any>>(changed.run({...pollRequest,post:[['timestamp','0']]}));
       expect(update.value.timestamp).toBe(data.timestamp);
       expect(update.innerHTML.roommain).toContain('Alpha');
+      const lobby=createOriginalPublicPageEngine({database:db,filesystem:fs,now:now+3});
+      const lobbyHtml=lobby.run('/index.php',{method:'GET',cookies:[['acbra2_user','Alpha'],['acbra2_pass',pass],['acbra2_roomid','1']]});
+      expect(lobbyHtml).toContain('Alpha');expect(lobbyHtml).toContain('id="roommain"');expect(lobbyHtml).toContain('SOLO');
       await command('Alpha',1,[['command','ready']],now+4);
       await command('Beta',1,[['command','ready']],now+5);
       const started=db.rows('acbra2_game').find(r=>r.get('groomid')==='1');
@@ -117,6 +140,9 @@ describe('complete original module execution chain',()=>{
       expect(db.rows('acbra2_s1_players').filter(p=>p.get('type')==='0').map(p=>p.get('name'))).toEqual(['Alpha','Beta']);
       const afterStart=createOriginalRoomUpdateEngine({database:db,filesystem:fs,now:now+6});
       expect(await legacyDecode(afterStart.run(pollRequest,true))).toEqual({url:'game.php'});
+      const activeLobby=createOriginalPublicPageEngine({database:db,filesystem:fs,now:now+6});
+      activeLobby.run('/index.php',{method:'GET',cookies:[['acbra2_user','Alpha'],['acbra2_pass',pass],['acbra2_roomid','1']]});
+      expect([...activeLobby.scheduledRooms]).toContain(1);
     }catch(error){console.error({error,frames:(error as Error & {legacyFrames?:string[]}).legacyFrames,queries:db.issued.slice(-4)});throw error;}
     finally{db.close();}
   });

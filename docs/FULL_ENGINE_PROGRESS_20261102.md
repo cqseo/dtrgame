@@ -89,6 +89,9 @@ GitHub main and the currently deployed staging Worker have not been changed.
    Never enable both the old allocators and the new transactional counters.
    Install the new migration and deploy staging only after the relevant checks.
 
+The later continuation sections below supersede the wiring, workerd-startup
+and writer-fence items above; broad acceptance gates remain open.
+
 ## Source/capture facts
 
 - Frozen authoritative source: `/opt/dts-sandbox/parity/legacy-dts`, read-only.
@@ -150,3 +153,58 @@ GitHub main and the currently deployed staging Worker have not been changed.
   old-writer/identity cutover, connected database installation and deployment.
   The original public kernel remains active; no production or player data was
   changed. This checkpoint must not be presented as 1:1 completion.
+
+## Later continuation: account pages, original room slots and writer cutover
+
+- All 31 compiled public PHP entry points now route through original wrappers
+  or original page scripts under the disabled engine switch. Nineteen standalone
+  pages have anonymous and cookie-authenticated GET execution checks. This is
+  route/runtime coverage, not full acceptance of every page action or visual.
+- Original login/quit, registration challenge and insertion, initial 100 gold
+  and card 0, profile/password/settings edits, recovery-code generation/reset,
+  one original 99-gold card draw/insufficient-funds refusal, inbox attachment
+  claim-once, deletion/archive and original 100-gold recovery all passed.
+- All account/page writes now share canonical request transactions; redirects
+  and cookies are released only after commit. Login receipt/persistence tested
+  together in PostgreSQL-compatible integration. Core-only pages use original
+  core.list.php initializers and hook chains rather than all extension hooks.
+- Original index/map/chat execute in the same engine. Index's asynchronous
+  room-routine self-requests are queued after commit. Original direct area-timing
+  and room-routine command branches are source-generated and tested.
+- Original mysqli ordered multi-row insertion and VALUES(column) duplicate
+  updates now execute, enabling deleted-message archives/recovery. Three
+  GAME_ROOT-derived captured card paths are rebased to the Worker virtual root;
+  the raw authoritative capture and all gameplay values are unchanged.
+- Added synchronous SHA-1/SHA-256, native secure random bytes and hash comparison
+  for original account recovery. Compared independent native digest outputs
+  across binary data and block/padding boundaries through 1,000,000 bytes.
+- Verified the original direct error.php returns HTTP 500 with exactly 1,018
+  partial HTML bytes (SHA-256
+  `97a3ecf5525121cd757b5ec2cfa49a617405d42ea997b9846b67c70cf678686b`).
+  Preserve this actual PHP behavior; do not invent CURSCRIPT to mask it. Other
+  interpreter errors still fail visibly in tests rather than becoming success.
+- The captured installation had state tables for rooms 1–6 and 8. Original room
+  configuration allows 10 regular slots plus 2 perpetual types. New generated
+  provisioning copies the exact original room-1 schema into missing room slots,
+  producing **100 canonical state tables**. Original creation of room 7 passed.
+  `20261102183000_original_room_slots.sql` refuses installation while enabled.
+- `20261102190000_original_writer_cutover.sql` installs in legacy mode. Statement
+  triggers fence all old writers (including older SECURITY DEFINER RPCs) while
+  paused or original mode is active. Only complete commits open a scoped write
+  flag, restored before returning. Cutover requires a separately committed pause.
+  Rollback restores PostgreSQL allocators to original transactional high-water
+  counters; later legacy ids are recollected before re-entering original mode.
+- Fresh regression **96/96 files passed, zero retries/failures**; TypeScript and
+  dry build passed (39,136.20 KiB source / 4,269.02 KiB gzip, 841 static assets).
+  Afterwards a weekday/12-hour date-format defect affecting captcha seeds was
+  found and corrected against the actual PHP 8.2.35 oracle. There are now **14
+  real-PHP language cases**; affected engine/page/oracle rerun **60 tests passed**.
+- Real PostgreSQL 17.11: **11 drills passed** on fresh disposable DB
+  `dtr_original_slots_cutover_qa_20261102`, including all prior concurrency,
+  crash and backup drills, old-writer fencing, rollback allocator restoration
+  and re-entry. Final state is disabled/paused. No real player data used.
+- No connected Supabase migrations, staging/production deployment or live
+  account changes have been performed. Still required: background alarms,
+  remaining all-mode/skill/card/item/achievement interactions (including skill
+  427), full real-browser multiplayer matches and visual/source differential
+  checks, generated replay/resource delivery and a rehearsed staging cutover.

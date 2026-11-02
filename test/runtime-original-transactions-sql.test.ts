@@ -21,6 +21,7 @@ describe('complete original request transactions in disposable PostgreSQL',()=>{
     await db.exec('create role anon;create role authenticated;create role service_role;');
     await db.exec(readFileSync('src/generated/legacy-schema.sql','utf8'));
     await db.exec(readFileSync('supabase/migrations/20261102171000_original_full_request_transactions.sql','utf8'));
+    await db.exec(readFileSync('supabase/migrations/20261102183000_original_room_slots.sql','utf8'));
     expect((await db.query('select enabled from dtr_runtime.original_control')).rows).toEqual([{enabled:false}]);
     await expect(load()).rejects.toThrow('disabled');
   },30_000);
@@ -33,7 +34,7 @@ describe('complete original request transactions in disposable PostgreSQL',()=>{
   });
   it('loads every original table consistently, including all 124 player fields',async()=>{
     const snapshot=await load();
-    expect(Object.keys(snapshot.tables)).toHaveLength(65);
+    expect(Object.keys(snapshot.tables)).toHaveLength(100);
     expect(snapshot.tables.acbra2_users).toHaveLength(2);
     expect(snapshot.counters.acbra2_users).toBe(2);
     expect(snapshot.signature).toMatch(/^[a-f0-9]{32}$/);

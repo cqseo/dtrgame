@@ -89,7 +89,7 @@ export interface TemplateContext {
   readonly staticSlot?: ((name: string) => { get(): PhpValue; set(value: PhpValue): void }) | undefined;
 }
 
-export class TemplateError extends Error {}
+export class TemplateError extends Error {output='';}
 
 /** Raised by exit()/die() so the caller can distinguish it from a fault. */
 export class TemplateExit extends Error {
@@ -168,6 +168,7 @@ export function executeCompiledFunctionProgram(
     return { value: null, output: renderer.output };
   } catch (signal) {
     if (signal instanceof ReturnSignal) return { value: signal.value, output: renderer.output };
+    if(signal instanceof TemplateError)signal.output=renderer.output+signal.output;
     throw signal;
   }
 }

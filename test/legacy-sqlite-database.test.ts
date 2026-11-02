@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import initSqlJs from "sql.js/dist/sql-wasm-browser.js";
 import { SqliteLegacyDatabase, bindLegacySql } from "../src/legacy/php/sqlite-database";
 import { legacyRowFromJson, LegacyQueryResult } from "../src/legacy/php/database";
+import {PhpArray} from '../src/legacy/template/values';
 
 let SQL: Awaited<ReturnType<typeof initSqlJs>>;
 beforeAll(async () => { SQL=await initSqlJs({wasmBinary:readFileSync('node_modules/sql.js/dist/sql-wasm-browser.wasm')}); });
@@ -11,6 +12,16 @@ const users=[{uid:1,username:'Alpha',gold:10,credits:20},{uid:2,username:'Beta',
 function database(){return new SqliteLegacyDatabase(new SQL.Database(),{acbra2_users:users.map(legacyRowFromJson)});}
 
 describe('request-local original SQL',()=>{
+  it('inserts original ordered row batches and updates duplicate rows through VALUES(column)',()=>{
+    const db=database();
+    try{
+      const batch=new PhpArray();batch.push(legacyRowFromJson({uid:3,username:'Gamma',gold:7}));batch.push(legacyRowFromJson({uid:4,username:'Delta',gold:8}));
+      db.array_insert('acbra2_users',batch);
+      const updates=new PhpArray();updates.push(legacyRowFromJson({uid:3,username:'Gamma',gold:70}));updates.push(legacyRowFromJson({uid:4,username:'Delta',gold:80}));
+      db.array_insert('acbra2_users',updates,1,'uid');
+      expect(db.rows('acbra2_users').map(row=>row.get('gold'))).toEqual(['10','30','70','80']);
+    }finally{db.close();}
+  });
   it('evaluates numeric predicates, ordering, projection, count and limits',()=>{
     const db=database();
     try {

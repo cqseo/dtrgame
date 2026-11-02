@@ -849,9 +849,9 @@ export const LEGACY_MODULE_PREINIT_VARS: Record<string, Record<string, PhpValue>
     "bubblebox_style": a([]),
   },
   "cardbase": {
-    "card_config_file": "/opt/dts-sandbox/parity/preinit-capture-20261102//include/modules/extra/card/cardbase/config/card.config.php",
-    "card_main_file": "/opt/dts-sandbox/parity/preinit-capture-20261102//include/modules/extra/card/cardbase/main.php",
-    "card_index_file": "/opt/dts-sandbox/parity/preinit-capture-20261102/./gamedata/cache/card_index.config.php",
+    "card_config_file": "/include/modules/extra/card/cardbase/config/card.config.php",
+    "card_main_file": "/include/modules/extra/card/cardbase/main.php",
+    "card_index_file": "/gamedata/cache/card_index.config.php",
     "card_force_different_gtype": a([[0, 4]]),
     "card_need_charge_gtype": a([[0, 4]]),
     "card_cooldown_discount_gtype": a([]),

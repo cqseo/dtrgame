@@ -4,6 +4,7 @@ import type {LegacyPageRequest} from '../legacy/php/runtime';
 import {createSqliteShadow} from './sqlite-shadow';
 import {OriginalRoomSubscribers} from './original-room-subscribers';
 import type {LegacyRowMutation} from '../legacy/php/database';
+import {ORIGINAL_ROOM_ID_LIMIT} from '../generated/legacy-sqlite-shadow-schema';
 
 interface OriginalActorEnv {
   DTS_ORIGINAL_ENGINE?:string;
@@ -48,7 +49,7 @@ export class OriginalGameActor {
       // command either has a receipt or has been fenced at the SQL lock.
       if(this.#pending){await store.reconcile(this.#pending);await this.#clearPending();}
       const body=await request.json<OriginalActorCommand>();
-      if(!Number.isSafeInteger(body.roomId)||body.roomId<0||body.roomId>12||typeof body.page!=='string'||!body.request||typeof body.request!=='object')return new Response('Invalid original command.',{status:400});
+      if(!Number.isSafeInteger(body.roomId)||body.roomId<0||body.roomId>ORIGINAL_ROOM_ID_LIMIT||typeof body.page!=='string'||!body.request||typeof body.request!=='object')return new Response('Invalid original command.',{status:400});
       const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(body)));
       const requestDigest=[...new Uint8Array(digest)].map(v=>v.toString(16).padStart(2,'0')).join('');
       const response=await executeOriginalCommand({store,createShadow:createSqliteShadow,
@@ -57,6 +58,13 @@ export class OriginalGameActor {
         afterResolved:()=>this.#clearPending(),
         afterCommitted:changes=>this.#notifyRooms(changes)
       });
+      if(response.scheduledRooms?.length&&this.env.ORIGINAL){
+        const namespace=this.env.ORIGINAL;
+        this.ctx.waitUntil(Promise.allSettled(response.scheduledRooms.map(roomId=>{
+          const command:OriginalActorCommand={roomId,page:'command_transport',request:{method:'POST',post:[['command','room_routine_single'],['game_roomid',String(roomId)]]}};
+          return namespace.get(namespace.idFromName('original-room:'+roomId)).fetch('https://original.internal/execute',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(command)});
+        })));
+      }
       return new Response([204,205,304].includes(response.status)?null:response.body,{status:response.status,headers:response.headers});
     }catch(error){
       console.error('Original command did not complete.',error instanceof Error?error.message:'unknown failure');

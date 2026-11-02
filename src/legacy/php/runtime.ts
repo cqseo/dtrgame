@@ -27,6 +27,7 @@ import { TemplateExit, createTemplateContext, executeCompiledFunctionProgram } f
 import { PhpArray, PhpBytes,phpStringBytes,toBool, toStringValue, type PhpValue } from "../template/values";
 import type { LegacyVirtualFilesystem } from "./virtual-filesystem";
 import { LEGACY_FUNCTION_SOURCE_PATHS } from "../../generated/legacy-runtime-source-metadata";
+import {ORIGINAL_CORE_MODULES} from '../../generated/legacy-original-transport-steps';
 import {
   HookChains,
   NULL_FUNCTION,
@@ -62,11 +63,11 @@ const MAGIC = "__DTS_MAGIC_PROLOGUE__";
  * order of the module that declares it, so the chains here are the real
  * ones rather than the ones that happen to be compiled.
  */
-function buildChainsFromManifest(): HookChains {
+function buildChainsFromManifest(only?:ReadonlySet<string>): HookChains {
   const chains = new HookChains();
   for (const [name, entries] of Object.entries(LEGACY_HOOK_CHAINS)) {
     const ordered = [...entries].sort((left, right) => left.order - right.order);
-    for (const entry of ordered) chains.register(entry.module, name);
+    for (const entry of ordered)if(!only||only.has(entry.module))chains.register(entry.module, name);
   }
   return chains;
 }
@@ -158,6 +159,7 @@ export class LegacyModuleRuntime {
    */
   readonly #globals = new ModuleScope();
   readonly #outputBuffers: string[] = [];
+  #coreChains:HookChains|undefined;
   /**
    * One live constants table for the whole request.
    *
@@ -272,7 +274,9 @@ export class LegacyModuleRuntime {
   }
 
   has(name: string, namespace?: string): boolean {
-    return this.#functions.has(this.resolve(name, namespace));
+    const target=this.resolve(name, namespace),module=splitQualified(target).module;
+    if(this.#options.fullGame&&this.#constants.has('LOAD_CORE_ONLY')&&module&&!ORIGINAL_CORE_MODULES.has(module))return false;
+    return this.#functions.has(target);
   }
 
   /** Which parameters of a function are declared `&$x`. */
@@ -317,7 +321,8 @@ export class LegacyModuleRuntime {
     // overridden, and the original's version returns NULL.
     if (target === NULL_FUNCTION.toLowerCase()) return { value: null, output: "" };
 
-    const dispatch = resolveDispatch(this.chains, target, caller);
+    const coreOnly=this.#options.fullGame&&this.#constants.has('LOAD_CORE_ONLY');
+    const dispatch = resolveDispatch(coreOnly?(this.#coreChains??=buildChainsFromManifest(ORIGINAL_CORE_MODULES)):this.chains, target, caller);
     if (dispatch.kind === "redirect") {
       // The prologue calls the newest implementation from inside the one it
       // redirected away from, so that is the caller the newest sees.
@@ -446,6 +451,11 @@ export class LegacyModuleRuntime {
       if (signal instanceof TemplateExit){this.#outputBuffers.length=0;return { value: null, output: signal.output };}
       throw signal;
     }
+  }
+
+  /** PHP request shutdown flushes every still-open output buffer. */
+  flushPageOutput():string{
+    const output=this.#outputBuffers.join('');this.#outputBuffers.length=0;return output;
   }
 
   /**
@@ -750,7 +760,9 @@ export class LegacyModuleRuntime {
       // MOD_<NAME> for every enabled module, which is what the original's
       // loop over gamedata/modules.list.php defines. The registry is
       // generated from that same list.
-      for (const module of LEGACY_MODULES) {
+      const enabledModules=LEGACY_MODULES.filter(module=>module.enabled&&
+        !(this.#options.fullGame&&this.#constants.has('LOAD_CORE_ONLY')&&!ORIGINAL_CORE_MODULES.has(module.name)));
+      for (const module of enabledModules) {
         if (!module.enabled) continue;
         this.#constants.set(`MOD_${module.name.toUpperCase()}`, true);
         // Original modules.init.template.php registers each module's actual
@@ -780,7 +792,7 @@ export class LegacyModuleRuntime {
       // cpass. Both initializers are request-specific; the captured module
       // variable defaults cannot stand in for either of them.
       if(this.#options.fullGame){
-        for(const module of [...LEGACY_MODULES].filter(m=>m.enabled).sort((a,b)=>a.order-b.order)){
+        for(const module of [...enabledModules].sort((a,b)=>a.order-b.order)){
           if(module.name==='input'&&this.#constants.has('IN_DAEMON'))continue;
           if(this.has(`${module.name}\\init`,""))this.call(`${module.name}\\init`,[],"","");
           if(module.name==='input'){
@@ -837,6 +849,11 @@ export class LegacyModuleRuntime {
       if ((readMap || (curscript === "game" && this.#constants.has("IN_COMMAND"))) &&
           this.has("sys\\load_gameinfo", "")) {
         this.call("sys\\load_gameinfo", [], "", "");
+      }
+      if(this.#options.fullGame&&!this.#constants.has('IN_DAEMON')&&!this.#constants.has('NO_SYS_UPDATE')&&
+          !this.#constants.has('LOAD_CORE_ONLY')&&!['chat','help'].includes(curscript)&&
+          !(curscript==='news'&&this.#globals.get('sendmode')==='news')){
+        this.call('sys\\routine');this.call('dts_quickmatch_tick');
       }
       return true;
     });

@@ -3,7 +3,7 @@ import { LEGACY_TEMPLATES } from "../generated/legacy-templates";
 import { LEGACY_HELP_MODULE_TEMPLATES } from "../generated/legacy-help-module-templates";
 import { LEGACY_RUNTIME_DATA_FILES } from "../generated/legacy-runtime-source-metadata";
 import { LEGACY_MODULE_VARS } from "../generated/legacy-module-vars";
-import { ORIGINAL_REPLAY_RECORD_STEP,ORIGINAL_DAEMON_PREPARE_INPUT } from '../generated/legacy-original-transport-steps';
+import { ORIGINAL_REPLAY_RECORD_STEP,ORIGINAL_DAEMON_PREPARE_INPUT,ORIGINAL_DAEMON_DIRECT_COMMANDS } from '../generated/legacy-original-transport-steps';
 import { LEGACY_PUBLIC_STATIC_FILES } from '../generated/legacy-public-static-files';
 import { phpJsonEncode } from "../legacy/php/codec";
 import { createLegacyModuleRuntime } from "../legacy/php/compiled-modules";
@@ -13,6 +13,7 @@ import type { LegacyPageRequest } from "../legacy/php/runtime";
 import { LegacyVirtualFilesystem } from "../legacy/php/virtual-filesystem";
 import { LegacyHttpResponse } from "./legacy-http-response";
 import {PhpThrow} from '../legacy/php/module-store';
+import {ORIGINAL_ROOM_ID_LIMIT} from '../generated/legacy-sqlite-shadow-schema';
 
 const BOOTSTRAP=parseModuleFile(`<?php
   $___MOD_SRV=1; $___MOD_CODE_ADV3=1; $___TEMP_WORKFLAG=1;
@@ -38,7 +39,7 @@ export function originalRuntimeFiles():Readonly<Record<string,string>>{
  * no PHP socket daemon on Workers. Every module, action and template is the
  * captured original; state remains a request working copy until committed. */
 export function createOriginalGameEngine(input:{database:LegacyDatabase;roomId:number;now:number;filesystem?:LegacyVirtualFilesystem;requestId?:string}) {
-  if(!Number.isSafeInteger(input.roomId)||input.roomId<0||input.roomId>12)throw new RangeError('Invalid original room.');
+  if(!Number.isSafeInteger(input.roomId)||input.roomId<0||input.roomId>ORIGINAL_ROOM_ID_LIMIT)throw new RangeError('Invalid original room.');
   const response=new LegacyHttpResponse();
   const filesystem=input.filesystem??new LegacyVirtualFilesystem(originalRuntimeFiles(),{},input.now,{readonlyPaths:LEGACY_PUBLIC_STATIC_FILES});
   const runtime=createLegacyModuleRuntime({fullGame:true,filesystem,database:input.database,
@@ -56,8 +57,8 @@ export function createOriginalGameEngine(input:{database:LegacyDatabase;roomId:n
   return {
     runtime,filesystem,response,
     run(page:string,request:LegacyPageRequest,options:{tick?:boolean}={}) {
-      if(!PAGES.has(page))throw new Error('Invalid original page.');
-      const program=LEGACY_COMPILED_INCLUDES['./include/pages/'+page+'.php'];
+      if(page!=='command_transport'&&!PAGES.has(page))throw new Error('Invalid original page.');
+      const program=page==='command_transport'?ORIGINAL_DAEMON_DIRECT_COMMANDS:LEGACY_COMPILED_INCLUDES['./include/pages/'+page+'.php'];
       if(!program)throw new Error('Original page is not compiled: '+page);
       runtime.runPageScript(ORIGINAL_DAEMON_PREPARE_INPUT,request);
       runtime.runPageScript(BOOTSTRAP);
@@ -76,8 +77,9 @@ export function createOriginalGameEngine(input:{database:LegacyDatabase;roomId:n
         output=runtime.runPageScript(parseModuleFile(`<?php echo '${quoted}';`)).output;
       }
       const buffered=runtime.runPageScript(parseModuleFile('<?php return ob_get_clean();')).value;
-      if(typeof buffered!=='string')throw new Error('Original response buffer is missing.');
-      const body=output+buffered;
+      // The original area-timing branch flushes its buffer itself.
+      if(typeof buffered!=='string'&&page!=='command_transport')throw new Error('Original response buffer is missing.');
+      const body=output+(typeof buffered==='string'?buffered:'');
       // The original socket client reissues daemon cookie changes via the
       // ordinary gsetcookie() function. Preserve that step on HTTP transport.
       runtime.runPageScript(parseModuleFile(`<?php
