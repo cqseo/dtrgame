@@ -251,9 +251,12 @@ export function createHostConstants(curscript: string | null): Map<string, PhpVa
 
 /** Everything above, as one map. */
 export function createHostFunctions(): Map<string, HostFunction> {
+  let errorMask=32767,ignoreAbort=0;
   return new Map<string, HostFunction>([
     ...createLockFunctions(),
     ...createFilesystemFunctions(),
+    ['error_reporting',values=>{const old=errorMask;if(values[0]!==undefined)errorMask=Number(values[0]);return old;}],
+    ['ignore_user_abort',values=>{const old=ignoreAbort;if(values[0]!==undefined)ignoreAbort=values[0]?1:0;return old;}],
     // The original selects Etc/GMT at the beginning of sys\init().
     // Workers and this interpreter already evaluate date/time builtins in
     // UTC, so accepting that exact timezone preserves the observable clock

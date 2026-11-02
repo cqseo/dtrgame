@@ -14,6 +14,7 @@ import { createLegacyModuleRuntime } from '../src/legacy/php/compiled-modules';
 import { toPhpFromJson } from '../src/legacy/php/codec';
 import { PhpArray,phpStringBytes } from '../src/legacy/template/values';
 import { LEGACY_SQLITE_SHADOW_SCHEMA } from '../src/generated/legacy-sqlite-shadow-schema';
+import {createOriginalRoomUpdateEngine} from '../src/runtime/original-room-update';
 let SQL:Awaited<ReturnType<typeof initSqlJs>>;
 beforeAll(async()=>{SQL=await initSqlJs({wasmBinary:readFileSync('node_modules/sql.js/dist/sql-wasm-browser.wasm')});});
 const now=1793580000;
@@ -35,6 +36,90 @@ function harness(gametype=0,roomId=0){
   return {db,engine:createOriginalGameEngine({database:db,roomId,now})};
 }
 describe('complete original module execution chain',()=>{
+  it('applies skill58 full-health revival and stat gains only on the first lethal battle',async()=>{
+    const {db,engine}=harness();
+    const roll=vi.spyOn(Math,'random').mockReturnValue(0);
+    try{
+      const codec=createLegacyModuleRuntime();
+      const values=codec.call('skillbase\\skillbase_save_process',[toPhpFromJson({58:1}),toPhpFromJson({'58_r':'0'})]) as PhpArray;
+      db.array_update('acbra2_players',legacyRowFromJson({lvl:5,nskill:values.get(0),nskillpara:values.get(1)}),"pid='2'");
+      let fs=engine.filesystem;
+      for(const [round,hp]of [410,0].entries()){
+        db.array_update('acbra2_players',legacyRowFromJson({action:'enemy2',wep:'调色刀',wepk:'WK',wepe:99999,weps:'∞',wk:99999}),"pid='1'");
+        fs=new LegacyVirtualFilesystem(originalRuntimeFiles(),fs.snapshot(),now+round,{directories:fs.directories,readonlyPaths:LEGACY_PUBLIC_STATIC_FILES});
+        const next=createOriginalGameEngine({database:db,roomId:0,now:now+round,filesystem:fs});
+        await legacyDecode(next.run('command_act',{method:'POST',post:[['command','attack'],['mode','combat']],cookies:[['acbra2_user','Alpha'],['acbra2_pass',pass]]},{tick:false}));
+        const defender=db.rows('acbra2_players').find(p=>p.get('name')==='Beta');
+        expect(defender?.get('hp')).toBe(String(hp));expect(defender?.get('mhp')).toBe('410');
+        expect(defender?.get('def')).toBe('125');
+      }
+    }catch(error){console.error({error,frames:(error as Error & {legacyFrames?:string[]}).legacyFrames,queries:db.issued.slice(-3)});throw error;}
+    finally{roll.mockRestore();db.close();}
+  });
+  it('keeps a dead teammate in the original team victory list and winner flags',async()=>{
+    const {db,engine}=harness(14,4);
+    try{
+      db.array_update('acbra2_s4_players',legacyRowFromJson({teamID:'red'}),"type='0'");
+      db.array_update('acbra2_s4_players',legacyRowFromJson({hp:0,state:22,player_dead_flag:1,endtime:now-1}),"pid='2'");
+      await legacyDecode(engine.run('command_act',{method:'POST',post:[['command','menu']],cookies:[['acbra2_user','Alpha'],['acbra2_pass',pass]]},{tick:false}));
+      engine.runtime.call('sys\\gameover',[now]);
+      expect(db.rows('acbra2_shistory')[0]?.get('winner')).toBe('Alpha,Beta');
+      expect(db.rows('acbra2_shistory')[0]?.get('winnernum')).toBe('2');
+      expect(db.rows('acbra2_s4_players').map(p=>p.get('winner_flag'))).toEqual(['2','2']);
+    }catch(error){console.error({error,frames:(error as Error & {legacyFrames?:string[]}).legacyFrames,queries:db.issued.slice(-3)});throw error;}
+    finally{db.close();}
+  });
+  it.each(['end3','end5','end7'])('preserves original %s special-ending history, news and rewards',async ending=>{
+    const {db,engine}=harness();
+    try{
+      await legacyDecode(engine.run('command_act',{method:'POST',post:[['command','menu']],cookies:[['acbra2_user','Alpha'],['acbra2_pass',pass]]},{tick:false}));
+      engine.runtime.call('sys\\gameover',[now,ending,'Alpha']);
+      expect(db.rows('acbra2_game')[0]?.get('gamestate')).toBe('0');
+      expect(db.rows('acbra2_history')[0]?.get('winner')).toBe('Alpha');
+      expect(db.rows('acbra2_newsinfo').some(n=>n.get('news')===ending)).toBe(true);
+      expect(Number(db.rows('acbra2_users')[0]?.get('gold'))).toBeGreaterThan(0);
+      expect(typeof engine.filesystem.read('gamedata/replays/7.dat')).toBe('string');
+    }catch(error){console.error({error,frames:(error as Error & {legacyFrames?:string[]}).legacyFrames,queries:db.issued.slice(-3)});throw error;}
+    finally{db.close();}
+  });
+  it('creates an original SOLO waiting room, admits the second account and broadcasts their chat',async()=>{
+    const {db,engine}=harness();
+    let fs=engine.filesystem;
+    const command=async(name:string,room:number,post:Array<[string,string]>,time:number)=>{
+      fs=new LegacyVirtualFilesystem(originalRuntimeFiles(),fs.snapshot(),time,{directories:fs.directories,readonlyPaths:LEGACY_PUBLIC_STATIC_FILES});
+      const next=createOriginalGameEngine({database:db,roomId:room,now:time,filesystem:fs});
+      return next.run('command_roomcmd',{method:'POST',post,cookies:[['acbra2_user',name],['acbra2_pass',pass],['acbra2_roomid',String(room)]]},{tick:false});
+    };
+    try{
+      expect(await command('Alpha',0,[['command','newroom'],['para1','0']],now)).toBe('redirect:index.php');
+      expect(db.rows('acbra2_game').find(r=>r.get('groomid')==='1')?.get('groomstatus')).toBe('10');
+      expect(await command('Beta',0,[['command','enterroom'],['para1','1']],now+1)).toBe('redirect:index.php');
+      await command('Beta',1,[['command','pos_enter'],['para1','1']],now+2);
+      await command('Beta',1,[['command','newchat'],['para1','original room message']],now+3);
+      const data=await legacyDecode<Record<string,any>>(String(db.rows('acbra2_game').find(r=>r.get('groomid')==='1')?.get('roomvars')));
+      expect(data.player.map((p:any)=>p.name)).toEqual(['Alpha','Beta']);
+      expect(JSON.stringify(data.chatdata)).toContain('original room message');
+      expect(fs.exists('gamedata/tmp/rooms/1.txt')).toBe(true);
+      expect(db.mutations().some(m=>m.table==='acbra2_roomlisteners')).toBe(false);
+      const pollRequest={method:'POST',post:[['timestamp',String(data.timestamp)]],cookies:[['acbra2_user','Alpha'],['acbra2_pass',pass],['acbra2_roomid','1']]} as const;
+      const waiting=createOriginalRoomUpdateEngine({database:db,filesystem:fs,now:now+3});
+      expect(waiting.run(pollRequest)).toBe('');
+      expect(waiting.response.headers.get('x-original-room-wait')).toBe('1');
+      const changed=createOriginalRoomUpdateEngine({database:db,filesystem:fs,now:now+3});
+      const update=await legacyDecode<Record<string,any>>(changed.run({...pollRequest,post:[['timestamp','0']]}));
+      expect(update.value.timestamp).toBe(data.timestamp);
+      expect(update.innerHTML.roommain).toContain('Alpha');
+      await command('Alpha',1,[['command','ready']],now+4);
+      await command('Beta',1,[['command','ready']],now+5);
+      const started=db.rows('acbra2_game').find(r=>r.get('groomid')==='1');
+      expect(started?.get('groomstatus')).toBe('40');
+      expect(Number(started?.get('gamestate'))).toBeGreaterThanOrEqual(30);
+      expect(db.rows('acbra2_s1_players').filter(p=>p.get('type')==='0').map(p=>p.get('name'))).toEqual(['Alpha','Beta']);
+      const afterStart=createOriginalRoomUpdateEngine({database:db,filesystem:fs,now:now+6});
+      expect(await legacyDecode(afterStart.run(pollRequest,true))).toEqual({url:'game.php'});
+    }catch(error){console.error({error,frames:(error as Error & {legacyFrames?:string[]}).legacyFrames,queries:db.issued.slice(-4)});throw error;}
+    finally{db.close();}
+  });
   it('preserves original gexit errors from the daemon without performing an action',async()=>{
     const {db,engine}=harness();
     try{

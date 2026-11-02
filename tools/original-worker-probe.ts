@@ -24,6 +24,9 @@ function fixture(){
 export default {async fetch(request:Request,env:{ASSETS:Fetcher}){
   const url=new URL(request.url);
   if(!['localhost','127.0.0.1'].includes(url.hostname))return new Response('Local synthetic probe only.',{status:403});
+  if(url.pathname==='/reset'&&request.method==='POST'){
+    if(database)(await database).close();database=undefined;files={};directories=[];return Response.json({reset:true,syntheticOnly:true});
+  }
   if(!['/probe','/game.php','/command.php'].includes(url.pathname))return env.ASSETS.fetch(request);
   try{
     const db=await(database??=fixture()),now=Math.floor(Date.now()/1000);

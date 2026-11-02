@@ -19,6 +19,7 @@ const BOOTSTRAP=parseModuleFile(`<?php
   $___LOCAL_INPUT__VARS__INPUT_VAR_LIST=$___TEMP_data;
   $___LOCAL_INPUT__VARS__INPUT_VAR_LIST['___GAME_ROOMID']=___TRANSPORT_ROOM_ID;
   unset($_COOKIE,$_POST,$_GET,$_REQUEST);
+  require GAME_ROOT.'./include/roommng/roommng.config.php';
   require GAME_ROOT.'./include/common.inc.php';
 `);
 const PAGES = new Set(["command_act","command_game","command_roomcmd","command_valid","command_end","command_winner","command_rank","command_alive","command_help","command_news","command_aranking","command_logistics"]);
@@ -60,7 +61,7 @@ export function createOriginalGameEngine(input:{database:LegacyDatabase;roomId:n
       if(!program)throw new Error('Original page is not compiled: '+page);
       runtime.runPageScript(ORIGINAL_DAEMON_PREPARE_INPUT,request);
       runtime.runPageScript(BOOTSTRAP);
-      if(options.tick!==false)runtime.call('sys\\routine');
+      if(options.tick!==false){runtime.call('sys\\routine');runtime.call('dts_quickmatch_tick');}
       // The original uses this marker in page-specific interface hooks.
       runtime.runPageScript(parseModuleFile(`<?php $___CURSCRIPT='${page==='command_act'?'ACT':page.slice(8).toUpperCase()}';`));
       // sys.init() starts the original response buffer. Hooks share it
@@ -77,6 +78,12 @@ export function createOriginalGameEngine(input:{database:LegacyDatabase;roomId:n
       const buffered=runtime.runPageScript(parseModuleFile('<?php return ob_get_clean();')).value;
       if(typeof buffered!=='string')throw new Error('Original response buffer is missing.');
       const body=output+buffered;
+      // The original socket client reissues daemon cookie changes via the
+      // ordinary gsetcookie() function. Preserve that step on HTTP transport.
+      runtime.runPageScript(parseModuleFile(`<?php
+        foreach($___LOCAL_INPUT__VARS__COOKIE_VAR_LIST as $tmp_rc_k=>$tmp_rc_v)
+          gsetcookie($tmp_rc_k,$tmp_rc_v['value'],$tmp_rc_v['life'],$tmp_rc_v['prefix']);
+      `));
       if(page==='command_act'){
         const uid=input.requestId??crypto.randomUUID();
         if(!/^[A-Za-z0-9_-]{1,100}$/.test(uid))throw new Error('Invalid original transport request id.');

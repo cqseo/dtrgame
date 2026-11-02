@@ -96,6 +96,9 @@ export class LegacyFunctionNotCompiled extends Error {
 export interface ModuleRuntimeOptions {
   readonly fullGame?: boolean;
   readonly filesystem?: LegacyVirtualFilesystem;
+  /** HTTP transport replacement below the original render_page() wrapper. */
+  readonly originalCurlPost?:HostFunction|undefined;
+  readonly initialGlobals?:ReadonlyMap<string,PhpValue>|undefined;
   /** Constants the original defines before a page runs. */
   readonly constants?: ReadonlyMap<string, PhpValue>;
   /**
@@ -210,6 +213,7 @@ export class LegacyModuleRuntime {
       }
     }
     for (const [name, value] of options.constants ?? []) this.#constants.set(name, value);
+    for(const [name,value]of options.initialGlobals??[])this.#globals.set(name,value);
     this.#constants.set("__MAGIC__", MAGIC);
   }
 
@@ -707,7 +711,8 @@ export class LegacyModuleRuntime {
      * The forwarded request is built as render_page builds it: the page
      * name, the current $_POST, and the cookies it chooses to pass on.
      */
-    functions.set("render_page", values => {
+    if(this.#options.originalCurlPost)functions.set('curl_post',this.#options.originalCurlPost);
+    else functions.set("render_page", values => {
       const page = toStringValue(values[0] ?? null);
       const program = LEGACY_PAGE_SCRIPTS["/command.php"];
       if (!program) throw new Error("command.php is not compiled; render_page cannot forward.");
@@ -757,6 +762,9 @@ export class LegacyModuleRuntime {
           this.#constants.set(key, `/./include/modules/${module.path}${template}`);
         }
       }
+      // common.inc.php publishes module availability but returns before
+      // imports and every initializer for original long-poll requests.
+      if(this.#constants.has('NO_MOD_LOAD'))return true;
       // The import list the original uses for a non-game page. game.php
       // imports more, and reaches this through CURSCRIPT.
       const curscript = toStringValue(this.#constants.get("CURSCRIPT") ?? null);

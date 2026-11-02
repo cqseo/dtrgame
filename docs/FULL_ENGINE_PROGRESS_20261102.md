@@ -104,3 +104,49 @@ GitHub main and the currently deployed staging Worker have not been changed.
   data files. Raw drop/shop/event files must be scanned beyond codeFiles.
 - Deployment remains Cloudflare connector only, no GitHub Actions. Draft PR
   #18 and branch `work/original-parity-20261101` remain the continuation target.
+
+## Later continuation: original wrappers and waiting-room transport
+
+- Actual remote **Cloudflare workerd** probe passed with all 735 modules:
+  pose 5 persisted, replay frame recorded, original game HTML rendered (38,768
+  bytes, original ACFUN title and game command form). This used synthetic local
+  state, not Supabase or a completed browser match. sql.js's browser adapter
+  required optional `self.location` access; its exact upstream SHA is checked by
+  `generate-sqljs-worker.mjs`. Original SQLite Wasm bytes are unchanged.
+- Under the still-disabled `DTS_ORIGINAL_ENGINE` switch, original public PHP
+  wrappers now supply daemon inputs and render committed responses. Their own
+  redirect/error/cookie logic executes, including logout, GET room arguments
+  and `valid_ip`. Daemon cookie changes are reissued through original code.
+- Room configuration and the installed quickmatch runtime are compiled from
+  source. Original include magic paths are scoped to the included file.
+- The original socket-listener schema is request-local transport state and is
+  excluded from canonical game diffs. Original SHOW TABLES checks inspect real
+  installed working-copy tables. No dummy game state or broadcast result is
+  returned.
+- Original `roomupdate.php` authentication, checks and HTML rendering execute
+  on both sides of a DO wait. The socket-only middle is replaced. The request
+  commits and releases its room queue before waiting; notifications occur
+  after canonical commit. Generation checks prevent lost wakeups, and timeout
+  is the original 30 seconds. Disconnects remove their timers/subscriptions.
+- New complete-engine scenario passed: original SOLO creation, second account
+  joins/seats/chats, lobby HTML/state poll, both ready, original initialization
+  and entry into the same running match. Closing/wake behavior still needs
+  broader coverage and actual deployed multi-browser verification.
+- New original gameplay scenarios passed: skill 58 revives once with unchanged
+  HP/defense gains and dies on the next lethal battle; team-mode 14 includes a
+  dead teammate in the victory list/flags; end3/end5/end7 execute their original
+  history/news/reward/replay chains. These do not prove every special ending.
+- Targeted engine/request/SQL/wrapper/subscription tests: 28 passed before
+  additional scenarios. Actor queue/poll/HTTP tests: 12 passed. New special
+  scenarios: 5 passed. Fresh complete serial regression: **93/93 files passed,
+  zero retries, zero failures** (external PHP suites remain optional/skipped).
+  TypeScript check passed and Worker dry build passed: 39,089.49 KiB source,
+  4,265.68 KiB gzip, 841 static assets. No deployment performed.
+- **Remaining gates are still open:** account/index routes and other public
+  operations must move to this same transaction path; dynamic original room
+  schema creation beyond captured installed rooms, direct daemon branches,
+  background scheduling, skill 427/other special cases, achievements/all modes,
+  actual two-browser full matches, complete PHP differential/visual checks,
+  old-writer/identity cutover, connected database installation and deployment.
+  The original public kernel remains active; no production or player data was
+  changed. This checkpoint must not be presented as 1:1 completion.

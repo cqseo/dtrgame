@@ -18,6 +18,8 @@ import { createLegacyModuleRuntime } from "../legacy/php/compiled-modules";
 import type { LegacyDatabase } from "../legacy/php/database";
 import type { LegacyPageRequest } from "../legacy/php/runtime";
 import { LegacyHttpResponse } from "./legacy-http-response";
+import type {HostFunction} from '../legacy/template/builtins';
+import type {PhpValue} from '../legacy/template/values';
 
 /** Reads the request's cookies as the original's $_COOKIE. */
 export function cookiesOf(request: Request): (readonly [string, string])[] {
@@ -51,6 +53,8 @@ export interface LegacyPageDependencies {
   readonly tablePrefix: string;
   readonly roomId?: string;
   readonly response?: LegacyHttpResponse;
+  readonly originalCurlPost?:HostFunction|undefined;
+  readonly initialGlobals?:ReadonlyMap<string,PhpValue>|undefined;
 }
 
 /** Tables touched by the original bootstrap and each gameplay page. */
@@ -95,6 +99,8 @@ export async function runLegacyPage(
   const runtime = createLegacyModuleRuntime({
     functions: dependencies.response?.functions() ?? new Map(),
     database: dependencies.database,
+    originalCurlPost:dependencies.originalCurlPost,
+    initialGlobals:dependencies.initialGlobals,
     loadTemplate: dependencies.loadTemplate ??
       ((name: string) => LEGACY_HELP_MODULE_TEMPLATES[name] ??
         LEGACY_TEMPLATES[name] ?? LEGACY_TEMPLATES[name.replace(/^.*\/(?=templates\/)/, "./")]),

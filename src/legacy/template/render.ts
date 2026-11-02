@@ -192,6 +192,7 @@ class Renderer {
     else this.#buffers[this.#buffers.length - 1] += text;
   }
   private readonly compiledCache = new Map<string, Statement[]>();
+  private readonly phpIncludes=new Set<string>();
 
   constructor(private readonly context: TemplateContext) {}
 
@@ -201,15 +202,23 @@ class Renderer {
       const php = this.context.loadPhp?.(name);
       if (php) {
         this.compiledCache.set(name, php as Statement[]);
-        this.run(php);
-        return;
+        this.phpIncludes.add(name);program=php as Statement[];
+      }else{
+        const source = this.context.loadTemplate(name);
+        if (source === undefined) throw new TemplateError(`template not found: ${name}`);
+        program = parseTemplateProgram(compileTemplate(source, this.context.compileOptions));
+        this.compiledCache.set(name, program);
       }
-      const source = this.context.loadTemplate(name);
-      if (source === undefined) throw new TemplateError(`template not found: ${name}`);
-      program = parseTemplateProgram(compileTemplate(source, this.context.compileOptions));
-      this.compiledCache.set(name, program);
     }
-    this.run(program);
+    if(!this.phpIncludes.has(name)){this.run(program);return;}
+    // PHP includes use the included file's magic path, then return to the
+    // caller's path. In particular roommng.config.php requires its sibling
+    // quickmatch.config.php through __DIR__.
+    const file='/'+name.split('/').filter(p=>p&&p!=='.').join('/'),directory=file.slice(0,file.lastIndexOf('/'))||'/';
+    const magic=new Map([['__FILE__',file],['__file__',file],['__DIR__',directory],['__dir__',directory]]);
+    const old=new Map([...magic].map(([key])=>[key,this.context.constants.get(key)]));
+    for(const [key,value]of magic)this.context.constants.set(key,value);
+    try{this.run(program);}finally{for(const [key,value]of old){if(value===undefined)this.context.constants.delete(key);else this.context.constants.set(key,value);}}
   }
 
   run(statements: readonly Statement[]): void {

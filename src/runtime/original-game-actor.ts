@@ -2,11 +2,14 @@ import {SupabaseLegacyRest} from './supabase';
 import {executeOriginalCommand,originalRequestStore,type OriginalPendingRequest} from './original-request-transaction';
 import type {LegacyPageRequest} from '../legacy/php/runtime';
 import {createSqliteShadow} from './sqlite-shadow';
+import {OriginalRoomSubscribers} from './original-room-subscribers';
+import type {LegacyRowMutation} from '../legacy/php/database';
 
 interface OriginalActorEnv {
   DTS_ORIGINAL_ENGINE?:string;
   SUPABASE_URL?:string;
   SUPABASE_SECRET_KEY?:string;
+  ORIGINAL?:DurableObjectNamespace;
 }
 export interface OriginalActorCommand {roomId:number;page:string;request:LegacyPageRequest}
 
@@ -16,12 +19,24 @@ export class OriginalGameActor {
   #queue:Promise<unknown>=Promise.resolve();
   #ready:Promise<unknown>;
   #pending:OriginalPendingRequest|undefined;
+  readonly #subscribers=new OriginalRoomSubscribers();
   constructor(readonly ctx:DurableObjectState,readonly env:OriginalActorEnv){
     this.#ready=ctx.blockConcurrencyWhile(async()=>{this.#pending=await ctx.storage.get<OriginalPendingRequest>('original-pending');});
   }
   async fetch(request:Request):Promise<Response>{
     await this.#ready;
-    const next=this.#queue.then(()=>this.#fetch(request));this.#queue=next.catch(()=>undefined);return next;
+    if(this.env.DTS_ORIGINAL_ENGINE==='enabled'&&request.method==='POST'&&new URL(request.url).pathname==='/notify'){
+      this.#subscribers.notify();return new Response(null,{status:204});
+    }
+    const saved=request.clone(),version=this.#subscribers.version;
+    const next=this.#queue.then(()=>this.#fetch(request));this.#queue=next.catch(()=>undefined);
+    const response=await next;
+    if(!response.headers.has('x-original-room-wait'))return response;
+    // Waiting happens after the queued command has committed and resolved.
+    // Commands and notifications remain free to enter this same actor.
+    if(!await this.#subscribers.wait(version,request.signal))return new Response('',{headers:{'cache-control':'no-store'}});
+    const body=await saved.json<OriginalActorCommand>();body.page='roomupdate_wake';
+    return this.fetch(new Request('https://original.internal/execute',{method:'POST',body:JSON.stringify(body),headers:{'content-type':'application/json'},signal:request.signal}));
   }
   async #fetch(request:Request):Promise<Response>{
     if(this.env.DTS_ORIGINAL_ENGINE!=='enabled')return new Response('Original engine is disabled.',{status:503});
@@ -39,7 +54,8 @@ export class OriginalGameActor {
       const response=await executeOriginalCommand({store,createShadow:createSqliteShadow,
         roomId:body.roomId,page:body.page,request:body.request,now:Math.floor(Date.now()/1000),requestId:crypto.randomUUID(),requestDigest,
         beforeCommit:async pending=>{await this.ctx.storage.put('original-pending',pending);this.#pending=pending;},
-        afterResolved:()=>this.#clearPending()
+        afterResolved:()=>this.#clearPending(),
+        afterCommitted:changes=>this.#notifyRooms(changes)
       });
       return new Response([204,205,304].includes(response.status)?null:response.body,{status:response.status,headers:response.headers});
     }catch(error){
@@ -48,4 +64,18 @@ export class OriginalGameActor {
     }
   }
   async #clearPending(){await this.ctx.storage.delete('original-pending');this.#pending=undefined;}
+  #notifyRooms(changes:readonly LegacyRowMutation[]){
+    const rooms=new Set<number>();
+    for(const change of changes)if(change.table==='acbra2_game'){
+      const row=change.operation==='delete'?change.key:change.row;
+      const id=Number(row.groomid);if(Number.isSafeInteger(id)&&id>0)rooms.add(id);
+    }
+    if(!rooms.size)return;
+    // A command may create/join another room while running through room 0.
+    // Notify the actor for every changed room, after the canonical commit.
+    const namespace=this.env.ORIGINAL;
+    if(namespace)this.ctx.waitUntil(Promise.allSettled([...rooms].map(id=>namespace.get(namespace.idFromName('original-room:'+id)).fetch('https://original.internal/notify',{method:'POST'}))));
+    // Also close the race for subscribers already waiting in this actor.
+    this.#subscribers.notify();
+  }
 }

@@ -1,4 +1,4 @@
-import initSqlJs from "sql.js/dist/sql-wasm-browser.js";
+import initSqlJs from "../vendor/sqljs-worker.cjs";
 import sqliteModule from "../../node_modules/sql.js/dist/sql-wasm-browser.wasm";
 import { SqliteLegacyDatabase } from "../legacy/php/sqlite-database";
 import type { PhpArray } from "../legacy/template/values";

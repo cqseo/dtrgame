@@ -6,6 +6,7 @@ import {LEGACY_PUBLIC_STATIC_FILES} from '../generated/legacy-public-static-file
 import type {LegacyPageRequest} from '../legacy/php/runtime';
 import {createOriginalGameEngine,originalRuntimeFiles} from './original-game-engine';
 import type {SupabaseLegacyRest} from './supabase';
+import {createOriginalRoomUpdateEngine} from './original-room-update';
 
 export interface OriginalSnapshot {
   revision:number;signature:string;tables:Record<string,Array<Record<string,unknown>>>;
@@ -43,6 +44,7 @@ export async function executeOriginalCommand(input:{
   requestId:string;requestDigest:string;roomId:number;now:number;page:string;request:LegacyPageRequest;
   beforeCommit:(pending:OriginalPendingRequest)=>Promise<void>;
   afterResolved:()=>Promise<void>;
+  afterCommitted?:(changes:readonly LegacyRowMutation[])=>void;
 }):Promise<OriginalResponse>{
   if(!/^[a-f0-9-]{36}$/.test(input.requestId)||!/^[a-f0-9]{64}$/.test(input.requestDigest))throw new Error('Invalid original request identity.');
   for(let attempt=0;attempt<3;attempt++){
@@ -53,8 +55,10 @@ export async function executeOriginalCommand(input:{
     let commit:OriginalCommit;
     try{
       const filesystem=new LegacyVirtualFilesystem(originalRuntimeFiles(),snapshot.files,input.now,{directories:snapshot.directories,readonlyPaths:LEGACY_PUBLIC_STATIC_FILES});
-      const engine=createOriginalGameEngine({database,filesystem,roomId:input.roomId,now:input.now,requestId:input.requestId});
-      const body=engine.run(input.page,input.request);
+      const polling=input.page==='roomupdate'||input.page==='roomupdate_wake';
+      const engine=polling?createOriginalRoomUpdateEngine({database,filesystem,now:input.now}):createOriginalGameEngine({database,filesystem,roomId:input.roomId,now:input.now,requestId:input.requestId});
+      const body=polling?(engine as ReturnType<typeof createOriginalRoomUpdateEngine>).run(input.request,input.page==='roomupdate_wake'):
+        (engine as ReturnType<typeof createOriginalGameEngine>).run(input.page,input.request);
       const headers:Array<[string,string]>=[...engine.response.headers].filter(([name])=>name!=='set-cookie');
       for(const cookie of engine.response.headers.getSetCookie())headers.push(['set-cookie',cookie]);
       commit={requestId:input.requestId,requestDigest:input.requestDigest,expectedRevision:snapshot.revision,signature:snapshot.signature,
@@ -71,7 +75,7 @@ export async function executeOriginalCommand(input:{
       try{reply=await input.store.reconcile(pending);}catch{throw new OriginalCommitUncertain(error);}
     }
     await input.afterResolved();
-    if(reply.ok)return reply.response;
+    if(reply.ok){input.afterCommitted?.(commit.changes);return reply.response;}
   }
   throw new Error('Original game state remained busy after three complete retries.');
 }

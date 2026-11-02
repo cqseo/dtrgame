@@ -14,7 +14,8 @@
  * Usage:
  *   node scripts/generate-compiled-modules.mjs [--check] [../legacy-dts]
  */
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync,existsSync } from "node:fs";
+import {LEGACY_COMPILED_INCLUDES as CAPTURED_INCLUDES} from '../src/generated/legacy-compiled-includes.ts';
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compilePhpModuleFile } from "../src/legacy/module-compiler.ts";
@@ -64,7 +65,8 @@ const GLOBAL_FILES = [
   "include/socket.func.php",
   "include/modules/modules.func.php",
   "include/roommng/room.func.php",
-  "include/roommng/roommng.func.php"
+  "include/roommng/roommng.func.php",
+  "include/roommng/quickmatch.runtime.php"
 ];
 
 /**
@@ -76,6 +78,8 @@ const GLOBAL_FILES = [
  * that way when the operator edits the file.
  */
 const INCLUDED_DATA_FILES = [
+  "include/roommng/roommng.config.php",
+  "include/roommng/quickmatch.config.php",
   "gamedata/banlist.list",
   // Config the pages read directly rather than through a module: help.php
   // and rank.php include these to get the server's own settings.
@@ -118,6 +122,12 @@ if (process.argv.includes("--only-includes")) {
   }
   console.log(`Verified ${INCLUDED_DATA_FILES.length} included data/page files.`);
   process.exit(0);
+}
+if(process.argv.includes('--only-globals')){
+  const artifact=generateGlobals();
+  if(check){if(readFileSync(artifact.path,'utf8')!==artifact.text)throw new Error('Global functions are stale.');}
+  else writeFileSync(artifact.path,artifact.text);
+  console.log('Generated original global function library.');process.exit(0);
 }
 
 /**
@@ -179,7 +189,11 @@ function generateIncludedFiles() {
     "export const LEGACY_COMPILED_INCLUDES: Record<string, readonly Statement[]> = {"
   ];
   for (const relative of INCLUDED_DATA_FILES) {
-    const program = parseModuleFile(readFileSync(join(sourceRoot, relative), "utf8"));
+    const privateConfig=new Set(['include/modules/core/sys/config/server.config.php','include/modules/core/sys/config/system.config.php','include/modulemng/modulemng.config.php']);
+    const unavailable=!existsSync(join(sourceRoot,relative));
+    const captured=unavailable&&privateConfig.has(relative)&&process.argv.includes('--use-captured-private-includes')?CAPTURED_INCLUDES['./'+relative]:undefined;
+    if(unavailable&&!captured)throw new Error('Original include is unavailable: '+relative);
+    const program = captured??parseModuleFile(readFileSync(join(sourceRoot, relative), "utf8"));
     lines.push(`  ${JSON.stringify("./" + relative)}: ${render(program)},`);
   }
   lines.push("};", "");

@@ -44,6 +44,7 @@ import {
 import { legacyCommandResponse } from "./runtime/command";
 import { hasLegacyPage, legacyPageTables, runLegacyPageResponse } from "./runtime/legacy-page-handler";
 import { SupabaseLegacyDatabase } from "./runtime/supabase-legacy-database";
+import {handleOriginalEngineHttp} from './runtime/http-original-engine';
 export { applyOriginalRouting } from "./original-routing";
 export { LegacyRoomDurableObject } from "./runtime/room-durable-object";
 export { LegacyGameDurableObject } from "./runtime/game-durable-object";
@@ -79,6 +80,11 @@ export default {
       return new Response(JSON.stringify(ORIGINAL_STAGING_STATUS), {
         headers: { "content-type": "application/json;charset=utf-8", "cache-control": "no-store" }
       });
+    }
+    if(env.DTS_ORIGINAL_ENGINE==='enabled'){
+      if(!env.ORIGINAL)return text('Original engine binding is unavailable.',503);
+      const original=await handleOriginalEngineHttp(request,env.ORIGINAL);
+      if(original)return original;
     }
     const signedOutGameRequest = isSignedOutRequest(request) && (
       (url.pathname === "/command.php" && request.method === "POST") ||

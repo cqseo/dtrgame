@@ -1,4 +1,4 @@
-import { LEGACY_SQLITE_SHADOW_SCHEMA } from "../../generated/legacy-sqlite-shadow-schema";
+import { LEGACY_SQLITE_SHADOW_SCHEMA, LEGACY_SQLITE_TRANSPORT_SCHEMA } from "../../generated/legacy-sqlite-shadow-schema";
 import { LEGACY_RUNTIME_DATA_FILES } from '../../generated/legacy-runtime-source-metadata';
 import { PhpArray, type PhpValue } from "../template/values";
 import { LegacyDatabase, LegacyQueryResult, SnapshotLegacyDatabase, legacyRowFromJson, type LegacyRowMutation } from "./database";
@@ -64,6 +64,7 @@ export class SqliteLegacyDatabase extends LegacyDatabase {
   #insertId=0;
   constructor(readonly connection: LegacySqliteConnection, tables: Readonly<Record<string, readonly PhpArray[]>>,counters:Readonly<Record<string,number>>={}) {
     super(); this.#before = {};
+    for(const ddl of Object.values(LEGACY_SQLITE_TRANSPORT_SCHEMA))connection.exec(ddl);
     for (const [name, rows] of Object.entries(tables)) {
       const schema = LEGACY_SQLITE_SHADOW_SCHEMA[name];
       if (!schema) throw new Error(`Unknown original table: ${name}`);
@@ -93,6 +94,13 @@ export class SqliteLegacyDatabase extends LegacyDatabase {
     this.issued.push({sql:source});
     if(splitLegacyStatements(source).length!==1)throw new Error('Original query() accepts exactly one statement.');
     let { sql, params }=bindLegacySql(source.trim());
+    // Original room creation probes installed tables before deciding
+    // whether its captured SQL blueprints must be installed.
+    const show=/^SHOW\s+TABLES\s+LIKE\s+\?1\s*;?$/i.exec(sql);
+    if(show){
+      const result=this.connection.exec("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE ?",params)[0];
+      return new LegacyQueryResult((result?.values??[]).map(row=>legacyRowFromJson({Tables_in_original:row[0]})));
+    }
     sql=sql.replace(/\s+FOR\s+UPDATE\s*;?$/i,'');
     const reset=/^(DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?|TRUNCATE\s+(?:TABLE\s+)?)(`?)(acbra2_[A-Za-z0-9_]+)\2\s*;?$/i.exec(sql);
     if(reset){
