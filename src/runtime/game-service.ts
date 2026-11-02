@@ -52,26 +52,33 @@ export class LegacyGameService {
     try {
       const input = await parseLegacyForm(request);
       const stub = this.namespace.get(this.namespace.idFromName(String(current.match.matchId)));
-    const command = input.command ?? "menu";
-    let response: Response;
-    if (command === "attack") {
-      response = await stub.fetch("https://game.internal/battle", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ username: current.username, target: input.target ?? "", active: true, weatherId: current.match.weather, now })
-      });
-    } else {
-      response = await stub.fetch("https://game.internal/command", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          username: current.username,
-          mode: input.mode ?? "command",
-          command,
-          input,
-          now,
-          requestStartMs: Date.now()
-        })
-      });
-    }
+      const command = input.command ?? "menu";
+      let response: Response;
+      if (input.mode === "corpse") {
+        // The target is derived inside the match object from the server-held
+        // action (corpse<pid>), never trusted from a form field.
+        response = await stub.fetch("https://game.internal/corpse", {
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ username: current.username, item: command, now })
+        });
+      } else if (command === "attack") {
+        response = await stub.fetch("https://game.internal/battle", {
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ username: current.username, target: input.target ?? "", active: true, weatherId: current.match.weather, now })
+        });
+      } else {
+        response = await stub.fetch("https://game.internal/command", {
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            username: current.username,
+            mode: input.mode ?? "command",
+            command,
+            input,
+            now,
+            requestStartMs: Date.now()
+          })
+        });
+      }
       const output = await json<Record<string, unknown>>(response);
       const refreshed = await json<StoredLegacyMatch>(await stub.fetch("https://game.internal/state"));
       return { ok: true, username: current.username, match: current.match, snapshot: refreshed, output };
