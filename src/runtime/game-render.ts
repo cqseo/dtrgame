@@ -36,7 +36,7 @@ export function renderLegacyCommandPanel(snapshot: StoredLegacyMatch, username: 
     const pid = Number(action.slice(5));
     const enemy = Object.values(snapshot.state.players).find(candidate => number(candidate, "pid") === pid);
     if (enemy) {
-      return `<span class="red b">你遭遇了 ${escape(enemy.name)}！</span><br><input type="hidden" name="target" value="${escape(enemy.name)}">${formButton("z", "攻击", "attack")} ${formButton("x", "返回", "menu")}`;
+      return `<span class="red b">你遭遇了 ${escape(enemy.name)}！</span><br>${formButton("z", "攻击", "attack")} ${formButton("x", "返回", "menu")}`;
     }
   }
   const encounteredCorpse = /^(?:pa)?corpse([0-9]+)$/.exec(action);
