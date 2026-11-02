@@ -145,3 +145,18 @@ Everything listed below is **verified on the detached PR #18 worktree**, not dep
 - Cloudflare API verified all bindings remain: `APP_ENV`, `ASSETS`, `GAMES`, `ROOMS`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`; no secret values read.
 - `npm run smoke:staging`: **12/12 live GET-only checks passed**, exit 0, including help, map, index, register, game/room anonymous handling, retired installer and forbidden command GET; log `/tmp/dtr-77-staging-smoke.log`. Status explicitly continues `backendParity:false` and `playable:false`.
 - Production PHP, production Worker, live players, and main branch **unchanged**. Real database-backed two-account UI game test, all 735 module/hook parity, race/crash recovery, DB migration, rollback exercise, and type checking on a larger host remain unresolved. Do not merge or cut over.
+
+
+## 2026-11-02 09:08 China — Corpses now actionable from browser game command panels
+
+- **Original gameplay defect repaired:** Previously the match Durable Object had a private `/corpse` route, but no usable browser `command.php` transport or corpse-action command panel. Players who discovered a corpse couldn't use money, equipment, backpack, destroy or exit actions even though internal unit tests existed.
+- `src/runtime/game-render.ts` now renders a context-specific corpse UI when server-held `action` matches `corpse<pid>` or `pacorpse<pid>` and the corpse is dead in the same area. It shows original-style actions for available cash, equipped items, backpack slots 1–6, destroy and menu; it escapes names and embeds commands with `mode=corpse`. Original source: `include/modules/base/corpse/main.php` and `corpse.htm`.
+- `src/runtime/game-service.ts` routes authenticated `mode=corpse` commands to the match's `/corpse` handler. It **does not trust user-supplied target names**.
+- `src/runtime/game-durable-object.ts` resolves the corpse's pid from the player's saved encounter action, validates target identity, corpse death and same area, refuses dead looters and unknown item positions; `menu` exits without looting. Mutations commit both player and corpse in one version, and replay after the encounter is cleared returns 409. Unsupported original special corpse skills remain unimplemented.
+- Added **7 passing tests** in `test/runtime-corpse-gameplay.test.ts`, covering escaped/rendered corpse choices, authenticated money/item/weapon transfer, destroy, menu exit, forged target rejection, unknown commands, dead looters and duplicate pickups.
+- Full low-memory regression **78/78 test files passed**, zero retries, exit 0; log `/tmp/dtr-corpse-78-full.log`.
+- Worker dry-run build **exit 0**, 841 assets, 34,170.81 KiB Worker code; log `/tmp/dtr-corpse-build.log`.
+- Reviewed code head `476327b0ae5bcf361f3b169064f9ade51ec8a915`. Deployed **staging Worker only** with `wrangler deploy --keep-vars`, exit 0, new active version **`afab72d0-9712-4100-932d-718392e5e1a3`**, deployment `09ccae56-257b-4db8-9ea2-1b497919b9e9`, Cloudflare confirmed 100% staging traffic. Rollback version: `9a8c0828-2c3b-45dc-bad0-dacef76af1bb`.
+- Verified all prior Cloudflare bindings remain: `APP_ENV`, `ASSETS`, `GAMES`, `ROOMS`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`; no secrets read.
+- `npm run smoke:staging`: **12/12 read-only live HTTP probes passed**, exit 0; log `/tmp/dtr-corpse-staging-smoke.log`.
+- **Limits:** No real browser-based authenticated looting on staging has been exercised because previous attempt at creating a real staging test account was blocked by tool policy; not bypassed. There is also no full original PHP oracle coverage for all corpse extensions (e.g., skills and special corpse rules). `backendParity=false`, `playable=false`. All 735 original modules are not accepted. No production changes, no merge.
