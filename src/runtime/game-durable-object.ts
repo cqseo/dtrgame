@@ -2,6 +2,7 @@ import type { LegacyPlayerRecord } from "../legacy/player";
 import type { LegacyMapItem } from "../legacy/item";
 import { LEGACY_INFINITE_DURABILITY, emptyLegacyItem, isLegacyItemEmpty, type LegacyItem } from "../legacy/item";
 import { executeLegacyAssault } from "../legacy/battle-runtime";
+import { decideLegacyGameover } from "../legacy/gameover-decision";
 import { cryptoLegacyRandom } from "../legacy/random";
 import { readLegacyPlayerInventory, writeLegacyPendingItem } from "../legacy/player-inventory";
 import { runLegacyPlayerCommand } from "../legacy/command-runtime";
@@ -98,6 +99,15 @@ export class LegacyGameDurableObject {
     try {
       if (request.method === "GET" && url.pathname === "/state") {
         return this.#match ? json(this.#match) : json({ error: "游戏数据记录不存在。" }, 404);
+      }
+      if (request.method === "GET" && url.pathname === "/settlement-preview") {
+        // Read-only preflight for the original sys/gameover() eligibility
+        // branch. Never pay gold, mutate winner_flag, or stop the game here:
+        // the original endgame pipeline needs its own atomic acceptance.
+        return this.#match
+          ? json(decideLegacyGameover(this.#match.state.players,
+              this.#match.state.gametype, this.#match.state.gamestate))
+          : json({ error: "游戏数据记录不存在。" }, 404);
       }
       if (request.method === "POST" && url.pathname === "/hydrate") {
         return await this.#exclusive(async () => {
