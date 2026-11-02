@@ -169,6 +169,14 @@ describe("legacy match Durable Object", () => {
     expect(deadView).toContain("死亡时间：");
     expect(deadView).toContain("本次生命已结束");
     expect(deadView).not.toContain("现在想要做什么？");
+    const beforePreview = structuredClone(test.values.get("match"));
+    const previewResponse = await test.object.fetch(new Request("https://game.invalid/settlement-preview"));
+    expect(previewResponse.status).toBe(200);
+    expect(await previewResponse.json()).toMatchObject({
+      ready: true, winmode: 2, winners: ["测试者"], validnum: 2, alivenum: 1, winnum: 1
+    });
+    expect(test.values.get("match")).toEqual(beforePreview);
+    expect((test.values.get("match") as { version: number }).version).toBe(1);
   });
 
   it("binds attacks to saved enemy pid and refuses forged targets without mutating the match", async () => {
