@@ -64,7 +64,7 @@ export class LegacyGameService {
       } else if (command === "attack") {
         response = await stub.fetch("https://game.internal/battle", {
           method: "POST", headers: { "content-type": "application/json" },
-          body: JSON.stringify({ username: current.username, target: input.target ?? "", active: true, weatherId: current.match.weather, now })
+          body: JSON.stringify({ username: current.username, now })
         });
       } else {
         response = await stub.fetch("https://game.internal/command", {
