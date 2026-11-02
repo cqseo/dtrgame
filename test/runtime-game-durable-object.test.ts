@@ -162,6 +162,83 @@ describe("legacy match Durable Object", () => {
     expect(stored.state.players["测试者"]).toMatchObject({ killnum: 1, action: "corpse2" });
   });
 
+  it("binds attacks to saved enemy pid and refuses forged targets without mutating the match", async () => {
+    vi.spyOn(crypto, "getRandomValues").mockImplementation(array => {
+      (array as Uint32Array)[0] = 0;
+      return array;
+    });
+    const test = harness();
+    await test.ready();
+    const current = state();
+    Object.assign(current.players["测试者"]!, {
+      pid: 1, pls: 0, action: "enemy2",
+      wep: "调色刀", wepk: "WK", wepe: 45, weps: 9,
+      att: 100, def: 100, wk: 100
+    });
+    const encountered = player();
+    Object.assign(encountered, { pid: 2, name: "已遭遇", pls: 0, hp: 200, mhp: 400 });
+    const uninvolved = player();
+    Object.assign(uninvolved, { pid: 3, name: "其他玩家", pls: 0, hp: 200, mhp: 400 });
+    current.players["已遭遇"] = encountered;
+    current.players["其他玩家"] = uninvolved;
+    current.weatherId = 2;
+    await test.object.fetch(post("/hydrate", { version: 0, state: current }));
+
+    const forged = await test.object.fetch(post("/battle", {
+      username: "测试者", target: "其他玩家", now: 120, active: false, weatherId: 999
+    }));
+    expect(forged.status).toBe(409);
+    const afterForgery = test.values.get("match") as { version: number; state: LegacyMatchState };
+    expect(afterForgery.version).toBe(0);
+    expect(afterForgery.state.players["其他玩家"]?.hp).toBe(200);
+
+    const legitimate = await test.object.fetch(post("/battle", {
+      username: "测试者", now: 120
+    }));
+    expect(legitimate.status).toBe(200);
+    const afterBattle = test.values.get("match") as { version: number; state: LegacyMatchState };
+    expect(afterBattle.version).toBe(1);
+    expect(afterBattle.state.players["其他玩家"]?.hp).toBe(200);
+
+    const replayWithoutEncounter = await test.object.fetch(post("/battle", {
+      username: "其他玩家", now: 121
+    }));
+    expect(replayWithoutEncounter.status).toBe(409);
+    expect((test.values.get("match") as { version: number }).version).toBe(1);
+  });
+
+  it("uses snapshot weather and initiative, ignoring spoofed battle request values", async () => {
+    vi.spyOn(crypto, "getRandomValues").mockImplementation(array => {
+      (array as Uint32Array)[0] = 0;
+      return array;
+    });
+    const create = async () => {
+      const test = harness();
+      await test.ready();
+      const current = state();
+      Object.assign(current.players["测试者"]!, {
+        pid: 1, action: "enemy2", pls: 0, att: 100, def: 100, wk: 100,
+        wep: "调色刀", wepk: "WK", wepe: 45, weps: 9
+      });
+      const enemy = player();
+      Object.assign(enemy, { pid: 2, name: "敌人", pls: 0, hp: 300, mhp: 400 });
+      current.players["敌人"] = enemy;
+      current.weatherId = 2;
+      await test.object.fetch(post("/hydrate", { version: 0, state: current }));
+      return test;
+    };
+    const first = await create();
+    const second = await create();
+    const normal = await first.object.fetch(post("/battle", { username: "测试者", now: 100 }));
+    const spoofed = await second.object.fetch(post("/battle", {
+      username: "测试者", now: 100, target: "敌人", active: false, weatherId: 999
+    }));
+    expect(normal.status).toBe(200);
+    expect(spoofed.status).toBe(200);
+    expect(await spoofed.json()).toEqual(await normal.json());
+    expect(second.values.get("match")).toEqual(first.values.get("match"));
+  });
+
   it("runs an immediate passive assault when search discovers an alert enemy", async () => {
     const values = [0, 0, 99, 0, 40, 6, 99];
     vi.spyOn(crypto, "getRandomValues").mockImplementation((array) => {
