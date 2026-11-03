@@ -64,6 +64,14 @@ was persisted. This tests application restart with local storage, not loss or
 restoration of ephemeral Cloudflare container disks, database crash recovery,
 or a production deployment.
 
+In a follow-up, restarting the same local MariaDB container during an active
+match retained both synthetic player rows on that container's writable layer.
+Both players re-entered and a known available stance change persisted. An
+earlier requested `pose2` returned HTTP 200 without changing the pose. Decoding
+the original application's response revealed the message “这个姿势太奇怪啦！”;
+the game rejected that choice. This exercise does not model loss of the
+database container's writable layer.
+
 The source requires game runtime directories such as `gamedata/tmp/rooms`,
 `server`, `response`, `processlock`, `playerlock`, `userlock`, `log`, `news`,
 and `replay`. A missing rooms directory caused room creation to write a DB row
