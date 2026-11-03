@@ -1,4 +1,5 @@
 import { LEGACY_CONFIG } from "../generated/legacy-config";
+import { LEGACY_MODULE_VARS } from "../generated/legacy-module-vars";
 import { LEGACY_TEMPLATE_LANGUAGE } from "../generated/legacy-template-language";
 import { createOriginalFunctions } from "../legacy/original-functions";
 import type { LegacyPlayerRecord } from "../legacy/player";
@@ -27,16 +28,89 @@ function formButton(id: string, label: string, command: string, mode = "command"
   return `<input type="button" id="${id}" class="cmdbutton" value="${escape(label)}" onclick="$('mode').value='${mode}';$('command').value='${escape(command)}';postCmd('gamecmd','command.php',this);this.disabled=true;">`;
 }
 
+/** Original death.htm's normal base-case fields, using the generated PHP
+ * stateinfo/dinfo values. Mod-specific revival timers remain separate work. */
+export function renderLegacyDeathPanel(snapshot: StoredLegacyMatch, username: string): string {
+  const player = snapshot.state.players[username];
+  if (!player) return "玩家数据记录不存在。";
+  const state = number(player, "state");
+  const sys = LEGACY_MODULE_VARS["sys"] ?? {};
+  const stateinfo = sys["stateinfo"] instanceof PhpArray ? sys["stateinfo"].get(state) : undefined;
+  const dinfo = sys["dinfo"] instanceof PhpArray ? sys["dinfo"].get(state) : undefined;
+  const status = typeof stateinfo === "string" ? stateinfo : "死亡";
+  const details = typeof dinfo === "string"
+    ? dinfo
+    : `你莫名地死了。这应该是BUG，请通知管理员。<br>死亡代号：${state}`;
+  const killer = Object.values(snapshot.state.players).find(candidate =>
+    number(candidate, "pid") === number(player, "bid") && number(player, "bid") > 0);
+  const showKiller = [20, 21, 22, 23, 24, 26, 28, 29].includes(state) && killer;
+  const endTime = number(player, "endtime");
+  let date = "";
+  if (Number.isFinite(endTime) && endTime > 0) {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit",
+      day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+    }).formatToParts(new Date(endTime * 1000));
+    const field = (key: string) => parts.find(part => part.type === key)?.value ?? "00";
+    date = `${field("year")}年${field("month")}月${field("day")}日${field("hour")}时${field("minute")}分${field("second")}秒`;
+  }
+  return `<br><div class="subtitle">${escape(status)}</div>
+    <div>${details}</div><br>
+    ${date ? `<div>死亡时间：${escape(date)}</div>` : ""}
+    ${showKiller ? `<div>凶手：${escape(killer.name)}</div>` : ""}
+    <br><span class="dmg">你死了。</span><br><br>
+    <input type="button" class="cmdbutton" value="我靠！" disabled>
+    <div style="margin:14px auto 8px;padding:11px 14px;max-width:500px;border:1px solid #59637c;border-radius:8px;background:rgba(18,25,42,.9);color:#e8efff;line-height:1.7;text-align:center;">
+      <div style="font-weight:bold;margin-bottom:6px;">本次生命已结束</div>
+      <a href="index.php">返回大厅 / 房间列表</a>
+      <div style="font-size:12px;">部分玩法有复活机制；如果仍在等待复活，请勿退出房间。</div>
+    </div>`;
+}
+
 export function renderLegacyCommandPanel(snapshot: StoredLegacyMatch, username: string): string {
   const player = snapshot.state.players[username];
   if (!player) return "玩家数据记录不存在。";
-  if (number(player, "hp") <= 0) return '<span class="red b">你已经死亡。</span><br>';
+  if (snapshot.state.gamestate < 5 || snapshot.state.settlement) {
+    const result = snapshot.state.settlement;
+    return `<br><div class="subtitle">本局游戏已结束</div><br>
+      ${result ? `<div>${result.winner ? `优胜者：${escape(result.winner)}` : result.winmode === 4 ? "本局无人参加。" : "本局无人幸存。"}</div>
+      <div>第 ${escape(result.historyGid)} 局</div><br>` : ""}
+      <a href="index.php">返回大厅 / 房间列表</a>`;
+  }
+  if (number(player, "hp") <= 0) return renderLegacyDeathPanel(snapshot, username);
   const action = text(player, "action");
   if (/^enemy\d+$/.test(action)) {
     const pid = Number(action.slice(5));
     const enemy = Object.values(snapshot.state.players).find(candidate => number(candidate, "pid") === pid);
     if (enemy) {
-      return `<span class="red b">你遭遇了 ${escape(enemy.name)}！</span><br><input type="hidden" name="target" value="${escape(enemy.name)}">${formButton("z", "攻击", "attack")} ${formButton("x", "返回", "menu")}`;
+      return `<span class="red b">你遭遇了 ${escape(enemy.name)}！</span><br>${formButton("z", "攻击", "attack")} ${formButton("x", "返回", "menu")}`;
+    }
+  }
+  const encounteredCorpse = /^(?:pa)?corpse([0-9]+)$/.exec(action);
+  if (encounteredCorpse) {
+    const pid = Number(encounteredCorpse[1]);
+    const corpse = Object.values(snapshot.state.players).find(candidate =>
+      number(candidate, "pid") === pid && number(candidate, "hp") <= 0
+      && number(candidate, "pls") === number(player, "pls"));
+    if (corpse) {
+      const options: string[] = [formButton("x", "返回", "menu", "corpse")];
+      const money = number(corpse, "money");
+      if (money > 0) options.push(formButton("lootmoney", `拾取金钱 ${money}`, "money", "corpse"));
+      for (const slot of ["wep", "arb", "arh", "ara", "arf", "art"] as const) {
+        const name = text(corpse, slot);
+        const kind = text(corpse, `${slot}k` as keyof LegacyPlayerRecord);
+        const remaining = corpse[`${slot}s` as keyof LegacyPlayerRecord];
+        if (name && remaining && kind !== "WN" && kind !== "DN") {
+          options.push(formButton(`loot${slot}`, `拾取 ${name}`, slot, "corpse"));
+        }
+      }
+      for (let slot = 1; slot <= 6; slot++) {
+        const name = text(corpse, `itm${slot}` as keyof LegacyPlayerRecord);
+        const remaining = corpse[`itms${slot}` as keyof LegacyPlayerRecord];
+        if (name && remaining) options.push(formButton(`lootitm${slot}`, `拾取 ${name}`, `itm${slot}`, "corpse"));
+      }
+      options.push(formButton("lootdestroy", "销毁尸体", "destroy", "corpse"));
+      return `<span class="yellow b">你发现了${escape(corpse.name)}的尸体！</span><br>想要从尸体上拾取什么？<br>${options.join("<br>")}`;
     }
   }
   if (number(player, "state") >= 1 && number(player, "state") <= 3) {

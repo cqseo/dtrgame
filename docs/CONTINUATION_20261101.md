@@ -1,0 +1,347 @@
+# Continuation checkpoint — 2026-11-01
+
+This is a **staging-only engineering checkpoint**, not a release or completion claim.
+
+## Source of truth
+
+- Production PHP game: https://dts.zhangyingyin.top/ — leave unchanged.
+- GitHub base: `cqseo/dtrgame` at `7ae75d9`.
+- Review branch: `work/original-parity-20261101`.
+- Remote isolated checkout: `/opt/dts-work/dtrgame` on VM-0-10-opencloudos.
+- Frozen **read-only** original source: `/opt/dts-sandbox/parity/legacy-dts`.
+- Local symlink for fixtures: `/opt/dts-work/legacy-dts` (points to the frozen source).
+- Target preview Worker: `dtrgame-original-1to1-staging`.
+- Original 1:1 contract: `docs/ORIGINAL_GAME_1_TO_1_CONTRACT.md`.
+
+## Verified before this checkpoint
+
+1. The original asset hashes matched the captured manifest.
+2. Low-memory Vitest regression run: **70/70 existing test files passed**, with three batches recovered through single-file isolation. This predates the new tests below.
+3. Original PHP 8.2.35 MD5 oracle: one test passed.
+4. Supabase snapshot: initial save/load, monotonic version update, stale-write refusal verified in a rolled-back SQL transaction; test match row absent after rollback.
+5. Original HTTP fixture ledger: **17/23 signed-out** paths match exactly; **6** not yet matching.
+6. GitHub main and original production Worker were not changed by this work.
+
+## Changes made on the review branch after the 70-file run
+
+- `scripts/run-tests-low-memory.mjs` and `npm run test:low-memory`: per-batch Vitest processes, bounded heaps, single-file retries.
+- `src/index.ts`: corrected diagnostic route parity string to `17/23`; no release-readiness flag changed.
+- `src/runtime/legacy-page-handler.ts`: PHP 8.2 cookie decoding preserves raw `+`, with regression coverage in `test/legacy-cookies.test.ts`.
+- `src/runtime/room-durable-object.ts`: work on a cloned room record, do not publish it into memory until persistence succeeds; persist implicit heartbeat/readiness changes even when the legacy command reports `changed=false`; serialize initialization/hydration.
+- `test/runtime-room-durable-object.test.ts`: verifies failed Supabase writes do not mutate the active snapshot, storage failure safety, heartbeat writes and concurrent initialization.
+
+**New code/tests have NOT been run**. They must not be merged or deployed before validation.
+
+## Required next checks
+
+On a healthy VM-0-10 (or a larger isolated development runner):
+
+```bash
+cd /opt/dts-work/dtrgame
+git status --short
+git fetch origin work/original-parity-20261101
+git switch work/original-parity-20261101
+git pull --ff-only origin work/original-parity-20261101
+npm ci
+DTS_TEST_FILE_FILTER='legacy-cookies,runtime-room-durable-object' npm run test:low-memory
+npm run test:low-memory
+DTS_PHP_BIN=/www/server/php/82/bin/php npm run test:php-parity -- md5
+```
+
+Do **not** run the native TypeScript 7 `tsc --noEmit` binary at full project scope on the current 2 GiB host: it exhausted RAM and swap and the remote Desktop Commander stopped responding. Run the full `npm run verify` only on a runner with adequate RAM. No GitHub Actions deployment should be added.
+
+## Remaining acceptance gates
+
+- 6 signed-out HTTP routes, plus outstanding signed-in fixtures.
+- Full login, lobby, original game UI, original command.php and match conclusion parity.
+- Every enabled PHP module/hook parity against the executable original (735 enabled modules, 5,235 hook implementations; no module has received a full acceptance verdict).
+- All modes, cards, skills, items, battles, ranks, replays, admin/daemon parity and desktop/mobile screenshots.
+- Real multisession E2E, persistence, concurrency, crash recovery, migration, backups and rollback drill.
+- Only after all release gates pass may the production entry be considered for replacement.
+
+## Safety
+
+Never modify the production PHP source or player database to make tests pass.
+Keep Supabase server secrets outside GitHub and browser bundles.
+Do not deploy unverified preview code or change the production Worker.
+
+
+## Latest tested checkpoint — 2026-11-01 19:30 Asia/Shanghai
+
+Everything listed below is **verified on the detached PR #18 worktree**, not deployed:
+- PR HEAD includes the original `help.php` runtime fix and one permanent two-case regression test.
+- Unmodified original public help page was **HTTP 500** on the existing staging deployment; Cloudflare Observability showed `Renderer.include` failure. The new local runner renders the original page (~708 KB) from compiled frozen PHP data and original skill module template sources. **The existing staging deployment is still old and the endpoint may continue returning 500 until deliberately redeployed.**
+- Regenerated included data source from the read-only original: 23 include/page files. `npx --yes tsx scripts/generate-compiled-modules.mjs --only-includes --check` passed.
+- `node scripts/generate-help-module-templates.mjs --check` passed.
+- `DTS_TEST_BATCH_SIZE=1 DTS_TEST_HEAP_MB=640 DTS_TEST_RETRY_HEAP_MB=768 npm run test:low-memory`: **73/73 files passed, exit 0**, log `/tmp/dtr-pr18-help-full.log`.
+- `npm run build`: **dry-run passed, exit 0**, 841 assets, Worker bundle 32111 KiB, log `/tmp/dtr-pr18-help-build.log`.
+- **41** original PHP 8.2 differential assertions passed over map areas, room prefix, search memory, game tick, crafting, module vars, card pack, attack format, item actions, and game result.
+- Wrangler CLI on VM-0-10 is **not authenticated**. No staged or production deployment occurred in this checkpoint.
+- Native full `tsc --noEmit` remains **unverified**; do not run on the 2 GiB VM because it previously exhausted the machine and disconnected Desktop Commander.
+- No original player records or production PHP source changed. Keep PR #18 draft and do not merge main until release gates pass.
+
+### Immediate continuation order
+
+1. Re-establish authorized preview deployment capability for `dtrgame-original-1to1-staging` without affecting production.
+2. Deploy reviewed PR code to **staging only** after confirming configuration/secrets; test `/help.php`, `/index.php`, `/register.php`, and actual test-user room and game command lifecycles.
+3. Compare actual help HTML and status against frozen PHP golden reference (successful render alone is not 1:1 proof).
+4. Test original mode/module/hook coverage comprehensively (735 enabled modules), then authenticated route fixtures.
+5. Run native type check on a larger runner, stress tests, data backup and rollback drill. Only then consider main merge or production cutover.
+
+
+## 2026-11-01 staging deployment after Wrangler OAuth
+
+- Wrangler OAuth confirmed on VM-0-10 as 1054935976@qq.com.
+- **Only staging** `dtrgame-original-1to1-staging` was deployed from tested commit `f43fc1a16a132e8f27f9b533e4a8744be8746ad8` with `wrangler deploy --keep-vars`; exit code 0.
+- New active staging version: `a175e415-7f3f-4964-a34d-6593dd45b73e`; deployment `3a3ed86e-7aa4-40d4-89b4-ebe3aebbd780`, 100% of **staging** traffic.
+- Previous staging rollback version: `cffdc2ac-e9ff-4250-8767-688aebccdc90`; deployment `2b1ee59b-4f3a-4684-a149-3abd5662d33a`. Versions retained on Cloudflare.
+- Verified Cloudflare version binding names after deployment: `APP_ENV`, `ASSETS`, `ROOMS`, `GAMES`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`. The secret value was **not** read or logged.
+- Live staging GET smoke: `/help.php`, `/index.php`, `/register.php`, `/rank.php`, `/itemhelp.php`, `/end.php`, `/login.php`, `/game.php`, and `/__stage_status` all returned HTTP 200.
+- The original broken staging `/help.php` changed from 500 to 200, returning 897,234 bytes; it now renders full HTML containing the original help/crafting text.
+- **Still NOT exact 1:1 parity:** read-only HTTP comparison against unmodified production `https://dts.zhangyingyin.top/help.php` returned 1,260,839 bytes versus 897,234 staging bytes. First byte difference at offset 24,753: original says 35 map areas, staging says 1. Further legacy map/module initialization and help content require parity work.
+- No production Worker, PHP source, or live player state was modified by this deployment. PR #18 remains draft and the production cutover gate remains CLOSED.
+
+
+## 2026-11-01 22:45 China — Mercenary/NPC parity correction (new staging version)
+
+- Current review branch commit: `bd221992e1b9e123219026e0f4c3f5b15b6e7860`, **NOT main**.
+- Root cause of 1508 missing lines in original public help: `skill56::init()` declares `global $skill56_npc` before overwriting `$npcinfo[25]`. The interpreter kept captured module-level variables out of ordinary PHP globals, so it replaced the original 11-entry summon roster with NULL. The fix aliases only explicitly global variables that exist in the calling module's original variable store.
+- Root cause of missing NPC portraits: Worker runtime `file_exists` ignored packaged public images. Added a deterministic inventory of **820** bundled public static files and **672** image dimensions read from original GIF/PNG/JPEG headers; host `file_exists`/\`getimagesize\` can now recognize original portraits, without exposing private PHP/config files or requiring filesystem access.
+- Permanent regressions in `test/legacy-help-page.test.ts` verify summoned mercenary names and original `img/n_150.gif`/`img/n_160.gif` links. `test/legacy-public-static-assets.test.ts` verifies actual image dimensions and path restrictions.
+- `npm run test:low-memory` finished **74/74 test files passed**, exit 0; log: `/tmp/dtr-npc-full-regression.log`. This is **not** 735-module acceptance.
+- Worker dry-run reported `--dry-run: exiting now.` with 841 assets and 34,167.70 KiB Worker code. Wrapper completion marker was interrupted briefly during RAM exhaustion; the subsequent actual deployment succeeded.
+- Added a **temporary, non-persistent 2 GiB swap file** at `/swapfile-dtrgame-staging` (no fstab change), bringing swap to 3 GiB to avoid Desktop Commander disconnections while uploading. Disk had ~14 GiB free afterward.
+- Deployed **staging Worker only** with `wrangler deploy --keep-vars`, exit code 0. New active version `0a8b2d71-6a31-448b-93a2-47c8638a974f`, deployment `5287850f-d716-4d27-afeb-a90e6a74ac12`; confirmed by Cloudflare API at 100% **staging** traffic with all six original binding names preserved. Rollback: previous staging version `09705247-ce03-4875-96c8-9d3f919d8945`.
+- Post-deployment smoke: GET `/help.php`, `/index.php`, `/register.php`, `/rank.php`, `/itemhelp.php`, `/end.php`, `/login.php`, `/__stage_status` all HTTP 200.
+- Actual deployed help `1,261,666` bytes vs unmodified production PHP help `1,260,839` bytes: **5 line-level differences** remain in guest-page skill cooldown hints and enabled/disabled skill buttons. These could be stateful/cached output; do not hard-code away without an original PHP oracle that accounts for player/session/time/cache. Maps and the 11 mercenary rows/portraits now render.
+- **Production PHP site, production Worker, main branch and live player data not modified.** Draft PR #18 remains unmerged. Signed-in routing, all 735 enabled modules, real E2E multiplayer, backups/rollback exercise and native TypeScript typecheck on a larger machine remain unresolved.
+
+
+## 2026-11-02 00:18 China — Public map rendering and live staging acceptance
+
+- **Original `map.php` bug found and fixed:** Before this checkpoint, the old live staging Worker returned HTTP 200 but its map had **zero location markers** (14,899 bytes), versus 34 place markers in the isolated original PHP response (16,754 bytes). The original `map.php` includes `common.inc.php` and calls `sys\\routine()`, which loads the current game record before template rendering. The Worker performed this read-only bootstrap only for `command.php`, leaving the map display with empty area data.
+- `src/legacy/php/runtime.ts`: now invokes the original compiled `sys\\load_gameinfo()` when `CURSCRIPT=map` and neither `NO_SYS_UPDATE` nor `LOAD_CORE_ONLY` is defined. **No timed match tick or database writes are added to public map pages.**
+- Permanent regression in `test/legacy-map-page.test.ts`: persisted 35-region map is rendered with **34 location markers**, original location names and SELECT-only SQL activity.
+- `npm run test:low-memory`: **75/75 test files passed**, exit 0, zero retries; `/tmp/dtr-map75-full.log`. `npm run build` Worker dry-run passed, 841 public assets, 34,167.84 KiB upload bundle; `/tmp/dtr-map75-build.log`.
+- Cloudflare staging deployment from reviewed GitHub commit `ed957bed2037070f18067fc13b1023b5302ce38b`: **new active version `a0c6ec78-e64a-4606-b151-9535cf3488d7`**, deployment `81410a2c-b053-4517-9560-9ef74570c03b`, confirmed 100% **staging** traffic; Wrangler exit 0. Previous staging version **`0a8b2d71-6a31-448b-93a2-47c8638a974f`** retained as rollback.
+- Verified new Worker binding names for `APP_ENV`, `ASSETS`, `ROOMS`, `GAMES`, `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. No secret value was accessed.
+- New real staging GET `/map.php` **HTTP 200, 16,752 bytes, 34 location markers**, correctly including 冰封墓场 and 常磐台中学. The isolated PHP output is 16,754 bytes. Comparison shows only the yellow/green warnings for a few areas differ; the databases are separate and **do not have identical game state**, so this is not a confirmed code mismatch nor byte-accurate acceptance.
+- New `scripts/check-staging-readonly.mjs`, invoked by `npm run smoke:staging`: fixed-preview-host, GET-only smoke checks for 12 public/security/status paths. First direct test **12/12 passed**, log `/tmp/dtr-staging-smoke-20261101.log`. No staging accounts or matches were created by this check.
+- Caveat: `test/original-routes-golden.test.mjs` still counts 17/23 byte-exact because it tests the Worker with **no Supabase secret**; six dynamic guest routes fall through to 501 there despite responding 200 on real staging. Never reinterpret that fixture ratchet as live staging parity.
+- Registration/login/multiplayer write E2E was **not** executed in this checkpoint: the attempted staging-only test-account registration command was rejected by tool safety policy. Do not bypass the block. Existing 75 tests cover mocked authenticated flows but **not** a real two-browser multiplayer match.
+- Main branch, production PHP and production player database remain untouched. `backendParity=false`, `playable=false`, signed-in route coverage and complete 735-module hook parity remain unresolved. PR #18 stays draft.
+
+
+## 2026-11-02 08:25 China — Isolated two-player lifecycle and error boundaries
+
+- **Development scope only**: all application changes are on draft PR #18's `work/original-parity-20261101` branch, **not** `main`.
+- `src/runtime/room-service.ts`: catches transient DO fetch, failed room snapshot hydration, malformed command content, and failed room commands; propagates a structured `{ ok:false, status:409, error }` instead of allowing an unhandled exception to become HTTP 500. Distinct `no_login` (401) and missing room (404) statuses stay intact.
+- `src/runtime/game-service.ts`: catches failed Supabase/match retrieval, failed match restore and command transport, and malformed command bodies. Do not report a failed command as successful.
+- `test/runtime-service-failure-boundaries.test.ts`: six new fault-injection assertions verify room read, room restore, invalid form, command write, game read, game restore, and game command error paths (with some combined assertions). All passed.
+- `test/runtime-isolated-two-player-lifecycle.test.ts`: one new **isolated** end-to-end test connects actual `LegacyRoomDurableObject`, `LegacyGameDurableObject`, `LegacyMatchStarter`, and cookie-authenticated `LegacyGameService`, using in-memory DO storage and mocked Supabase match/account adapters. Starts a ready two-player waiting room, verifies red/blue players and version-zero snapshot, submits concurrent commands under separate cookies, confirms serialized version 2 and independent player poses/tactics, and rejects an unauthenticated state request. **This is NOT a deployed two-browser login/multiplayer test.**
+- Fresh `npm run test:low-memory`: **77/77 test files passed**, zero retries, exit 0; log `/tmp/dtr-77-full-20261102.log`.
+- Fresh `npm run build`: **exit 0**, 841 static assets, 34,168.14 KiB Worker code; log `/tmp/dtr-77-worker-build.log`. Native whole-project `tsc --noEmit` remains unverified on the 2 GiB VM.
+- Deployed **staging Worker only**, exit 0, from code commit `55a7a2fb85b64e088bcaf8cdf5f9aa52a5f4adda` with `wrangler deploy --keep-vars`. New version `9a8c0828-2c3b-45dc-bad0-dacef76af1bb`, deployment `9f8b9bd0-6df8-4d9a-b815-8e0adf01aaec`, Cloudflare confirmed 100% **staging** traffic. Retained rollback version `a0c6ec78-e64a-4606-b151-9535cf3488d7`.
+- Cloudflare API verified all bindings remain: `APP_ENV`, `ASSETS`, `GAMES`, `ROOMS`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`; no secret values read.
+- `npm run smoke:staging`: **12/12 live GET-only checks passed**, exit 0, including help, map, index, register, game/room anonymous handling, retired installer and forbidden command GET; log `/tmp/dtr-77-staging-smoke.log`. Status explicitly continues `backendParity:false` and `playable:false`.
+- Production PHP, production Worker, live players, and main branch **unchanged**. Real database-backed two-account UI game test, all 735 module/hook parity, race/crash recovery, DB migration, rollback exercise, and type checking on a larger host remain unresolved. Do not merge or cut over.
+
+
+## 2026-11-02 09:08 China — Corpses now actionable from browser game command panels
+
+- **Original gameplay defect repaired:** Previously the match Durable Object had a private `/corpse` route, but no usable browser `command.php` transport or corpse-action command panel. Players who discovered a corpse couldn't use money, equipment, backpack, destroy or exit actions even though internal unit tests existed.
+- `src/runtime/game-render.ts` now renders a context-specific corpse UI when server-held `action` matches `corpse<pid>` or `pacorpse<pid>` and the corpse is dead in the same area. It shows original-style actions for available cash, equipped items, backpack slots 1–6, destroy and menu; it escapes names and embeds commands with `mode=corpse`. Original source: `include/modules/base/corpse/main.php` and `corpse.htm`.
+- `src/runtime/game-service.ts` routes authenticated `mode=corpse` commands to the match's `/corpse` handler. It **does not trust user-supplied target names**.
+- `src/runtime/game-durable-object.ts` resolves the corpse's pid from the player's saved encounter action, validates target identity, corpse death and same area, refuses dead looters and unknown item positions; `menu` exits without looting. Mutations commit both player and corpse in one version, and replay after the encounter is cleared returns 409. Unsupported original special corpse skills remain unimplemented.
+- Added **7 passing tests** in `test/runtime-corpse-gameplay.test.ts`, covering escaped/rendered corpse choices, authenticated money/item/weapon transfer, destroy, menu exit, forged target rejection, unknown commands, dead looters and duplicate pickups.
+- Full low-memory regression **78/78 test files passed**, zero retries, exit 0; log `/tmp/dtr-corpse-78-full.log`.
+- Worker dry-run build **exit 0**, 841 assets, 34,170.81 KiB Worker code; log `/tmp/dtr-corpse-build.log`.
+- Reviewed code head `476327b0ae5bcf361f3b169064f9ade51ec8a915`. Deployed **staging Worker only** with `wrangler deploy --keep-vars`, exit 0, new active version **`afab72d0-9712-4100-932d-718392e5e1a3`**, deployment `09ccae56-257b-4db8-9ea2-1b497919b9e9`, Cloudflare confirmed 100% staging traffic. Rollback version: `9a8c0828-2c3b-45dc-bad0-dacef76af1bb`.
+- Verified all prior Cloudflare bindings remain: `APP_ENV`, `ASSETS`, `GAMES`, `ROOMS`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`; no secrets read.
+- `npm run smoke:staging`: **12/12 read-only live HTTP probes passed**, exit 0; log `/tmp/dtr-corpse-staging-smoke.log`.
+- **Limits:** No real browser-based authenticated looting on staging has been exercised because previous attempt at creating a real staging test account was blocked by tool policy; not bypassed. There is also no full original PHP oracle coverage for all corpse extensions (e.g., skills and special corpse rules). `backendParity=false`, `playable=false`. All 735 original modules are not accepted. No production changes, no merge.
+
+
+## 2026-11-02 09:20 China — Server-owned battle target and weather
+
+- **Battle manipulation hardening / original encounter behavior:** In the previous browser path, `src/runtime/game-service.ts` forwarded `target` from the player's form and weather from the separate match metadata into `/battle`. The DO verified the target's pid against `player.action`, but still required a client-supplied target name; a different weather value than the persisted live game could influence rules.
+- `game-service.ts` now sends only the authenticated `username` and server `now` to the `/battle` handler; `game-render.ts` removes the unused client-side hidden enemy name.
+- `game-durable-object.ts` resolves the defender exclusively from the **server-persisted encounter action** `enemy<pid>`, validates the defender is a different player in the same area and both fighters are alive, and accepts an optional legacy internal target only when it matches. The assault always uses the **persisted `state.weatherId`** and active attacker semantics, ignoring spoofed `weatherId` and `active` fields in internal request bodies.
+- New tests in `test/runtime-game-service.test.ts` and `test/runtime-game-durable-object.test.ts`: authenticate real cookie transport, prove forged `target` isn't forwarded, prove a third player cannot be attacked, prove no-encounter attack is rejected with no snapshot revision, and prove forged weather / initiative result in **exactly the same persisted match and battle result** as normal attack under deterministic RNG.
+- `DTS_TEST_FILE_FILTER='runtime-game-service,runtime-game-durable-object,runtime-http-game' npm run test:low-memory`: **3/3 test files passed**. Full low-memory regression `npm run test:low-memory`: **78/78 test files passed**, zero retries, exit 0, log `/tmp/dtr-battle-78-full.log`.
+- Worker `npm run build`: **passed**, 841 assets, 34,171.07 KiB bundle, exit 0; `/tmp/dtr-battle-worker-build.log`.
+- **Cloudflare staging only**: deploy from reviewed commit `5252e35619dbf8cab0c47d3214dc6d7c6138b548` with `wrangler deploy --keep-vars`, exit 0. **Active version `43dd74a2-42d6-45e0-88f5-a37e17d83bff`**, deployment `38d3373e-6ba5-46b4-84c7-f15c92d40b1f`, confirmed 100% staging traffic. **Rollback version `afab72d0-9712-4100-932d-718392e5e1a3`.**
+- Cloudflare API checked all six binding names `APP_ENV`, `ASSETS`, `GAMES`, `ROOMS`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`; no secret values read.
+- Live read-only `npm run smoke:staging` **12/12 passed**, exit 0, log `/tmp/dtr-battle-staging-smoke.log`. Staging `playable=false`, `backendParity=false` is still intentional.
+- **Still not production ready:** complete 735-module/hook parity and real database-backed authenticated multi-browser battle not verified. This test enforces current covered battle behavior, not all original PHP combat extensions. Production PHP, player data, production Worker and `main` unchanged; PR #18 stays draft.
+
+
+## 2026-11-02 10:00 China — Original death display + read-only winner eligibility
+
+**Phase 1: lethal combat/death UI**
+- Implemented `renderLegacyDeathPanel` in `src/runtime/game-render.ts` and routed dead players' game command panel to it. Original PHP sources: `templates/default/death.htm`, `include/pages/command_act.php`, `core/player::get_dinfo`. Base status and narrative text are from generated `LEGACY_MODULE_VARS.sys.stateinfo`/`dinfo`, not a new hand-transcribed state list. Includes death status, base narrative, server-stored cause, optional killer when original state code permits, China-time-zone death timestamp, disabled action and lobby navigation. Killer name is HTML-escaped. **Custom resurrection effects such as skill475 remain unimplemented.**
+- New `test/runtime-death-panel.test.ts` with five tests, plus a lethal battle→persisted death view regression in `test/runtime-game-durable-object.test.ts`.
+- First full test run **79/79 files passed**, exit 0, `/tmp/dtr-death-79-full.log`; Worker build exit 0, `/tmp/dtr-death-worker-build.log`. Staging-only deployed version `8b727b93-f8b5-4069-8118-301ff9ddf85e` from commit `c07b13322114d42104e75a997f6517f97b37355f`, Cloudflare confirmed 100% staging traffic; read-only smoke **12/12 passed**. Previous rollback version `43dd74a2-42d6-45e0-88f5-a37e17d83bff`.
+
+**Phase 2: pure endgame eligibility, not settlement**
+- Added `src/legacy/gameover-decision.ts` mirroring the `sys/gamectl.php::gameover` automatic eligibility branch when no explicit gmode/winname is supplied. Reads original `sys.teamwin_mode` from generated PHP config. Distinguishes unstarted matches, empty entry pool (mode 4), all dead (mode 1), last survivor (mode 2), multiple survivors awaiting end, and team victories requiring one living team and including its dead teammates. NPC `type>0` are excluded from real player counts. **No history, achievements, currencies, winner flags or user DB updates occur**.
+- Added nine tests in `test/legacy-gameover-decision.test.ts`, including nonmutation, teamless survivors, fallen teammate inclusion and NPC exclusion. These are manual source-mirror fixtures; the old PHP-oracle `legacy-game-result.parity.test.mjs` remained **skipped** in the targeted run because its optional oracle environment variable was not set. Do not claim full original PHP endgame equivalence from nine tests.
+- Added a DO-internal read-only `GET /settlement-preview` route to `LegacyGameDurableObject`; after an actual isolated lethal battle, confirms a last-survivor candidate without changing the match version or stored state.
+- Reviewed code commit `2fc68839066971496d1085b06128d58b69441eba`. Full low-memory test suite **80/80 test files passed**, zero retries, exit 0, log `/tmp/dtr-gameover-80-full.log`. Worker build exit 0, 841 assets, 34,175.73 KiB, log `/tmp/dtr-gameover-80-build.log`.
+- **Staging only**: deployed with `wrangler deploy --keep-vars`, exit 0, new version `6a28b953-622b-42c6-925f-4704c4249445`, deployment `7d565960-3e11-4af6-80d0-84cec3e82adf`; Cloudflare confirmed 100% staging traffic and all six expected bindings. Previous rollback version: **`8b727b93-f8b5-4069-8118-301ff9ddf85e`**.
+- Live `npm run smoke:staging` **12/12 read-only checks passed**, exit 0, log `/tmp/dtr-gameover-staging-smoke.log`. No test account, user or room writes performed.
+- **Still blocked**: actual automatic `gameover` execution and payout transaction, persistent history/rank, achievement and winmode hooks, special respawns and all other 735-module parity; no live two-browser match and no production cutover. **`backendParity:false`, `playable:false`** remain intentional. Main branch, production PHP site/Worker and live players unchanged, PR #18 draft/unmerged.
+
+
+## 2026-11-02 10:23 China — PHP-oracle payout projection; no financial writes
+
+- Reviewed frozen `include/modules/core/sys/gamectl.php` `gameover_set_credits`, `gameover_get_credit_up` and `gameover_get_gold_up`. Source rewards include player/NPC kills, levels, maximum mastery, cash, full PHP rounding/caps, ignored game modes, validgames, wingames and lastwin rules.
+- New pure `src/legacy/settlement-plan.ts` computes `projectLegacySettlement(players,gametype,gamestate,now)` from the previously proven automatic winner decision. Returns `null` while a match is not eligible; otherwise a typed list of per-user credits, gold, validgames, wingames and lastwin deltas. Excludes NPC accounts. No database I/O or mutation.
+- Eight new focused tests in `test/legacy-settlement-plan.test.ts` passed, including team multiwinner `wingames` behavior, all-dead, empty and ignored modes, progression caps and immutable source snapshots.
+- New `test/legacy-settlement-credit.parity.test.mjs` invoked against **actual frozen PHP 8.2.35** using `DTS_PHP_BIN=/www/server/php/82/bin/php` and the isolated source root: **1/1 differential suite passed**, comparing **22 gold/credit output values** from original `\\sys\\gameover_get_credit_up` and `\\sys\\gameover_get_gold_up` across six match scenarios. Log: `/tmp/dtr-settlement-php-oracle.log`.
+- `LegacyGameDurableObject` has a second **DO-private, GET-only** `/settlement-plan` route that returns current snapshot identity/version, candidate winner and the projected player account deltas. An isolated fatal-battle test proves the reward data is derived from the persisted player state and **no match version/state is changed**.
+- The initial integration test incorrectly expected ignored-mode payouts against a gametype 0 fixture; corrected the fixture assertions to match ordinary PHP payouts (winner 120 gold/214 credits, loser 10 gold/14 credits). Re-run targeted **2/2** files passed, log `/tmp/dtr-settlement-integration-targeted2.log`.
+- SQL schema confirmed by **read-only Supabase introspection** of isolated project `qtjcjmpapjsgrrgtfica`: match_snapshots has PK match_id and version; account username and original history gid each have unique indexes. Nothing was changed in the database. New `docs/SETTLEMENT_ATOMICITY_SPEC.md` records required transactional account/history/snapshot commit, ledger idempotency, source-matched game number, postcommit DO recovery and security gates. The atomic write transaction is **NOT** implemented/applied and must not be treated as complete.
+- Fresh full `npm run test:low-memory`: **82/82 test files passed**, zero retries, exit 0, `/tmp/dtr-settlement-83-full.log`. The PHP oracle ran **separately** (environment gated during the normal full test). Worker dry-run build **passed**, 841 public assets, 34,179.38 KiB, `/tmp/dtr-settlement-82-build.log`.
+- Code deployed **staging Worker only** from reviewed source commit `21e0cff622db11337d7c2825996899f5f5813639` via `wrangler deploy --keep-vars`, exit 0. New active version **`a2c57804-579e-45d3-9beb-33cfee0ecfa6`**, deployment `c7cfe636-be02-4267-ad2a-6f0ca4dc474c`, Cloudflare confirmed 100% staging traffic; rollback version **`6a28b953-622b-42c6-925f-4704c4249445`**.
+- Confirmed existing `APP_ENV`, `ASSETS`, `GAMES`, `ROOMS`, `SUPABASE_URL` and `SUPABASE_SECRET_KEY` bindings intact; no secret value read. Real GET-only `npm run smoke:staging` **12/12 passed**, exit 0, `/tmp/dtr-settlement-staging-smoke.log`. Original `backendParity:false` and `playable:false` remain intentional.
+- Production PHP/game and player DB, GitHub `main`, and existing prod Worker unchanged. No account credit, payout, history, migration, or snapshot gameover writes occurred in this checkpoint. PR #18 remains draft.
+
+## 2026-11-02 — Atomic base settlement and DO recovery checkpoint
+
+The prior reward-only checkpoint is superseded by this section. **STAGING ONLY;
+not a release, not full gameover parity, no real payout enabled.**
+
+- Added `20261102023311_atomic_settlement_ledger.sql` and server-only
+  `src/runtime/settlement.ts`. SQL locks the existing match and room, rejects
+  stale/recycled/malformed state, recomputes base reward deltas from the saved
+  snapshot, locks all accounts in sorted order, allocates the original shared
+  subroom history gid under a table lock, writes compressed original history
+  fields supplied by the server, updates accounts/game/snapshot, and records
+  one immutable receipt keyed by match ID in the **same transaction**.
+- Terminal snapshots cannot be overwritten by `dtr_match_save`, even with a
+  higher version. An older installed `dtr_match_commit` accepting arbitrary
+  award JSON is retired from service-role execution; current runtime had no
+  callers of it. Other player/account fields are untouched by the new RPC.
+- Added private `POST /settle` to the game DO. It is not routed from index.ts
+  or any browser command and ignores any supplied winner/award fields. Both
+  `DTS_SETTLEMENT_EXPERIMENTAL=enabled` and DB control are required; neither
+  is enabled on staging. Ordinary commands do not auto-finalize games.
+- Before sending SQL the DO durably records a pending marker. Lost response,
+  SQL-committed/DO-write-failed and marker-clear-failed windows recover from
+  the authoritative DB snapshot. While recovery cannot reach DB all state
+  reads and actions fail closed. Restart recovery also works with the
+  experimental Worker flag removed. All reads and writes are serialized.
+- Ended snapshots render an escaped game result and lobby link; movement,
+  battle and corpse commands return 409, including when raced after settlement.
+- A stable ended-game mapping prevents a history gid collision from changing
+  the match DO identity. A reused, active room derives its new match identity.
+
+### Verified
+
+- **38/38 new targeted tests**: 30 SQL tests in ephemeral PGlite (actual
+  PostgreSQL WASM engine) and 8 DO recovery tests. Tests only create local
+  synthetic fixture rows; no deployed users or accounts are registered.
+- SQL tests include original winner/loser/team/mode/cap/rounding components,
+  all-dead and no-entry outcomes, immutable duplicate receipts, stale/new-room
+  refusals, missing accounts, malformed roster/history, browser-role denial,
+  and injected failures at second-account update, history insert, ledger
+  insert, snapshot update and room/game update. Every failure rolls back all
+  state, balances and history. PGlite serializes sessions: **this does not
+  constitute multi-session PostgreSQL lock/race acceptance**.
+- Full low-memory runner: **84/84 test files with no failures**, zero retries
+  on final run. Optional PHP-oracle suites are skipped in this ordinary runner;
+  they are not counted as PHP parity. First local run lacked the frozen source
+  fixture directory; after mounting it read-only the complete run passed.
+  Log `/tmp/dtr-84-full-final-20261102.log` in the current Work environment.
+- Fresh frozen **PHP 8.2.35** oracle on VM-0-10: `game-result settlement-credit`,
+  **2 suites / 5 tests passed**, including the 22 reward comparisons. Log
+  `/tmp/dtr-atomic-php-oracle-20261102.log` on the VM. This revalidates the pure
+  projection used by SQL fixture comparisons, not every module hook.
+- Full native **`npm run check` now passes** on a larger isolated runner.
+  Fixed two pre-existing test-only unknown JSON type errors with an explicit
+  `LegacyRoomRecord` generic. Do not run full tsc on the 2 GiB VM.
+- Worker dry-run build passed: 841 assets, 34,184.39 KiB Worker bundle.
+  Log `/tmp/dtr-atomic-build-20261102.log`.
+- Applied migration **only to isolated Supabase `qtjcjmpapjsgrrgtfica`**.
+  Read-back: control `enabled=false`, ledger receipts **0**, anon/authenticated
+  cannot execute, service role can execute, retired old RPC service privilege
+  is false. Installation does not write any account rewards or game/history
+  outcomes. Security advisors: no new warnings; the two new private tables
+  correctly have RLS/no browser policies. Existing unrelated [Auth leaked password warning](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) remains; no Auth settings changed.
+
+### Still required before enabling or merging
+
+- Original resurrection / special winmode hooks, original player-table mirror,
+  achievements, news/chat archive, replay/rating, main-room restart scheduling
+  and room recycling must be reconciled. Receipts explicitly say
+  `hooksPending=true`; experimental SQL only accepts subrooms 1–12.
+- Server-generated compressed history payloads are trusted internal encodings;
+  SQL independently derives balances/outcome from its snapshot but does not
+  decompress gzip to verify those two archive strings.
+- Real multi-session PostgreSQL race and crash verification, deployed
+  authenticated multi-browser game, all 735-module/hook acceptance, backups
+  and rollback exercise remain required. A previous real staging-account
+  registration was blocked by tool policy; not repeated or bypassed here.
+- No production PHP, production Worker, live player database or GitHub main
+  changes. Keep `backendParity=false`, `playable=false` and PR #18 draft.
+- Worker deployment outcome and rollback version are recorded below once
+  confirmed. Never infer a deployment from a dry-run build.
+
+### Follow-up: fence the response-lost/in-flight request window
+
+- `20261102024727_settlement_recovery_fence.sql` adds service-only
+  `dtr_match_reconcile`. A plain MVCC load can read precommit state while a
+  lost RPC is still executing; recovery now locks the snapshot and advances
+  an unchanged active version. A late request retaining the old expected
+  version must fail. No account, history, game or receipt changes occur in
+  this recovery function. Repeated recovery with the same expected version
+  does not keep advancing the fence. Terminal snapshots return unchanged.
+- DO pending markers now save both match ID and expected version. New code
+  accepts the older numeric experimental marker when hydrating.
+- Two additional real-engine SQL tests prove late-request rejection and
+  exact terminal recovery; one extra DO test verifies subsequent commands
+  start at the fenced version. Final targeted result **38/38 passed**.
+- Final verification logs after this change: `/tmp/dtr-final-38-targeted.log`,
+  `/tmp/dtr-final-fence-full.log`, `/tmp/dtr-final-fence-typecheck.log`,
+  `/tmp/dtr-final-fence-build.log`. All are in the current Work environment.
+- Initial disabled staging build `8648404` deployed successfully as
+  `e13fc2dc-2180-4651-8972-3adaf93cf954` (100% staging, all six bindings);
+  follow-up deployment results are recorded below after confirmation.
+
+### Final staging deployment and acceptance — 2026-11-02
+
+- Runtime source commit: **`10a665a13e49dfb5fc2706697f0e1156a183d48a`**.
+  Canonical isolated VM checkout: **`/opt/dts-work/dtrgame-pr18`**, detached
+  at that tested commit; review branch remains `work/original-parity-20261101`.
+  Do not confuse `/opt/dts-work/dtrgame` (older dirty worktree) with this one.
+- Final native typecheck and Worker dry-run both exit 0. Final regression:
+  **84/84 files, zero failures/retries; 362 assertions passed, 62 optional
+  PHP-oracle assertions skipped** in the ordinary runner. The separate
+  original PHP reward run is the 2-suite / 5-test result documented above.
+- Deployed only `dtrgame-original-1to1-staging` with `--keep-vars`, exit 0.
+  Active Worker version **`ef243859-788d-40c3-9b17-8d2372be346a`**; deployment
+  **`151a9eb7-fdf2-4212-b21e-1c65fbaddc6f`**. Cloudflare read-back confirms
+  **100% staging traffic** and all six original bindings. There is NO
+  `DTS_SETTLEMENT_EXPERIMENTAL` binding. No secret values were inspected.
+  Bundle 34,185.04 KiB, 841 assets; log
+  `/tmp/dtr-final-fence-staging-deploy.log` on VM-0-10.
+- The pre-task staging rollback version is
+  `a2c57804-579e-45d3-9beb-33cfee0ecfa6`; the intermediate disabled build
+  `e13fc2dc-2180-4651-8972-3adaf93cf954` is retained too. With BOTH switches
+  off and zero receipts this rollback does not require any account/data
+  restoration. Never drop a ledger or roll back to code unaware of pending
+  markers after enabling the experiment; that needs its own accepted drill.
+- Both SQL migrations installed only in isolated project
+  `qtjcjmpapjsgrrgtfica`. Final read-back: **enabled=false, receipts=0**;
+  anon/authenticated cannot call settlement or reconciliation, service_role
+  can call those gated APIs, and the retired unsafe RPC is not executable.
+- Preview: https://dtrgame-original-1to1-staging.dearpassengerscrew-new.workers.dev/
+- Public HTTP smoke result is appended after completion below. No live
+  registration/login/match mutation was attempted. Production PHP site,
+  production Worker/player data and GitHub main remain unchanged.
+- Final live `npm run smoke:staging`: **12/12 GET-only checks passed**, exit 0,
+  `/tmp/dtr-final-fence-staging-smoke.log` on VM-0-10. Help, map, index,
+  registration page, ranks, item help, anonymous game/room responses,
+  installer refusal, forbidden command GET and status were checked. Status
+  explicitly still reports `backendParity=false` and `playable=false`.

@@ -54,78 +54,90 @@ export class LegacyRoomDurableObject {
         return this.#record ? json(this.#record) : json({ error: "房间数据记录不存在。" }, 404);
       }
       if (request.method === "POST" && url.pathname === "/initialize") {
-        if (this.#record) return json(this.#record, 200);
-        const body = await request.json<InitializeBody>();
-        const founder = String(body.founder ?? "");
-        if (!founder) return json({ error: "Missing founder." }, 400);
-        const roomId = Number(body.roomId);
-        const roomType = Number(body.roomType);
-        if (!Number.isSafeInteger(roomId) || roomId < 1 || !Number.isSafeInteger(roomType)) {
-          return json({ error: "Invalid room identity." }, 400);
-        }
-        this.#record = createLegacyRoomRecord(roomId, roomType, founder, validTimestamp(body.now));
-        await this.ctx.storage.put("record", this.#record);
-        return json(this.#record, 201);
+        return await this.#exclusive(async () => {
+          if (this.#record) return json(this.#record, 200);
+          const body = await request.json<InitializeBody>();
+          const founder = String(body.founder ?? "");
+          if (!founder) return json({ error: "Missing founder." }, 400);
+          const roomId = Number(body.roomId);
+          const roomType = Number(body.roomType);
+          if (!Number.isSafeInteger(roomId) || roomId < 1 || !Number.isSafeInteger(roomType)) {
+            return json({ error: "Invalid room identity." }, 400);
+          }
+          const next = createLegacyRoomRecord(roomId, roomType, founder, validTimestamp(body.now));
+          await this.ctx.storage.put("record", next);
+          this.#record = next;
+          return json(next, 201);
+        });
       }
       if (request.method === "POST" && url.pathname === "/hydrate") {
-        if (this.#record) return json(this.#record, 200);
-        const body = await request.json<LegacyRoomRecord>();
-        if (!Number.isSafeInteger(body.roomId) || body.roomId < 1 || !body.room || body.room.roomtype !== body.groomtype) {
-          return json({ error: "Invalid persisted room." }, 400);
-        }
-        this.#record = structuredClone(body);
-        await this.ctx.storage.put("record", this.#record);
-        return json(this.#record, 201);
-      }
-      if (request.method === "POST" && url.pathname === "/replace") {
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
+          if (this.#record) return json(this.#record, 200);
           const body = await request.json<LegacyRoomRecord>();
           if (!Number.isSafeInteger(body.roomId) || body.roomId < 1 || !body.room || body.room.roomtype !== body.groomtype) {
             return json({ error: "Invalid persisted room." }, 400);
           }
-          this.#record = structuredClone(body);
-          await this.ctx.storage.put("record", this.#record);
-          return json(this.#record, 201);
+          const next = structuredClone(body);
+          await this.ctx.storage.put("record", next);
+          this.#record = next;
+          return json(next, 201);
+        });
+      }
+      if (request.method === "POST" && url.pathname === "/replace") {
+        return await this.#exclusive(async () => {
+          const body = await request.json<LegacyRoomRecord>();
+          if (!Number.isSafeInteger(body.roomId) || body.roomId < 1 || !body.room || body.room.roomtype !== body.groomtype) {
+            return json({ error: "Invalid persisted room." }, 400);
+          }
+          const next = structuredClone(body);
+          await this.ctx.storage.put("record", next);
+          this.#record = next;
+          return json(next, 201);
         });
       }
       if (request.method === "POST" && url.pathname === "/enter") {
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           if (!this.#record) return json({ error: "房间数据记录不存在。" }, 404);
           const body = await request.json<EnterBody>();
           const username = String(body.username ?? "");
           if (!username) return json({ error: "Missing username." }, 400);
-          this.#record = enterLegacyWaitingRoom(this.#record, username);
+          // Keep the active in-memory snapshot untouched when Supabase rejects
+          // an entry (or Durable Object storage fails).
+          const next = enterLegacyWaitingRoom(this.#record, username);
           if (this.#env.SUPABASE_URL && this.#env.SUPABASE_SECRET_KEY) {
             const rest = new SupabaseLegacyRest({ url: this.#env.SUPABASE_URL, secretKey: this.#env.SUPABASE_SECRET_KEY });
-            await new SupabaseLegacyRooms(rest).saveRecord(this.#record);
+            await new SupabaseLegacyRooms(rest).saveRecord(next);
           }
-          await this.ctx.storage.put("record", this.#record);
-          return json(this.#record);
+          await this.ctx.storage.put("record", next);
+          this.#record = next;
+          return json(next);
         });
       }
       if (request.method === "POST" && url.pathname === "/activate") {
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           if (!this.#record) return json({ error: "房间数据记录不存在。" }, 404);
           const body = await request.json<ActivateBody>();
           const gamestate = Number(body.gamestate);
           if (!Number.isSafeInteger(gamestate) || gamestate < 0) return json({ error: "Invalid game state." }, 400);
           validTimestamp(body.now);
-          this.#record.groomstatus = 40;
-          this.#record.gamestate = gamestate;
-          this.#record.room.readystat = 2;
-          this.#record.room.timestamp += 1;
-          this.#record.room.chatdata = Array.from({ length: 10 }, () => ({ cid: -1, data: "" }));
+          const next = structuredClone(this.#record);
+          next.groomstatus = 40;
+          next.gamestate = gamestate;
+          next.room.readystat = 2;
+          next.room.timestamp += 1;
+          next.room.chatdata = Array.from({ length: 10 }, () => ({ cid: -1, data: "" }));
           if (this.#env.SUPABASE_URL && this.#env.SUPABASE_SECRET_KEY) {
             const rest = new SupabaseLegacyRest({ url: this.#env.SUPABASE_URL, secretKey: this.#env.SUPABASE_SECRET_KEY });
-            await new SupabaseLegacyRooms(rest).saveRecord(this.#record);
+            await new SupabaseLegacyRooms(rest).saveRecord(next);
           }
-          await this.ctx.storage.put("record", this.#record);
-          return json(this.#record);
+          await this.ctx.storage.put("record", next);
+          this.#record = next;
+          return json(next);
         });
       }
       if (request.method === "POST" && url.pathname === "/command") {
         const raw = await request.json<Partial<LegacyRoomCommand>>();
-        return this.#exclusive(async () => {
+        return await this.#exclusive(async () => {
           if (!this.#record) return json({ error: "房间数据记录不存在。" }, 404);
           if (!raw.command || !COMMANDS.has(raw.command)) return json({ error: "Unknown room command." }, 400);
           const actor = String(raw.actor ?? "");
@@ -135,12 +147,16 @@ export class LegacyRoomDurableObject {
           if (raw.para2 !== undefined) command.para2 = String(raw.para2);
           const state: LegacyRoomRuntimeState = { record: structuredClone(this.#record) };
           const result = applyLegacyRoomCommand(state, command);
-          if (result.changed && this.#env.SUPABASE_URL && this.#env.SUPABASE_SECRET_KEY) {
+          // Even a command reporting changed=false can advance ownerHeartbeat,
+          // readiness or timeout state. Compare the full snapshot before
+          // deciding whether to persist it, without changing the legacy reply.
+          const dirty = JSON.stringify(result.record) !== JSON.stringify(this.#record);
+          if (dirty && this.#env.SUPABASE_URL && this.#env.SUPABASE_SECRET_KEY) {
             const rest = new SupabaseLegacyRest({ url: this.#env.SUPABASE_URL, secretKey: this.#env.SUPABASE_SECRET_KEY });
             await new SupabaseLegacyRooms(rest).saveRecord(result.record);
           }
+          if (dirty) await this.ctx.storage.put("record", result.record);
           this.#record = result.record;
-          if (result.changed) await this.ctx.storage.put("record", this.#record);
           return json(result);
         });
       }

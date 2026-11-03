@@ -13,13 +13,16 @@
  */
 import { LEGACY_PAGE_SCRIPTS } from "../generated/legacy-page-scripts";
 import { LEGACY_TEMPLATES } from "../generated/legacy-templates";
+import { LEGACY_HELP_MODULE_TEMPLATES } from "../generated/legacy-help-module-templates";
 import { createLegacyModuleRuntime } from "../legacy/php/compiled-modules";
 import type { LegacyDatabase } from "../legacy/php/database";
 import type { LegacyPageRequest } from "../legacy/php/runtime";
 import { LegacyHttpResponse } from "./legacy-http-response";
+import type {HostFunction} from '../legacy/template/builtins';
+import type {PhpValue} from '../legacy/template/values';
 
 /** Reads the request's cookies as the original's $_COOKIE. */
-function cookiesOf(request: Request): (readonly [string, string])[] {
+export function cookiesOf(request: Request): (readonly [string, string])[] {
   const header = request.headers.get("cookie") ?? "";
   const pairs: (readonly [string, string])[] = [];
   for (const part of header.split(";")) {
@@ -27,7 +30,10 @@ function cookiesOf(request: Request): (readonly [string, string])[] {
     if (at === -1) continue;
     const name = part.slice(0, at).trim();
     if (name === "") continue;
-    const value = part.slice(at + 1).trim().replace(/\+/g, " ");
+    // PHP 8.2 treats cookie values like rawurldecode(): literal "+" remains "+".
+    // Only percent escapes are decoded; application/x-www-form-urlencoded
+    // rules (where "+" means space) must not be applied to Cookie headers.
+    const value = part.slice(at + 1).trim();
     try { pairs.push([name, decodeURIComponent(value)]); }
     catch { pairs.push([name, value]); }
   }
@@ -47,6 +53,8 @@ export interface LegacyPageDependencies {
   readonly tablePrefix: string;
   readonly roomId?: string;
   readonly response?: LegacyHttpResponse;
+  readonly originalCurlPost?:HostFunction|undefined;
+  readonly initialGlobals?:ReadonlyMap<string,PhpValue>|undefined;
 }
 
 /** Tables touched by the original bootstrap and each gameplay page. */
@@ -91,8 +99,11 @@ export async function runLegacyPage(
   const runtime = createLegacyModuleRuntime({
     functions: dependencies.response?.functions() ?? new Map(),
     database: dependencies.database,
+    originalCurlPost:dependencies.originalCurlPost,
+    initialGlobals:dependencies.initialGlobals,
     loadTemplate: dependencies.loadTemplate ??
-      ((name: string) => LEGACY_TEMPLATES[name] ?? LEGACY_TEMPLATES[name.replace(/^.*\/(?=templates\/)/, "./")]),
+      ((name: string) => LEGACY_HELP_MODULE_TEMPLATES[name] ??
+        LEGACY_TEMPLATES[name] ?? LEGACY_TEMPLATES[name.replace(/^.*\/(?=templates\/)/, "./")]),
     // The page defines CURSCRIPT itself, and a constant cannot be
     // redefined, so it must not be preset here.
     curscript: null

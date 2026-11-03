@@ -11,6 +11,8 @@ export interface OriginalEnv {
   APP_ENV?: string;
   ROOMS: DurableObjectNamespace;
   GAMES: DurableObjectNamespace;
+  ORIGINAL?: DurableObjectNamespace;
+  DTS_ORIGINAL_ENGINE?:string;
   SUPABASE_URL?: string;
   SUPABASE_SECRET_KEY?: string;
 }
@@ -42,9 +44,11 @@ import {
 import { legacyCommandResponse } from "./runtime/command";
 import { hasLegacyPage, legacyPageTables, runLegacyPageResponse } from "./runtime/legacy-page-handler";
 import { SupabaseLegacyDatabase } from "./runtime/supabase-legacy-database";
+import {handleOriginalEngineHttp} from './runtime/http-original-engine';
 export { applyOriginalRouting } from "./original-routing";
 export { LegacyRoomDurableObject } from "./runtime/room-durable-object";
 export { LegacyGameDurableObject } from "./runtime/game-durable-object";
+export { OriginalGameActor } from './runtime/original-game-actor';
 export const ORIGINAL_STAGING_STATUS = {
   source: "ACFUN 大逃杀 installed Baota source",
   presentation: "original asset byte parity",
@@ -57,7 +61,7 @@ export const ORIGINAL_STAGING_STATUS = {
   roomLifecycle: "partial",
   matchLifecycle: "partial",
   gameCommandTransport: "partial",
-  routeParity: "16/23 signed-out fixtures"
+  routeParity: "17/23 signed-out fixtures"
 };
 const text = (body: string, status: number): Response => new Response(body, {
   status, headers: { "content-type": "text/plain;charset=utf-8", "cache-control": "no-store" }
@@ -76,6 +80,11 @@ export default {
       return new Response(JSON.stringify(ORIGINAL_STAGING_STATUS), {
         headers: { "content-type": "application/json;charset=utf-8", "cache-control": "no-store" }
       });
+    }
+    if(env.DTS_ORIGINAL_ENGINE==='enabled'){
+      if(!env.ORIGINAL)return text('Original engine binding is unavailable.',503);
+      const original=await handleOriginalEngineHttp(request,env.ORIGINAL);
+      if(original)return original;
     }
     const signedOutGameRequest = isSignedOutRequest(request) && (
       (url.pathname === "/command.php" && request.method === "POST") ||

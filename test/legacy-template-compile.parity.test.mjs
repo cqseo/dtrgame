@@ -65,7 +65,7 @@ function allTemplates(localRoot, remoteRoot) {
 }
 
 describe.skipIf(!php)("template compiler against the original compiler", () => {
-  const names = readdirSync(localTemplates)
+  const names = (php ? readdirSync(localTemplates) : [])
     .filter(file => file.endsWith(".htm"))
     .map(file => file.slice(0, -4))
     .sort();

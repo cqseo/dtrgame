@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createLegacyPlayerRecord } from "../src/generated/legacy-registry";
 import type { LegacyPlayerRecord } from "../src/legacy/player";
 import { LegacyGameDurableObject, type LegacyMatchState } from "../src/runtime/game-durable-object";
+import { renderLegacyCommandPanel } from "../src/runtime/game-render";
 
 function player(): LegacyPlayerRecord {
   const value = createLegacyPlayerRecord();
@@ -28,16 +29,19 @@ function state(): LegacyMatchState {
 
 function harness(env: Partial<Cloudflare.Env> = {}) {
   const values = new Map<string, unknown>();
+  const put = vi.fn(async (key: string, value: unknown): Promise<void> => {
+    values.set(key, structuredClone(value));
+  });
   let ready = Promise.resolve();
   const ctx = {
     storage: {
       get: async <T>(key: string): Promise<T | undefined> => values.get(key) as T | undefined,
-      put: async (key: string, value: unknown): Promise<void> => { values.set(key, structuredClone(value)); }
+      put
     },
     blockConcurrencyWhile: (callback: () => Promise<void>) => { ready = callback(); }
   } as unknown as DurableObjectState;
   const object = new LegacyGameDurableObject(ctx, env as Cloudflare.Env);
-  return { object, values, ready: () => ready };
+  return { object, values, put, ready: () => ready };
 }
 
 const post = (path: string, body: unknown) => new Request(`https://game.invalid${path}`, {
@@ -89,6 +93,36 @@ describe("legacy match Durable Object", () => {
     expect((test.values.get("match") as { version: number }).version).toBe(2);
   });
 
+  it("returns an HTTP failure and keeps the previous match when storage rejects a command", async () => {
+    const test = harness();
+    await test.ready();
+    await test.object.fetch(post("/hydrate", { version: 0, state: state() }));
+    test.put.mockRejectedValueOnce(new Error("durable storage unavailable"));
+    const response = await test.object.fetch(post("/command", {
+      username: "测试者", command: "move", input: { moveto: "1" }, now: 101
+    }));
+    expect(response.status).toBe(409);
+    const stateResponse = await test.object.fetch(new Request("https://game.invalid/state"));
+    const current = await stateResponse.json<{ version: number; state: LegacyMatchState }>();
+    expect(current.version).toBe(0);
+    expect(current.state.players["测试者"]?.pls).toBe(0);
+    expect((test.values.get("match") as { version: number }).version).toBe(0);
+  });
+
+  it("does not expose a restored match when Durable Object storage fails", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json([{ version: 7, state: state() }])));
+    const test = harness({
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_SECRET_KEY: "sb_secret_fixture"
+    } as Partial<Cloudflare.Env>);
+    await test.ready();
+    test.put.mockRejectedValueOnce(new Error("durable storage unavailable"));
+    const response = await test.object.fetch(post("/restore", { matchId: 9 }));
+    expect(response.status).toBe(409);
+    expect((await test.object.fetch(new Request("https://game.invalid/state"))).status).toBe(404);
+    expect(test.values.has("match")).toBe(false);
+  });
+
   it("rejects malformed hydration instead of creating a partial match", async () => {
     const test = harness();
     await test.ready();
@@ -125,8 +159,114 @@ describe("legacy match Durable Object", () => {
     expect(response.status).toBe(200);
     const stored = test.values.get("match") as { version: number; state: LegacyMatchState };
     expect(stored.version).toBe(1);
-    expect(stored.state.players["敌人"]).toMatchObject({ hp: 0, state: 22, bid: 1 });
+    expect(stored.state.players["敌人"]).toMatchObject({ hp: 0, state: 22, bid: 1, endtime: 123 });
     expect(stored.state.players["测试者"]).toMatchObject({ killnum: 1, action: "corpse2" });
+    // A fatal combat transaction must feed the original PHP death details,
+    // rather than leaving the victim with an empty or playable command UI.
+    const deadView = renderLegacyCommandPanel(stored, "敌人");
+    expect(deadView).toContain("战败身亡");
+    expect(deadView).toContain("凶手：测试者");
+    expect(deadView).toContain("死亡时间：");
+    expect(deadView).toContain("本次生命已结束");
+    expect(deadView).not.toContain("现在想要做什么？");
+    const beforePreview = structuredClone(test.values.get("match"));
+    const previewResponse = await test.object.fetch(new Request("https://game.invalid/settlement-preview"));
+    expect(previewResponse.status).toBe(200);
+    expect(await previewResponse.json()).toMatchObject({
+      ready: true, winmode: 2, winners: ["测试者"], validnum: 2, alivenum: 1, winnum: 1
+    });
+    expect(test.values.get("match")).toEqual(beforePreview);
+    expect((test.values.get("match") as { version: number }).version).toBe(1);
+    const rewardResponse = await test.object.fetch(new Request("https://game.invalid/settlement-plan"));
+    expect(rewardResponse.status).toBe(200);
+    const rewards = await rewardResponse.json<{ matchId: number; version: number; plan: {
+      winner: string; rewards: Array<{ username: string; credits: number; gold: number; wingames: number }>
+    } }>();
+    expect(rewards.matchId).toBe(stored.state.matchId);
+    expect(rewards.version).toBe(1);
+    expect(rewards.plan.winner).toBe("测试者");
+    expect(rewards.plan.rewards).toMatchObject([
+      { username: "测试者", gold: 120, credits: 214, wingames: 1 },
+      { username: "敌人", gold: 10, credits: 14, wingames: 0 }
+    ]);
+    expect(test.values.get("match")).toEqual(beforePreview);
+  });
+
+  it("binds attacks to saved enemy pid and refuses forged targets without mutating the match", async () => {
+    vi.spyOn(crypto, "getRandomValues").mockImplementation(array => {
+      (array as Uint32Array)[0] = 0;
+      return array;
+    });
+    const test = harness();
+    await test.ready();
+    const current = state();
+    Object.assign(current.players["测试者"]!, {
+      pid: 1, pls: 0, action: "enemy2",
+      wep: "调色刀", wepk: "WK", wepe: 45, weps: 9,
+      att: 100, def: 100, wk: 100
+    });
+    const encountered = player();
+    Object.assign(encountered, { pid: 2, name: "已遭遇", pls: 0, hp: 200, mhp: 400 });
+    const uninvolved = player();
+    Object.assign(uninvolved, { pid: 3, name: "其他玩家", pls: 0, hp: 200, mhp: 400 });
+    current.players["已遭遇"] = encountered;
+    current.players["其他玩家"] = uninvolved;
+    current.weatherId = 2;
+    await test.object.fetch(post("/hydrate", { version: 0, state: current }));
+
+    const forged = await test.object.fetch(post("/battle", {
+      username: "测试者", target: "其他玩家", now: 120, active: false, weatherId: 999
+    }));
+    expect(forged.status).toBe(409);
+    const afterForgery = test.values.get("match") as { version: number; state: LegacyMatchState };
+    expect(afterForgery.version).toBe(0);
+    expect(afterForgery.state.players["其他玩家"]?.hp).toBe(200);
+
+    const legitimate = await test.object.fetch(post("/battle", {
+      username: "测试者", now: 120
+    }));
+    expect(legitimate.status).toBe(200);
+    const afterBattle = test.values.get("match") as { version: number; state: LegacyMatchState };
+    expect(afterBattle.version).toBe(1);
+    expect(afterBattle.state.players["其他玩家"]?.hp).toBe(200);
+
+    const replayWithoutEncounter = await test.object.fetch(post("/battle", {
+      username: "其他玩家", now: 121
+    }));
+    expect(replayWithoutEncounter.status).toBe(409);
+    expect((test.values.get("match") as { version: number }).version).toBe(1);
+  });
+
+  it("uses snapshot weather and initiative, ignoring spoofed battle request values", async () => {
+    vi.spyOn(crypto, "getRandomValues").mockImplementation(array => {
+      (array as Uint32Array)[0] = 0;
+      return array;
+    });
+    const create = async () => {
+      const test = harness();
+      await test.ready();
+      const current = state();
+      Object.assign(current.players["测试者"]!, {
+        pid: 1, action: "enemy2", pls: 0, att: 100, def: 100, wk: 100,
+        wep: "调色刀", wepk: "WK", wepe: 45, weps: 9
+      });
+      const enemy = player();
+      Object.assign(enemy, { pid: 2, name: "敌人", pls: 0, hp: 300, mhp: 400 });
+      current.players["敌人"] = enemy;
+      current.weatherId = 2;
+      await test.object.fetch(post("/hydrate", { version: 0, state: current }));
+      return test;
+    };
+    const first = await create();
+    const second = await create();
+    const normal = await first.object.fetch(post("/battle", { username: "测试者", now: 100 }));
+    const spoofed = await second.object.fetch(post("/battle", {
+      username: "测试者", now: 100, target: "敌人", active: false, weatherId: 999
+    }));
+    expect(normal.status).toBe(200);
+    expect(spoofed.status).toBe(200);
+    expect(await spoofed.json()).toEqual(await normal.json());
+    expect(second.values.get("match")).toEqual(first.values.get("match"));
   });
 
   it("runs an immediate passive assault when search discovers an alert enemy", async () => {

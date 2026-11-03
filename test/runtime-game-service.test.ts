@@ -89,6 +89,28 @@ describe("authenticated game transport", () => {
     });
   });
 
+  it("sends attacks with only authenticated identity and server-evaluated encounter", async () => {
+    const initial = snapshot();
+    let attackBody: Record<string, unknown> | undefined;
+    let stateReads = 0;
+    const sut = service(async (url, init) => {
+      if (new URL(url).pathname === "/state") {
+        return Response.json(stateReads++ === 0 ? initial : snapshot(1));
+      }
+      attackBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      return Response.json({ version: 1, log: "战斗结束" });
+    });
+    const result = await sut.execute(
+      request("mode=command&command=attack&target=forged&active=false&weatherId=99"),
+      202
+    );
+    expect(result).toMatchObject({ ok: true, username: "测试者", snapshot: { version: 1 } });
+    expect(attackBody).toEqual({ username: "测试者", now: 202 });
+    expect(attackBody).not.toHaveProperty("target");
+    expect(attackBody).not.toHaveProperty("weatherId");
+    expect(attackBody).not.toHaveProperty("active");
+  });
+
   it("rejects a missing or invalid legacy session before locating a match", async () => {
     const accounts = { findByUsername: vi.fn() } as unknown as SupabaseLegacyAccounts;
     const matches = { forUser: vi.fn() } as unknown as SupabaseLegacyMatches;

@@ -18,7 +18,7 @@ import { parseModuleFile } from "../src/legacy/php/parser";
 const LEGACY = "../legacy-dts";
 
 describe.skipIf(!existsSync(LEGACY))("original page scripts", () => {
-  const scripts = readdirSync(LEGACY)
+  const scripts = (existsSync(LEGACY) ? readdirSync(LEGACY) : [])
     .filter((name: string) => name.endsWith(".php"))
     .sort();
 

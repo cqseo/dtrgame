@@ -14,13 +14,15 @@
  * Usage:
  *   node scripts/generate-compiled-modules.mjs [--check] [../legacy-dts]
  */
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync,existsSync } from "node:fs";
+import {LEGACY_COMPILED_INCLUDES as CAPTURED_INCLUDES} from '../src/generated/legacy-compiled-includes.ts';
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compilePhpModuleFile } from "../src/legacy/module-compiler.ts";
 import { ENTRY_POINTS, closureFrom, readModuleTree } from "./lib/module-closure.mjs";
 import { LEGACY_MODULES } from "../src/generated/legacy-registry.ts";
 import { parseModuleFile } from "../src/legacy/php/parser.ts";
+import {renderCompiledFunction} from './lib/render-compiled-function.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..");
@@ -64,7 +66,8 @@ const GLOBAL_FILES = [
   "include/socket.func.php",
   "include/modules/modules.func.php",
   "include/roommng/room.func.php",
-  "include/roommng/roommng.func.php"
+  "include/roommng/roommng.func.php",
+  "include/roommng/quickmatch.runtime.php"
 ];
 
 /**
@@ -76,6 +79,8 @@ const GLOBAL_FILES = [
  * that way when the operator edits the file.
  */
 const INCLUDED_DATA_FILES = [
+  "include/roommng/roommng.config.php",
+  "include/roommng/quickmatch.config.php",
   "gamedata/banlist.list",
   // Config the pages read directly rather than through a module: help.php
   // and rank.php include these to get the server's own settings.
@@ -86,6 +91,15 @@ const INCLUDED_DATA_FILES = [
   "include/modules/extra/misc/glowbutton/module.inc.php",
   // command.php reads the module manager's config directly.
   "include/modulemng/modulemng.config.php",
+  // help.php calls render_page('command_help'), whose original PHP body
+  // dynamically includes these data-only configuration files. They must be
+  // compiled just like static include/page scripts, without exposing PHP
+  // source files as downloadable public assets.
+  "include/modules/base/itemmix/itemmix/config/itemmix.config.php",
+  "include/modules/extra/instance/instance8_proud/config/npc.data.config.php",
+  "include/modules/extra/instance/instance9_rush/config/npc.data.config.php",
+  "include/modules/base/addnpc/config/addnpc.config.php",
+  "include/modules/extra/club/skills/skill21/config/evonpc.config.php",
   // The page bodies command.php dispatches to. command_act.php is the
   // gameplay one: it calls \player\act() and the hook chains do the rest.
   ...readdirSync(join(sourceRoot, "include/pages"))
@@ -93,6 +107,29 @@ const INCLUDED_DATA_FILES = [
     .sort()
     .map(name => `include/pages/${name}`)
 ];
+
+// Config-only regeneration avoids reparsing all 735 modules when a page
+// begins requiring one more original data file. Function declarations are
+// hoisted, and this exits before the expensive whole-module traversal.
+if (process.argv.includes("--only-includes")) {
+  const artifact = generateIncludedFiles();
+  if (check) {
+    if (readFileSync(artifact.path, "utf8") !== artifact.text) {
+      console.error(`${artifact.path} does not match original data includes.`);
+      process.exit(1);
+    }
+  } else {
+    writeFileSync(artifact.path, artifact.text);
+  }
+  console.log(`Verified ${INCLUDED_DATA_FILES.length} included data/page files.`);
+  process.exit(0);
+}
+if(process.argv.includes('--only-globals')){
+  const artifact=generateGlobals();
+  if(check){if(readFileSync(artifact.path,'utf8')!==artifact.text)throw new Error('Global functions are stale.');}
+  else writeFileSync(artifact.path,artifact.text);
+  console.log('Generated original global function library.');process.exit(0);
+}
 
 /**
  * The original's page scripts, compiled like everything else.
@@ -153,7 +190,11 @@ function generateIncludedFiles() {
     "export const LEGACY_COMPILED_INCLUDES: Record<string, readonly Statement[]> = {"
   ];
   for (const relative of INCLUDED_DATA_FILES) {
-    const program = parseModuleFile(readFileSync(join(sourceRoot, relative), "utf8"));
+    const privateConfig=new Set(['include/modules/core/sys/config/server.config.php','include/modules/core/sys/config/system.config.php','include/modulemng/modulemng.config.php']);
+    const unavailable=!existsSync(join(sourceRoot,relative));
+    const captured=unavailable&&privateConfig.has(relative)&&process.argv.includes('--use-captured-private-includes')?CAPTURED_INCLUDES['./'+relative]:undefined;
+    if(unavailable&&!captured)throw new Error('Original include is unavailable: '+relative);
+    const program = captured??parseModuleFile(readFileSync(join(sourceRoot, relative), "utf8"));
     lines.push(`  ${JSON.stringify("./" + relative)}: ${render(program)},`);
   }
   lines.push("};", "");
@@ -274,12 +315,13 @@ function generate(module) {
     `// ${functions.length} functions.`,
     "",
     'import type { CompiledPhpFunction } from "../legacy/module-compiler";',
+    'import {lazyOriginalFunction} from "../legacy/php/lazy-original-function";',
     "",
     `export const ${constant}: Record<string, CompiledPhpFunction> = {`
   ];
 
   for (const fn of functions) {
-    lines.push(`  ${JSON.stringify(fn.name)}: ${render(fn)},`);
+    lines.push(`  ${JSON.stringify(fn.name)}: ${renderCompiledFunction(fn)},`);
   }
   lines.push("};", "");
   return { path: resolve(repoRoot, `src/generated/legacy-compiled-${module}.ts`), text: lines.join("\n") };
@@ -342,10 +384,11 @@ function generateGlobals() {
     `// ${functions.length} global functions.`,
     "",
     'import type { CompiledPhpFunction } from "../legacy/module-compiler";',
+    'import {lazyOriginalFunction} from "../legacy/php/lazy-original-function";',
     "",
     "export const LEGACY_COMPILED_GLOBALS: Record<string, CompiledPhpFunction> = {"
   ];
-  for (const fn of functions) lines.push(`  ${JSON.stringify(fn.name)}: ${render(fn)},`);
+  for (const fn of functions) lines.push(`  ${JSON.stringify(fn.name)}: ${renderCompiledFunction(fn)},`);
   lines.push("};", "");
   return { path: resolve(repoRoot, "src/generated/legacy-compiled-globals.ts"), text: lines.join("\n") };
 }

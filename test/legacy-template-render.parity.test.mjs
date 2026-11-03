@@ -65,7 +65,7 @@ describe.skipIf(!php)("template rendering against the original", () => {
     return cachedLanguage;
   };
 
-  const names = readdirSync(packDir)
+  const names = (php ? readdirSync(packDir) : [])
     .filter(file => file.endsWith(".htm"))
     .map(file => file.slice(0, -4))
     .sort();

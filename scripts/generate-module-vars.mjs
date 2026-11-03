@@ -22,7 +22,8 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..");
-const outputPath = resolve(repoRoot, "src/generated/legacy-module-vars.ts");
+const preinit = process.argv.includes("--preinit");
+const outputPath = resolve(repoRoot, preinit ? "src/generated/legacy-module-preinit-vars.ts" : "src/generated/legacy-module-vars.ts");
 
 const phpBin = process.env.DTS_PHP_BIN ?? resolve(repoRoot, "tools/php-remote");
 const referenceScript = resolve(repoRoot, "scripts/php-module-vars-reference.php");
@@ -58,6 +59,7 @@ const EXPECTED_WITHHELD = new Set([
 ]);
 
 function readOriginal() {
+  if (preinit) return JSON.parse(readFileSync(resolve(repoRoot,"scripts/reference/original-module-preinit-vars.json"),"utf8"));
   const stdout = execFileSync(phpBin, [referenceScript], {
     input: JSON.stringify({ root: instanceRoot }),
     maxBuffer: 256 * 1024 * 1024,
@@ -67,6 +69,7 @@ function readOriginal() {
 }
 
 /** Renders one encoded value as the TypeScript literal for it. */
+let capturedGameRoot='';
 function renderValue(value) {
   switch (value.t) {
     case "null":
@@ -79,6 +82,12 @@ function renderValue(value) {
       // A non-finite float arrives as a string; Number() restores it.
       return typeof value.v === "string" ? `Number(${JSON.stringify(value.v)})` : String(value.v);
     case "string":
+      // GAME_ROOT-derived file locators must point at the Worker virtual
+      // root, not the private PHP capture directory. The raw capture stays
+      // unchanged; numbers, labels and every non-path string stay verbatim.
+      if(preinit&&capturedGameRoot&&value.v.startsWith(capturedGameRoot)){
+        return JSON.stringify('/'+value.v.slice(capturedGameRoot.length).split('/').filter(s=>s&&s!=='.').join('/'));
+      }
       return JSON.stringify(value.v);
     case "array": {
       const entries = value.v.map(
@@ -94,6 +103,12 @@ function renderValue(value) {
 }
 
 function generate(dump) {
+  if(preinit){
+    const locator=dump.modules.cardbase?.card_main_file?.v;
+    const suffix='include/modules/extra/card/cardbase/main.php';
+    if(typeof locator!=='string'||!locator.startsWith('/')||!locator.endsWith(suffix))throw new Error('Cannot establish original capture GAME_ROOT.');
+    capturedGameRoot=locator.slice(0,-suffix.length).replace(/\/+$/,'')+'/';
+  }
   const unexpected = dump.skipped.filter(name => !EXPECTED_WITHHELD.has(name));
   if (unexpected.length) {
     throw new Error(
@@ -161,7 +176,7 @@ function generate(dump) {
   return lines.join("\n");
 }
 
-const generated = generate(readOriginal());
+const generated = generate(readOriginal()).replaceAll("LEGACY_MODULE_VARS", preinit ? "LEGACY_MODULE_PREINIT_VARS" : "LEGACY_MODULE_VARS");
 
 if (process.argv.includes("--check")) {
   const existing = readFileSync(outputPath, "utf8");

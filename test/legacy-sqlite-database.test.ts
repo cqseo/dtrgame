@@ -1,0 +1,76 @@
+import { beforeAll, describe, expect, it } from "vitest";
+// @ts-expect-error test-only Node builtin
+import { readFileSync } from "node:fs";
+import initSqlJs from "sql.js/dist/sql-wasm-browser.js";
+import { SqliteLegacyDatabase, bindLegacySql } from "../src/legacy/php/sqlite-database";
+import { legacyRowFromJson, LegacyQueryResult } from "../src/legacy/php/database";
+import {PhpArray} from '../src/legacy/template/values';
+
+let SQL: Awaited<ReturnType<typeof initSqlJs>>;
+beforeAll(async () => { SQL=await initSqlJs({wasmBinary:readFileSync('node_modules/sql.js/dist/sql-wasm-browser.wasm')}); });
+const users=[{uid:1,username:'Alpha',gold:10,credits:20},{uid:2,username:'Beta',gold:30,credits:40}];
+function database(){return new SqliteLegacyDatabase(new SQL.Database(),{acbra2_users:users.map(legacyRowFromJson)});}
+
+describe('request-local original SQL',()=>{
+  it('stores empty integer fields as original non-strict MySQL zero before the next query',()=>{
+    const db=database();
+    try{
+      db.query("UPDATE acbra2_users SET gold='' WHERE uid=1");
+      expect(db.affected_rows()).toBe(1);
+      db.query("INSERT INTO acbra2_users(username,gold) VALUES('Gamma','')");
+      expect(db.insert_id()).toBe(3);
+      const result=db.query('SELECT username,gold FROM acbra2_users WHERE gold=0 ORDER BY uid') as LegacyQueryResult;
+      expect(result.rows.map(row=>[row.get('username'),row.get('gold')])).toEqual([['Alpha','0'],['Gamma','0']]);
+      expect(db.mutations()).toHaveLength(2);
+    }finally{db.close();}
+  });
+  it('inserts original ordered row batches and updates duplicate rows through VALUES(column)',()=>{
+    const db=database();
+    try{
+      const batch=new PhpArray();batch.push(legacyRowFromJson({uid:3,username:'Gamma',gold:7}));batch.push(legacyRowFromJson({uid:4,username:'Delta',gold:8}));
+      db.array_insert('acbra2_users',batch);
+      const updates=new PhpArray();updates.push(legacyRowFromJson({uid:3,username:'Gamma',gold:70}));updates.push(legacyRowFromJson({uid:4,username:'Delta',gold:80}));
+      db.array_insert('acbra2_users',updates,1,'uid');
+      expect(db.rows('acbra2_users').map(row=>row.get('gold'))).toEqual(['10','30','70','80']);
+    }finally{db.close();}
+  });
+  it('preserves original non-strict MySQL implicit defaults in sparse batch CASE updates',()=>{
+    const db=database();
+    try{
+      const changes=new PhpArray();changes.push(legacyRowFromJson({uid:1,motto:'changed'}));changes.push(legacyRowFromJson({uid:2,gold:7}));
+      db.multi_update('acbra2_users',changes,'uid');
+      expect(db.rows('acbra2_users').map(row=>[row.get('motto'),row.get('gold')])).toEqual([['changed','0'],['','7']]);
+    }finally{db.close();}
+  });
+  it('evaluates numeric predicates, ordering, projection, count and limits',()=>{
+    const db=database();
+    try {
+      const selected=db.query("SELECT username,gold FROM acbra2_users WHERE gold>0 AND (username='Alpha' OR username='Beta') ORDER BY gold DESC LIMIT 1") as LegacyQueryResult;
+      expect(selected.rows.map(r=>r.pairs())).toEqual([[['username','Beta'],['gold','30']]]);
+      expect(db.result(db.query('SELECT COUNT(*) FROM acbra2_users WHERE gold>=10') as never,0)).toBe('2');
+      expect(db.mutations()).toEqual([]);
+    } finally {db.close();}
+  });
+  it('keeps escaped names and SQL-shaped content as bound data',()=>{
+    const db=database();
+    try {
+      const value="O'Brien, AND gold=999; -- \\ tail";
+      db.array_update('acbra2_users',legacyRowFromJson({username:value}),"uid='1'");
+      expect(db.rows('acbra2_users')[0]?.get('username')).toBe(value);
+      expect(db.rows('acbra2_users')[1]?.get('gold')).toBe('30');
+      expect(()=>bindLegacySql("SELECT 'unterminated")).toThrow();
+      expect(()=>db.query('SELECT 1; DELETE FROM acbra2_users')).toThrow();
+    }finally{db.close();}
+  });
+  it('executes arithmetic, concatenation, INSERT SET and duplicate-key updates',()=>{
+    const db=database();
+    try {
+      db.query("UPDATE acbra2_users SET gold=gold+5, motto=CONCAT(motto,'text') WHERE uid=1");
+      db.query("INSERT INTO acbra2_users SET username='Gamma',gold='9'");
+      expect(db.insert_id()).toBe(3);
+      db.query("INSERT INTO acbra2_users(uid,username,gold) VALUES(3,'Gamma',100) ON DUPLICATE KEY UPDATE gold=101");
+      expect(db.rows('acbra2_users').map(r=>[r.get('username'),r.get('gold')])).toEqual([['Alpha','15'],['Beta','30'],['Gamma','101']]);
+      expect(db.mutations()).toHaveLength(2);
+    }finally{db.close();}
+  });
+});

@@ -11,7 +11,9 @@
  * so when the mechanism differs because the platform differs.
  */
 import type { HostFunction } from "../template/builtins";
-import { PhpArray, type PhpValue } from "../template/values";
+import { PhpArray, toStringValue, type PhpValue } from "../template/values";
+import { LEGACY_PUBLIC_STATIC_FILES } from "../../generated/legacy-public-static-files";
+import { LEGACY_PUBLIC_IMAGE_SIZES } from "../../generated/legacy-public-image-sizes";
 
 /**
  * The original computes GAME_ROOT from __FILE__ and uses it to build
@@ -70,6 +72,13 @@ export function createLockFunctions(): Map<string, HostFunction> {
  */
 const TEMPLATE_MTIME = 1761782400;
 
+/** Exactly which original public portraits can be served from Worker assets. */
+export function legacyPublicImageExists(path: string): boolean {
+  const name = path.startsWith("./") ? path.slice(2) : path;
+  return name.startsWith("img/") && !name.includes("..") &&
+    LEGACY_PUBLIC_STATIC_FILES.has(name);
+}
+
 export function createFilesystemFunctions(): Map<string, HostFunction> {
   const functions = new Map<string, HostFunction>();
   const refuse = (name: string): HostFunction => () => {
@@ -110,8 +119,26 @@ export function createFilesystemFunctions(): Map<string, HostFunction> {
    */
   functions.set("debug_backtrace", () => new PhpArray());
   functions.set("debug_print_backtrace", () => null);
-  // file_exists is answerable: nothing this port writes exists on a disk.
-  functions.set("file_exists", () => false);
+  // The original player\\icon_parser_file_check() checks img/n_150.gif
+  // and friends before rendering NPC portraits. These are immutable files
+  // already bundled as public Cloudflare assets; return their real presence
+  // from the generated inventory rather than pretending every file is absent.
+  // Do not treat source PHP, server configs, or arbitrary filesystem paths as
+  // public assets: those remain inaccessible in Workers.
+  functions.set("file_exists", values => legacyPublicImageExists(toStringValue(values[0] ?? null)));
+  // PHP getimagesize() is used by the original icon parser to size the
+  // optional tall portrait. Width and height come from the real image header
+  // captured at build time, never from guessed defaults.
+  functions.set("getimagesize", values => {
+    const path = toStringValue(values[0] ?? null);
+    const name = path.startsWith("./") ? path.slice(2) : path;
+    const dimensions = LEGACY_PUBLIC_IMAGE_SIZES.get(name);
+    if (!dimensions || !legacyPublicImageExists(name)) return false;
+    const info = new PhpArray();
+    info.push(dimensions[0]);
+    info.push(dimensions[1]);
+    return info;
+  });
   return functions;
 }
 
@@ -127,6 +154,7 @@ export function createHostConstants(curscript: string | null): Map<string, PhpVa
   const constants = new Map<string, PhpValue>([
     ["IN_GAME", true],
     ["GAME_ROOT", GAME_ROOT],
+    ["IN_GAME_CHECK_STR", "<?php if(!defined('IN_GAME')) exit('Access Denied'); ?>\r\n"],
     ["TPLDIR", "./templates/default"],
     ["STYLEID", "1"],
     ["TEMPLATEID", "1"],
@@ -145,8 +173,9 @@ export function createHostConstants(curscript: string | null): Map<string, PhpVa
     ["LOCK_SH", 1],
     ["LOCK_EX", 2],
     ["LOCK_UN", 3],
-    ["ENT_COMPAT", 3],
-    ["ENT_QUOTES", 11],
+    ["ENT_COMPAT", 2],
+    ["ENT_QUOTES", 3],
+    ["ENT_NOQUOTES",0],["ENT_SUBSTITUTE",8],
     ["JSON_PRETTY_PRINT", 128],
     ["JSON_UNESCAPED_SLASHES", 64],
     ["JSON_UNESCAPED_UNICODE", 256],
@@ -160,6 +189,8 @@ export function createHostConstants(curscript: string | null): Map<string, PhpVa
     ["SORT_REGULAR", 0],
     ["SORT_NUMERIC", 1],
     ["SORT_STRING", 2],
+    ["EXTR_OVERWRITE",0],["EXTR_SKIP",1],["EXTR_PREFIX_SAME",2],["EXTR_PREFIX_ALL",3],
+    ["EXTR_PREFIX_INVALID",4],["EXTR_PREFIX_IF_EXISTS",5],["EXTR_IF_EXISTS",6],["EXTR_REFS",256],
     ["COUNT_NORMAL", 0],
     ["COUNT_RECURSIVE", 1],
     ["STR_PAD_RIGHT", 1],
@@ -220,9 +251,12 @@ export function createHostConstants(curscript: string | null): Map<string, PhpVa
 
 /** Everything above, as one map. */
 export function createHostFunctions(): Map<string, HostFunction> {
+  let errorMask=32767,ignoreAbort=0;
   return new Map<string, HostFunction>([
     ...createLockFunctions(),
     ...createFilesystemFunctions(),
+    ['error_reporting',values=>{const old=errorMask;if(values[0]!==undefined)errorMask=Number(values[0]);return old;}],
+    ['ignore_user_abort',values=>{const old=ignoreAbort;if(values[0]!==undefined)ignoreAbort=values[0]?1:0;return old;}],
     // The original selects Etc/GMT at the beginning of sys\init().
     // Workers and this interpreter already evaluate date/time builtins in
     // UTC, so accepting that exact timezone preserves the observable clock

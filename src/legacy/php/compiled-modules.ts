@@ -18,6 +18,7 @@ import { LEGACY_COMPILED_GLOBALS } from "../../generated/legacy-compiled-globals
 import { LEGACY_TEMPLATE_LANGUAGE } from "../../generated/legacy-template-language";
 import { createHostConstants, createHostFunctions } from "./host-environment";
 import { LegacyModuleRuntime, type ModuleRuntimeOptions } from "./runtime";
+import { ModuleVariableStore } from "./module-store";
 
 /**
  * Builds a runtime with every compiled module loaded.
@@ -36,12 +37,12 @@ export function createLegacyModuleRuntime(
       ...createHostConstants(options.curscript === undefined ? "index" : options.curscript),
       ...(options.constants ?? [])
     ]),
-    functions: new Map([...createHostFunctions(), ...(options.functions ?? [])]),
+    functions: new Map([...createHostFunctions(), ...(options.filesystem?.functions() ?? []), ...(options.functions ?? [])]),
     // {lang x} is resolved when a template compiles, so the pack has to
     // be here or every translated string renders as its placeholder.
     compileOptions: options.compileOptions ?? { language: LEGACY_TEMPLATE_LANGUAGE }
   };
-  const runtime = new LegacyModuleRuntime(undefined, withHost);
+  const runtime = new LegacyModuleRuntime(options.fullGame ? ModuleVariableStore.fromOriginalPreinit() : undefined, withHost);
   for (const table of COMPILED_MODULE_TABLES) runtime.registerModule(Object.values(table));
   // The global-namespace functions the original's include files declare,
   // such as fetch_udata_by_username. Compiled rather than hand-written, so
