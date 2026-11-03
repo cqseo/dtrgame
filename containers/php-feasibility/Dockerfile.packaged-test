@@ -1,0 +1,8 @@
+# Local experiment only: source, database and transient files need a security
+# and persistence design before any cloud image is uploaded or deployed.
+FROM dtr-original-php82-feasibility:20261103
+COPY game/ /game/
+RUN mkdir -p /game/gamedata/tmp/processlock /game/gamedata/tmp/userlock /game/gamedata/tmp/log /game/gamedata/tmp/news /game/gamedata/tmp/response /game/gamedata/tmp/rooms /game/gamedata/tmp/server /game/gamedata/tmp/replay /game/gamedata/tmp/playerlock /game/gamedata/bak /game/gamedata/replays /game/gamedata/remote_replays /game/gamedata/cache && chmod -R u+rwX /game/gamedata
+ENV PHP_CLI_SERVER_WORKERS=2
+EXPOSE 8080
+CMD ["php", "-S", "0.0.0.0:8080", "-t", "/game"]

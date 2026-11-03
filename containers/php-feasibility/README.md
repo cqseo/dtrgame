@@ -72,6 +72,23 @@ the original application's response revealed the message “这个姿势太奇�
 the game rejected that choice. This exercise does not model loss of the
 database container's writable layer.
 
+The copied game was then baked into a local, **test-only** image with no source
+bind mount. Two synthetic users again logged in, entered a room, started a game
+and persisted stance changes. The PHP CLI web server is not a production
+server, and this image has not been security-audited or uploaded to Cloudflare.
+The `Dockerfile.packaged-test` records the locally exercised command; it expects
+an externally prepared `game/` build context and must not be used for deploys.
+
+Replacing that local test container with a fresh instance reproduced a real
+recovery gap: the database still held an active room and two players, but its
+`gamedata/tmp/rooms/1.txt` marker had vanished and re-entry failed. Manually
+recreating the marker from the isolated database allowed both players to
+re-enter and one to persist an action. **This is not a complete recovery
+solution**: marker timestamps also influence the original room-owner heartbeat,
+and other temporary files, concurrent writers, timing, game replay, and the
+ordering of restore versus requests remain unverified. Do not make this manual
+shortcut automatic or release it as production recovery.
+
 The source requires game runtime directories such as `gamedata/tmp/rooms`,
 `server`, `response`, `processlock`, `playerlock`, `userlock`, `log`, `news`,
 and `replay`. A missing rooms directory caused room creation to write a DB row
