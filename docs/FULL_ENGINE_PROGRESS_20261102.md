@@ -368,3 +368,9 @@ Next work, in order:
   Before enabling it, verify and rehearse the database migration, ORIGINAL DO
   binding, old-writer fence, rollback and a genuine two-browser online match.
   No production PHP site, real player data or GitHub main was changed.
+
+## 2026-11-03 isolated match retest
+
+- Native workerd and disposable PGlite: two synthetic accounts logged in, created and joined the original SOLO room, exchanged live updates, readied, initialized the full original world/NPCs, and issued concurrent commands. A natural NPC encounter ended the game; participation/victory stats and both end pages passed. Reloading did not repeat settlement, and recycling the room opened a new match with the same accounts and a higher game number. No RPC errors occurred.
+- The lethal opponent in this run was an NPC; no human-on-human lethal event occurred. Separate original-engine lethal-combat, skill 58 and skill 427 tests passed (3 tests). These use controlled fixtures and are not a deployed browser match.
+- The connected isolated project still lacks the original control table, room-7 tables and writer-mode RPC; the complete engine remains disabled in staging. Online multiplayer acceptance and data cutover remain open.
