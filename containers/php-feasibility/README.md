@@ -55,6 +55,15 @@ Docker writable layer, but cleared four room-chat rows in a MEMORY table as
 expected. This also does not prove Cloudflare data durability or recovery
 during an active game. The web homepage reloaded after the database returned.
 
+A second end-to-end synthetic match also reached a recorded winner; its lethal
+encounter was against an NPC, so it is not additional PvP evidence. A third
+synthetic match was stopped in progress to test a PHP-container restart. With
+the original room directory kept on a local host bind mount and the MariaDB
+container still running, both users re-entered and a subsequent stance change
+was persisted. This tests application restart with local storage, not loss or
+restoration of ephemeral Cloudflare container disks, database crash recovery,
+or a production deployment.
+
 The source requires game runtime directories such as `gamedata/tmp/rooms`,
 `server`, `response`, `processlock`, `playerlock`, `userlock`, `log`, `news`,
 and `replay`. A missing rooms directory caused room creation to write a DB row

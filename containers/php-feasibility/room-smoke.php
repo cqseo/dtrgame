@@ -29,6 +29,10 @@ foreach(['QaAlpha'=>5,'QaBeta'=>4] as $user=>$pose){[$s,$b]=req($user,'/command.
 $db=new mysqli('dtr-cf-php-db-20261103',getenv('MARIADB_USER'),getenv('MARIADB_PASSWORD'),getenv('MARIADB_DATABASE'));
 $poses=$db->query("SELECT name,pose FROM acbra2_s1_players WHERE type=0 ORDER BY name")->fetch_all(MYSQLI_ASSOC);
 check(count($poses)===2 && $poses[0]['name']==='QaAlpha' && (int)$poses[0]['pose']===5 && $poses[1]['name']==='QaBeta' && (int)$poses[1]['pose']===4,'both actions persisted');
+if (getenv('DTR_STOP_AFTER_SETUP') === '1') {
+    echo "Active synthetic match ready for restart test.\n";
+    exit(0);
+}
 for($turn=0;$turn<120;$turn++){
  $result=$db->query("SELECT pid,name,hp,pls,action FROM acbra2_s1_players WHERE type=0 ORDER BY pid");
  $players=$result->fetch_all(MYSQLI_ASSOC);
