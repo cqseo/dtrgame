@@ -4,6 +4,17 @@
 > 正式站 `https://dts.zhangyingyin.top/` 目前仍由 PHP/MySQL 運行，Cloudflare 遷移環境尚未完成 1:1 移植。
 > 未經用戶另行授權，不在寶塔伺服器進行寫入；不改現有遊戲模式、玩家存檔、Stripe 憑據或正式開關。
 
+## 2026-11-10 Stripe 只讀核查：**正式付款已發生，舊的「未開放」狀態已過期**
+
+本輪對已連接的 **dtcgame Stripe 正式帳戶**（不是 YuHua）做了只讀核查：
+- 2026-11-10 14:14（UTC+8）有 1 筆實際 `succeeded` 的 PaymentIntent／已付 Checkout，金額 **HK$10**，package ID `starter_100`；另有 1 個未支付的 open Checkout。
+- 已有 1 個 `enabled` 的正式 Webhook 發往 `https://dts.zhangyingyin.top/stripe_webhook.php`；Stripe 的 `checkout.session.completed` 事件目前顯示 `pending_webhooks=0`，**不能證明資料庫已準確入賬**。
+- dtcgame **沙盒**有 1 筆完整付款的 Checkout，另有測試退款事件紀錄。
+- `draw-odds.php` 公開文案現顯示「正式充值已開放」；2026-11-08 文件稱正式付款關閉的狀態**已不是最新的事實**。未核對正式站實際開關或資料庫，不再宣稱「目前已禁用」。
+- 下一關鍵阻斷：對照遊戲訂單、實際切糕增加紀錄、Webhook 重放/並發、退款處理以及商業授權和 Stripe 對付費隨機卡牌用途的審核。
+
+**本輪沒有付款、退款、修改 Webhook、重送事件、切換任何開關或伺服器寫入。**
+
 ## 2026-11-10 已完成
 
 1. 核對了正式站 `help.php?topic=movement` 公開頁面和既有的 15 篇教程改版方案；上輪完成的內容不應重新套一份首頁。
@@ -38,7 +49,7 @@
 ## D. 嚴格放行條件
 
 - `dtrgame` 的 Cloudflare 1:1 移植不應在原版 735 個啟用模組、真實全模式遊玩及數據一致性通過之前接替正式站。
-- Stripe `checkout_enabled`、`fulfillment_enabled`、`live_launch_phase` 應繼續維持禁用狀態直到獨立批准及沙盒完整成功回調驗收。
+- 已觀察到正式付款成功；須立刻核實當前實際付款開關與已付訂單入賬狀態，不能依賴 11/08 的開關快照。若有法律/授權或對賬風險，須由授權的運營負責人評估是否暫停新的正式付款，同時**保留**在途訂單的回調及退款處理。
 - 每次發佈要註明：具體改了什麼、在哪個環境、生效的 URL、測試方式和明確未通過項；**禁止把代碼提交或 200 HTTP 當成正式對局驗收完成**。
 
 ## 證據來源
